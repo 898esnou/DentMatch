@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DentMatch · Crear cuenta</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  :root {
+    --dm-teal: #0F5C5A;
+    --dm-teal-dark: #0A403E;
+    --dm-mint: #DCEFEA;
+    --dm-ink: #16262B;
+    --dm-paper: #F7FAF9;
+  }
+
+  body {
+    background: var(--dm-paper);
+    color: var(--dm-ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    padding: 2.5rem 1rem;
+  }
+
+  .dm-shell {
+    max-width: 760px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 20px 50px rgba(15, 92, 90, 0.12);
+    padding: 2.8rem 2.5rem;
+  }
+
+  .dm-tag {
+    display: inline-block;
+    background: var(--dm-mint);
+    color: var(--dm-teal-dark);
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+  }
+
+  h2 {
+    font-weight: 700;
+    color: var(--dm-ink);
+    margin-bottom: 0.3rem;
+  }
+
+  .subtitle {
+    color: #5b6b6a;
+    margin-bottom: 1.8rem;
+    font-size: 0.95rem;
+  }
+
+  .form-label {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--dm-ink);
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: var(--dm-teal);
+    box-shadow: 0 0 0 0.2rem rgba(15, 92, 90, 0.15);
+  }
+
+  /* Selector de rol tipo tarjeta, en vez de radios por defecto */
+  .rol-opciones {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .rol-card {
+    border: 2px solid #e2e8e7;
+    border-radius: 12px;
+    padding: 0.9rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .rol-card input {
+    display: none;
+  }
+
+  .rol-card .rol-titulo {
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .rol-card .rol-desc {
+    font-size: 0.8rem;
+    color: #5b6b6a;
+  }
+
+  .rol-card.activa {
+    border-color: var(--dm-teal);
+    background: var(--dm-mint);
+  }
+
+  #campos-estudiante {
+    display: none;
+    border-top: 1px dashed #d7e3e1;
+    padding-top: 1.2rem;
+    margin-top: 0.3rem;
+  }
+
+  .btn-dm {
+    background: var(--dm-teal);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.65rem;
+  }
+
+  .btn-dm:hover { background: var(--dm-teal-dark); color: white; }
+
+  #mensaje {
+    display: none;
+    font-size: 0.9rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  #mensaje.error { display: block; background: #fde8e8; color: #9b2c2c; }
+  #mensaje.ok { display: block; background: var(--dm-mint); color: var(--dm-teal-dark); }
+</style>
+</head>
+<body>
+
+<div class="dm-shell">
+  <span class="dm-tag">Plataforma clínica estudiantil</span>
+  <h2>Crea tu cuenta en DentMatch</h2>
+  <p class="subtitle">Regístrate como estudiante de Odontología o como paciente.</p>
+
+  <div id="mensaje"></div>
+
+  <form id="form-registro">
+
+    <!-- Selector de rol -->
+    <label class="form-label d-block mb-2">¿Cómo quieres registrarte?</label>
+    <div class="rol-opciones">
+      <label class="rol-card" id="card-estudiante">
+        <input type="radio" name="rol" value="estudiante" required>
+        <div class="rol-titulo">Soy estudiante</div>
+        <div class="rol-desc">Busco pacientes para mis procedimientos</div>
+      </label>
+      <label class="rol-card" id="card-paciente">
+        <input type="radio" name="rol" value="paciente" required>
+        <div class="rol-titulo">Soy paciente</div>
+        <div class="rol-desc">Busco atención dental accesible</div>
+      </label>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="nombre_completo" class="form-label">Nombre completo</label>
+        <input type="text" class="form-control" id="nombre_completo" required>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="rut" class="form-label">RUT</label>
+        <input type="text" class="form-control" id="rut" placeholder="Ej: 12345678-9" required>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-12 mb-3">
+        <label for="correo" class="form-label">Correo electrónico</label>
+        <input type="email" class="form-control" id="correo" required>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        <label for="contrasena" class="form-label">Contraseña</label>
+        <input type="password" class="form-control" id="contrasena" minlength="6" required>
+      </div>
+      <div class="col-md-6 mb-3">
+        <label for="confirmar_contrasena" class="form-label">Confirmar contraseña</label>
+        <input type="password" class="form-control" id="confirmar_contrasena" minlength="6" required>
+      </div>
+    </div>
+
+    <!-- Campos extra, solo se muestran si elige "estudiante" -->
+    <div id="campos-estudiante">
+      <p class="subtitle mb-2" style="margin-bottom: 0.8rem;">Datos de tu perfil de estudiante</p>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="universidad" class="form-label">Universidad</label>
+          <input type="text" class="form-control" id="universidad" placeholder="Ej: Duoc UC">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="ano_carrera" class="form-label">Año de carrera</label>
+          <input type="number" class="form-control" id="ano_carrera" min="1" max="7" placeholder="Ej: 4">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label for="comuna_atencion" class="form-label">Comuna de atención</label>
+          <input type="text" class="form-control" id="comuna_atencion" placeholder="Ej: Providencia">
+        </div>
+        <div class="col-md-6 mb-3">
+          <label for="disponibilidad" class="form-label">Disponibilidad</label>
+          <input type="text" class="form-control" id="disponibilidad" placeholder="Ej: Lunes y miércoles tarde">
+        </div>
+      </div>
+
+      <div class="mb-1">
+        <label for="certificado" class="form-label">Certificado de alumno regular</label>
+        <input type="file" class="form-control" id="certificado" accept=".pdf,.jpg,.jpeg,.png">
+        <div class="form-text" id="ayuda-certificado">
+          Formatos aceptados: PDF, JPG o PNG · tamaño máximo 5 MB.
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-dm w-100 mt-2" id="btn-registro">
+      Crear cuenta
+    </button>
+  </form>
+
+  <p class="text-center mt-3" style="font-size: 0.85rem; color: #5b6b6a;">
+    ¿Ya tienes cuenta? <a href="/" style="color: var(--dm-teal); font-weight: 600;">Inicia sesión aquí</a>
+  </p>
+</div>
+
+<script>
+  // Cambia esto si tu API corre en otra URL/puerto
+  const API_URL = "http://127.0.0.1:8000";
+
+  const form = document.getElementById("form-registro");
+  const mensaje = document.getElementById("mensaje");
+  const btnRegistro = document.getElementById("btn-registro");
+  const camposEstudiante = document.getElementById("campos-estudiante");
+  const cardEstudiante = document.getElementById("card-estudiante");
+  const cardPaciente = document.getElementById("card-paciente");
+
+  function mostrarMensaje(texto, tipo) {
+    mensaje.textContent = texto;
+    mensaje.className = tipo; // "error" u "ok"
+  }
+
+  // Muestra/oculta los campos de estudiante y marca visualmente la tarjeta elegida
+  function actualizarSeleccionRol() {
+    const rolSeleccionado = form.querySelector('input[name="rol"]:checked')?.value;
+
+    cardEstudiante.classList.toggle("activa", rolSeleccionado === "estudiante");
+    cardPaciente.classList.toggle("activa", rolSeleccionado === "paciente");
+    camposEstudiante.style.display = rolSeleccionado === "estudiante" ? "block" : "none";
+
+    // Si es paciente, los campos de estudiante dejan de ser obligatorios
+    const requeridosEstudiante = ["universidad", "comuna_atencion"];
+    requeridosEstudiante.forEach((id) => {
+      document.getElementById(id).required = rolSeleccionado === "estudiante";
+    });
+    document.getElementById("certificado").required = rolSeleccionado === "estudiante";
+  }
+
+  cardEstudiante.addEventListener("click", actualizarSeleccionRol);
+  cardPaciente.addEventListener("click", actualizarSeleccionRol);
+
+  form.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    mensaje.className = "";
+
+    const rol = form.querySelector('input[name="rol"]:checked')?.value;
+    if (!rol) {
+      mostrarMensaje("Selecciona si eres estudiante o paciente.", "error");
+      return;
+    }
+
+    const contrasena = document.getElementById("contrasena").value;
+    const confirmar = document.getElementById("confirmar_contrasena").value;
+    if (contrasena !== confirmar) {
+      mostrarMensaje("Las contraseñas no coinciden.", "error");
+      return;
+    }
+
+    // Validación básica del archivo en el navegador (la API valida de nuevo igual)
+    const inputCertificado = document.getElementById("certificado");
+    const archivo = inputCertificado.files[0];
+    if (rol === "estudiante") {
+      if (!archivo) {
+        mostrarMensaje("Debes adjuntar tu certificado de alumno regular.", "error");
+        return;
+      }
+      const extensionesValidas = [".pdf", ".jpg", ".jpeg", ".png"];
+      const extension = "." + archivo.name.split(".").pop().toLowerCase();
+      if (!extensionesValidas.includes(extension)) {
+        mostrarMensaje("El certificado debe ser PDF, JPG o PNG.", "error");
+        return;
+      }
+      const tamanoMB = archivo.size / (1024 * 1024);
+      if (tamanoMB > 5) {
+        mostrarMensaje("El archivo supera el tamaño máximo permitido (5 MB).", "error");
+        return;
+      }
+    }
+
+   // FormData en vez de JSON: es OBLIGATORIO cuando el formulario incluye un archivo.
+    const cuerpo = new FormData();
+    cuerpo.append("nombre_completo", document.getElementById("nombre_completo").value.trim());
+    cuerpo.append("rut", document.getElementById("rut").value.trim()); // <-- ¡AQUÍ AGREGAS EL RUT!
+    cuerpo.append("correo", document.getElementById("correo").value.trim());
+    cuerpo.append("contrasena", contrasena);
+    cuerpo.append("rol", rol);
+
+    if (rol === "estudiante") {
+      cuerpo.append("universidad", document.getElementById("universidad").value.trim());
+      cuerpo.append("ano_carrera", document.getElementById("ano_carrera").value || 1);
+      cuerpo.append("comuna_atencion", document.getElementById("comuna_atencion").value.trim());
+      cuerpo.append("disponibilidad", document.getElementById("disponibilidad").value.trim());
+      cuerpo.append("certificado", archivo);
+    }
+
+    btnRegistro.disabled = true;
+    btnRegistro.textContent = "Creando cuenta...";
+
+    try {
+      // OJO: no se define "Content-Type" a mano; el navegador arma el
+      // encabezado "multipart/form-data" con el boundary correcto solo.
+      const respuesta = await fetch(`${API_URL}/api/registro`, {
+        method: "POST",
+        body: cuerpo,
+      });
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        // FastAPI puede devolver detail como string o como lista de errores de validación
+        const detalle = Array.isArray(datos.detail)
+          ? datos.detail.map((e) => e.msg).join(" · ")
+          : datos.detail;
+        mostrarMensaje(detalle || "No se pudo crear la cuenta.", "error");
+        return;
+      }
+
+      mostrarMensaje("¡Cuenta creada! Redirigiendo al login...", "ok");
+      setTimeout(() => { window.location.href = "/"; }, 1500);
+
+    } catch (error) {
+      mostrarMensaje("No se pudo conectar con el servidor. ¿Está corriendo la API?", "error");
+    } finally {
+      btnRegistro.disabled = false;
+      btnRegistro.textContent = "Crear cuenta";
+    }
+  });
+</script>
+
+</body>
+</html>

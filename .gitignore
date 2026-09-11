@@ -1,0 +1,20 @@
+# Archivos de entorno y credenciales
+.env
+
+# Entorno virtual de Python (pesa muchísimo y cada compañero debe instalar el suyo)
+venv/
+env/
+
+# Caché de Python (archivos compilados que se autogeneran y causan conflictos)
+__pycache__/
+*.pyc
+*.pyo
+
+# 🚨 IMPORTANTE: Archivos subidos por los usuarios
+# Evita que los certificados (PDFs/imágenes) de la gente terminen públicos en GitHub, esta funcion será añadida mas adelante, por ahora no rinde.
+uploads/
+
+# Archivos de sistema y configuración del editor (VS Code)
+.vscode/
+.DS_Store
+Thumbs.db

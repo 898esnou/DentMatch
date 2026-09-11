@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DentMatch · Iniciar sesión</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  :root {
+    --dm-teal: #0F5C5A;
+    --dm-teal-dark: #0A403E;
+    --dm-mint: #DCEFEA;
+    --dm-ink: #16262B;
+    --dm-paper: #F7FAF9;
+  }
+
+  body {
+    background: var(--dm-paper);
+    color: var(--dm-ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+  }
+
+  .dm-shell {
+    max-width: 900px;
+    margin: 0 auto;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(15, 92, 90, 0.12);
+  }
+
+  .dm-side {
+    background: linear-gradient(160deg, var(--dm-teal) 0%, var(--dm-teal-dark) 100%);
+    color: white;
+    padding: 3rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .dm-side h1 {
+    font-size: 1.9rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .dm-side p {
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.98rem;
+    line-height: 1.5;
+  }
+
+  .dm-tag {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.14);
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .dm-form-side {
+    background: white;
+    padding: 3rem 2.5rem;
+  }
+
+  .dm-form-side h2 {
+    font-weight: 700;
+    color: var(--dm-ink);
+    margin-bottom: 0.3rem;
+  }
+
+  .dm-form-side .subtitle {
+    color: #5b6b6a;
+    margin-bottom: 1.8rem;
+    font-size: 0.95rem;
+  }
+
+  .form-label {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--dm-ink);
+  }
+
+  .form-control:focus {
+    border-color: var(--dm-teal);
+    box-shadow: 0 0 0 0.2rem rgba(15, 92, 90, 0.15);
+  }
+
+  .btn-dm {
+    background: var(--dm-teal);
+    border: none;
+    color: white;
+    font-weight: 600;
+    padding: 0.65rem;
+  }
+
+  .btn-dm:hover {
+    background: var(--dm-teal-dark);
+    color: white;
+  }
+
+  #mensaje {
+    display: none;
+    font-size: 0.9rem;
+    padding: 0.6rem 0.9rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  #mensaje.error {
+    display: block;
+    background: #fde8e8;
+    color: #9b2c2c;
+  }
+
+  #mensaje.ok {
+    display: block;
+    background: var(--dm-mint);
+    color: var(--dm-teal-dark);
+  }
+
+  @media (max-width: 767px) {
+    .dm-side { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="row g-0 dm-shell">
+
+    <!-- Columna izquierda: identidad del proyecto -->
+    <div class="col-md-5 dm-side">
+      <div>
+        <span class="dm-tag">Plataforma clínica estudiantil</span>
+        <h1>DentMatch</h1>
+        <p>Conectamos estudiantes de Odontología con personas que necesitan el
+        procedimiento exacto que tú tienes que practicar — de forma verificada,
+        ordenada y segura.</p>
+      </div>
+      <p style="font-size: 0.8rem; opacity: 0.7;">© DentMatch — Proyecto APT</p>
+    </div>
+
+    <!-- Columna derecha: formulario de login -->
+    <div class="col-md-7 dm-form-side">
+      <h2>Inicia sesión</h2>
+      <p class="subtitle">Ingresa con tu correo y contraseña registrados.</p>
+
+      <div id="mensaje"></div>
+
+      <form id="form-login">
+        <div class="mb-3">
+          <label for="correo" class="form-label">Correo electrónico</label>
+          <input type="email" class="form-control" id="correo" placeholder="nombre@correo.com" required>
+        </div>
+
+        <div class="mb-3">
+          <label for="contrasena" class="form-label">Contraseña</label>
+          <input type="password" class="form-control" id="contrasena" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-dm w-100" id="btn-login">
+          Iniciar sesión
+        </button>
+      </form>
+
+      <p class="text-center mt-3" style="font-size: 0.85rem; color: #5b6b6a;">
+        <a href="/registro">¿Aún no tienes cuenta? Regístrate aquí</a>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Cambia esto si tu API corre en otra URL/puerto
+  const API_URL = "http://127.0.0.1:8000";
+
+  const form = document.getElementById("form-login");
+  const mensaje = document.getElementById("mensaje");
+  const btnLogin = document.getElementById("btn-login");
+
+  function mostrarMensaje(texto, tipo) {
+    mensaje.textContent = texto;
+    mensaje.className = tipo; // "error" u "ok"
+  }
+
+  form.addEventListener("submit", async (evento) => {
+    evento.preventDefault();
+    mensaje.className = "";
+
+    const correo = document.getElementById("correo").value.trim();
+    const contrasena = document.getElementById("contrasena").value;
+
+    btnLogin.disabled = true;
+    btnLogin.textContent = "Verificando...";
+
+    try {
+      const respuesta = await fetch(`${API_URL}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ correo, contrasena }),
+      });
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        mostrarMensaje(datos.detail || "No se pudo iniciar sesión.", "error");
+        return;
+      }
+
+      // Guardamos el token para usarlo en las próximas peticiones (ej. /api/me)
+      localStorage.setItem("dm_token", datos.access_token);
+      localStorage.setItem("dm_rol", datos.rol);
+      localStorage.setItem("dm_nombre", datos.nombre_completo);
+
+      mostrarMensaje(`¡Bienvenido/a, ${datos.nombre_completo}! (rol: ${datos.rol})`, "ok");
+
+      // Aquí, más adelante, redirigirías según el rol:
+      // if (datos.rol === "estudiante") window.location.href = "/static/dashboard_estudiante.html";
+      // if (datos.rol === "paciente") window.location.href = "/static/dashboard_paciente.html";
+
+    } catch (error) {
+      mostrarMensaje("No se pudo conectar con el servidor. ¿Está corriendo la API?", "error");
+    } finally {
+      btnLogin.disabled = false;
+      btnLogin.textContent = "Iniciar sesión";
+    }
+  });
+</script>
+
+</body>
+</html>
