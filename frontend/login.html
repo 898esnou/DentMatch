@@ -102,6 +102,19 @@
     color: white;
   }
 
+  .btn-outline-dm {
+    background: white;
+    border: 1.5px solid var(--dm-teal);
+    color: var(--dm-teal);
+    font-weight: 600;
+    padding: 0.6rem;
+  }
+
+  .btn-outline-dm:hover {
+    background: var(--dm-mint);
+    color: var(--dm-teal-dark);
+  }
+
   #mensaje {
     display: none;
     font-size: 0.9rem;
@@ -167,9 +180,15 @@
         </button>
       </form>
 
-      <p class="text-center mt-3" style="font-size: 0.85rem; color: #5b6b6a;">
-        <a href="/registro">¿Aún no tienes cuenta? Regístrate aquí</a>
-      </p>
+      <div class="d-flex align-items-center my-3" style="gap: 0.75rem;">
+        <hr class="flex-grow-1" style="border-color: #e2e8e7;">
+        <span style="font-size: 0.78rem; color: #9aa8a6;">o</span>
+        <hr class="flex-grow-1" style="border-color: #e2e8e7;">
+      </div>
+
+      <button type="button" class="btn btn-outline-dm w-100" id="btn-ir-registro">
+        Crear una cuenta nueva
+      </button>
     </div>
 
   </div>
@@ -182,6 +201,12 @@
   const form = document.getElementById("form-login");
   const mensaje = document.getElementById("mensaje");
   const btnLogin = document.getElementById("btn-login");
+  const btnIrRegistro = document.getElementById("btn-ir-registro");
+
+  // Al hacer clic, redirige a la página de registro
+  btnIrRegistro.addEventListener("click", () => {
+    window.location.href = "/registro";
+  });
 
   function mostrarMensaje(texto, tipo) {
     mensaje.textContent = texto;
