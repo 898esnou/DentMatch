@@ -1,0 +1,129 @@
+----------------------------------------------------------------------------------
+PASO A PASO para Levantar el proyecto
+----------------------------------------------------------------------------------
+
+PASO 1 
+
+### Abrir el VsCode y abri una terminal (Ctrl + ñ) ###
+Ejecutar cada comando uno a uno 
+
+
+* cd C:\Users\Benja\Desktop
+
+* git clone https://github.com/898esnou/DentMatch.git
+
+* cd DentMatch
+
+----------------------------------------------------------------------------------
+
+PASO 2 — Crear el entorno virtual
+
+Ejecutar 
+
+* python -m venv venv
+
+----------------------------------------------------------------------------------
+
+Paso 3 — Activar el entorno virtual
+
+
+* .\venv\Scripts\Activate.ps1
+
+Si te sale un error (algo como "no se puede cargar el archivo porque ...")
+
+Ejecutar 
+
+* Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
+Y luego volver a ejecutar 
+
+* .\venv\Scripts\Activate.ps1
+
+
+Confirmar que funcionó: al principio de la línea de comandos debe empezar con (venv)
+
+----------------------------------------------------------------------------------
+
+Paso 4 — Instalar las dependencias
+
+* pip install -r requirements.txt
+
+----------------------------------------------------------------------------------
+
+Paso 5 — Crear el archivo .env
+
+
+En VS Code, dentro de la carpeta raíz de DentMatch, crear un archivo nuevo llamado exactamente: 
+
+.env 
+
+Abrir el  .env.example, copiar su contenido, y pégarlo dentro del nuevo archivo .env 
+
+Reemplaza LA_CONTRASEÑA_AQUI por la contraseña real compartida, quedando algo así (ejemplo ficticio):
+
+DATABASE_URL="postgresql://postgres.inlqhwtwxzztyvdwxbcs:mipassword123@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
+
+Guardar el archivo (Ctrl + S).
+
+----------------------------------------------------------------------------------
+
+Paso 6 — Levantar el servidor
+
+* uvicorn app.main:app --reload
+
+Si todo va bien deberia salir: 
+
+INFO:     Uvicorn running on http://127.0.0.1:8000
+INFO:     Application startup complete.
+
+----------------------------------------------------------------------------------
+
+Paso 7 — Verificar que funciona
+
+Abre tu navegador y entra a:
+
+http://127.0.0.1:8001/docs
+
+Deberías ver una interfaz llamada Swagger UI, con una lista de endpoints (como /register, /login, etc.)
+
+
+
+----------------------------------------------------------------------------------
+
+DETENER EL SERVIDOR 
+
+----------------------------------------------------------------------------------
+
+Paso 1 — Detener el servidor
+
+En la terminal de VS Code donde corre uvicorn, presionaR:
+
+Ctrl + C
+
+Verás algo como:
+
+INFO:     Shutting down
+INFO:     Application shutdown complete
+
+Eso significa que el servidor se detuvo correctamente.
+
+----------------------------------------------------------------------------------
+
+Paso 2 — Desactivar el entorno virtual (opcional pero recomendado)
+
+Escribir en la terminal:
+
+
+* deactivate
+
+Verás que desaparece el (venv) del inicio de la línea de comandos.
+
+----------------------------------------------------------------------------------
+
+Paso 3 — Cerrar VS Code 
+
+Cerrar VS Code sin problemas.
+
+
+----------------------------------------------------------------------------------
+
