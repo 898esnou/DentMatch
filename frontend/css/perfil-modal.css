@@ -1,0 +1,29 @@
+/* =========================================================================
+   MODAL "EDITAR MI PERFIL" (compartido por ambos dashboards)
+   ========================================================================= */
+.pm {
+  margin: auto; /* el reset global de márgenes le quita el centrado al <dialog> */
+  border: 0; padding: 0; width: min(520px, calc(100vw - 32px));
+  border-radius: var(--radius-lg); background: var(--surface); color: var(--text);
+  font-family: var(--font-main); box-shadow: 0 24px 60px -20px rgba(6, 42, 87, .5);
+}
+.pm::backdrop { background: rgba(6, 42, 87, .45); }
+.pm__form { display: flex; flex-direction: column; gap: 14px; padding: 24px; }
+.pm__title { margin: 0; font-size: 20px; }
+.pm__lead { margin: -8px 0 0; font-size: 13px; color: var(--text-muted); }
+.pm__field { display: flex; flex-direction: column; gap: 6px; }
+.pm__field label { font-size: 12px; font-weight: 700; }
+.pm__field input, .pm__field textarea {
+  font: inherit; font-size: 14px; padding: 11px 12px; color: var(--text);
+  border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--page-bg);
+}
+.pm__field textarea { min-height: 84px; resize: vertical; }
+.pm__field input:focus, .pm__field textarea:focus {
+  outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(10, 58, 117, .16);
+}
+.pm__error {
+  margin: 0; padding: 10px 12px; font-size: 13px; border-radius: var(--radius-sm);
+  background: var(--danger-soft); color: var(--danger);
+}
+.pm__actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+.pm [hidden] { display: none !important; }

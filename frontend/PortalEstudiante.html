@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DentMatch · Portal del Estudiante</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/static/css/tokens.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+  <link rel="stylesheet" href="/static/css/portal.css" />
+  <link rel="stylesheet" href="/static/css/portal-estudiante.css" />
+  <link rel="stylesheet" href="/static/css/portal-listas.css" />
+  <link rel="stylesheet" href="/static/css/perfil-modal.css" />
+
+  <script src="/static/js/session.js"></script>
+  <script>protegerPagina("estudiante");</script>
+</head>
+<body>
+
+  <!-- ============ 1. CABECERA ============ -->
+  <header class="portal-header">
+    <a href="/estudiante" class="portal-brand">
+      <img src="/static/img/logo-dentmatch.jpg" alt="DentMatch" />
+      <span class="portal-brand__text"><strong>DentMatch</strong><small>Portal del Estudiante</small></span>
+    </a>
+
+    <nav class="portal-nav" aria-label="Navegación principal">
+      <a href="/estudiante" class="portal-nav__link portal-nav__link--active">Inicio</a>
+      <a href="#mis-requerimientos" class="portal-nav__link">Mis Requerimientos</a>
+      <a href="#casos" class="portal-nav__link">Explorar Pacientes</a>
+      <a href="#mis-postulaciones" class="portal-nav__link">Postulaciones</a>
+      <a href="#clinicas" class="portal-nav__link">Clínicas &amp; Boxes</a>
+    </nav>
+
+    <div class="portal-actions">
+      <button type="button" class="btn btn--primary" data-accion="nuevo-requerimiento">
+        <span class="material-symbols-rounded">add</span> Publicar Requerimiento
+      </button>
+      <a class="icon-btn" href="#mis-postulaciones" aria-label="Notificaciones">
+        <span class="material-symbols-rounded">notifications</span>
+        <span class="badge badge--red" id="badge-notificaciones" hidden>0</span>
+      </a>
+      <div class="portal-user">
+        <span class="avatar" data-usuario="iniciales">MR</span>
+        <button type="button" class="btn btn--outline btn--pill btn--sm" data-accion="cerrar-sesion">
+          <span class="material-symbols-rounded">logout</span> Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="portal-main">
+
+    <!-- ============ 2. PERFIL ============ -->
+    <section class="card profile">
+      <div class="profile__top">
+        <div class="profile__id">
+          <span class="avatar profile__avatar" data-usuario="iniciales">MR</span>
+          <div>
+            <h1 class="profile__name" data-usuario="nombre">Matías Rojas Valenzuela</h1>
+            <span class="chip-tag chip-tag--green"><span class="material-symbols-rounded">school</span> <span id="perfil-ano">—</span></span>
+            <div class="profile__meta"><span class="profile__faculty" id="perfil-universidad"></span></div>
+          </div>
+        </div>
+        <div class="fila__acciones">
+          <button type="button" class="btn btn--outline btn--pill" data-accion="editar-perfil">
+            <span class="material-symbols-rounded">edit</span> Editar perfil
+          </button>
+          <button type="button" class="btn btn--primary btn--lg" data-accion="nuevo-requerimiento">
+            <span class="material-symbols-rounded">add_circle</span> Declarar Requerimiento
+          </button>
+        </div>
+      </div>
+
+      <div class="profile__stats">
+        <article class="profile-stat profile-stat--col">
+          <div class="profile-stat__row">
+            <small>Requerimientos clínicos</small>
+            <span class="chip-tag chip-tag--green" id="estado-verificacion">—</span>
+          </div>
+          <div class="profile-stat__row profile-stat__row--end">
+            <div>
+              <strong class="big"><span id="stat-abiertos">0</span> <span class="unit">abiertos</span></strong>
+              <span class="sub"><span id="stat-completados">0</span> completados</span>
+            </div>
+            <span class="profile-stat__icon"><span class="material-symbols-rounded">campaign</span></span>
+          </div>
+        </article>
+
+        <article class="profile-stat profile-stat--col">
+          <div class="profile-stat__row">
+            <small>Ramos inscritos</small>
+            <strong class="big" id="stat-ramos">0</strong>
+          </div>
+          <div class="mini-tags" id="tags-ramos"></div>
+        </article>
+
+        <article class="profile-stat">
+          <div>
+            <strong>Postulaciones recibidas</strong>
+            <span class="sub"><span id="stat-recibidas">0</span> esperan tu respuesta · <span id="stat-citas">0</span> citas próximas</span>
+          </div>
+          <a href="#mis-postulaciones" class="btn btn--soft btn--sm">
+            <span class="material-symbols-rounded">folder_open</span> Ver postulaciones <span class="material-symbols-rounded">arrow_forward</span>
+          </a>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ 3. CASOS + CLÍNICAS ============ -->
+    <div class="layout">
+
+      <section class="cases" id="casos" style="scroll-margin-top:90px">
+        <div class="cases__head">
+          <div>
+            <h2 class="portal-section-title"><span class="material-symbols-rounded">hub</span> Casos Clínicos Disponibles para Asignación</h2>
+            <p class="portal-section-sub">Posibles pacientes para tus procedimientos clínicos</p>
+          </div>
+          <span class="chip-tag">Urgentes primero</span>
+        </div>
+
+        <div class="tabs" id="tabs">
+          <button class="tab tab--active" data-filtro="todos">Todos los casos</button>
+          <button class="tab" data-filtro="urgencia">Urgencia / Dolor activo</button>
+          <button class="tab" data-filtro="operatoria">Operatoria Dental</button>
+          <button class="tab" data-filtro="endodoncia">Endodoncia</button>
+          <button class="tab" data-filtro="periodoncia">Periodoncia</button>
+        </div>
+
+        <!-- La llena portal-estudiante.js -->
+        <div id="lista-casos"></div>
+      </section>
+
+      <aside class="card clinics" id="clinicas" style="scroll-margin-top:90px">
+        <header>
+          <div>
+            <h3><span class="material-symbols-rounded">calendar_month</span> Mis Clínicas por Ramo</h3>
+            <p class="portal-section-sub">Horarios prácticos asignados e ingresados por ti</p>
+          </div>
+          <button type="button" class="btn btn--soft btn--sm" data-accion="nuevo-ramo"><span class="material-symbols-rounded">add</span> Agregar Ramo / Turno</button>
+        </header>
+        <!-- La llena portal-estudiante.js -->
+        <div id="lista-clinicas"></div>
+      </aside>
+    </div>
+
+    <!-- ============ 3b. MIS REQUERIMIENTOS ============ -->
+    <section class="card panel" id="mis-requerimientos">
+      <div class="panel__head">
+        <h2><span class="material-symbols-rounded">assignment</span> Mis Requerimientos Clínicos</h2>
+        <button type="button" class="btn btn--primary btn--sm" data-accion="nuevo-requerimiento">
+          <span class="material-symbols-rounded">add</span> Declarar requerimiento
+        </button>
+      </div>
+      <div class="panel__lista" id="lista-requerimientos"></div>
+    </section>
+
+    <!-- ============ 3c. MIS POSTULACIONES ============ -->
+    <section class="card panel" id="mis-postulaciones">
+      <div class="panel__head">
+        <h2><span class="material-symbols-rounded">handshake</span> Postulaciones con Pacientes</h2>
+        <span class="chip-tag chip-tag--soft">Las que recibes y las que envías</span>
+      </div>
+      <div class="panel__lista" id="lista-postulaciones"></div>
+    </section>
+
+    <!-- ============ 3d. MIS CITAS ============ -->
+    <section class="card panel" id="mis-citas">
+      <div class="panel__head">
+        <h2><span class="material-symbols-rounded">event</span> Mis Citas</h2>
+      </div>
+      <div class="panel__lista" id="lista-citas"></div>
+    </section>
+  </main>
+
+  <!-- ============ 4. PIE DE PÁGINA ============ -->
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <img src="/static/img/logo-dentmatch.jpg" alt="DentMatch" />
+        <p>Proyecto Capstone: plataforma web que conecta pacientes con estudiantes de odontología para acceder a tratamientos dentales más accesibles.</p>
+      </div>
+      <nav>
+        <h4>PLATAFORMA</h4>
+        <a href="#">Solicitudes de Pacientes</a>
+        <a href="#">Portal para Estudiantes</a>
+        <a href="#">Red de Clínicas Docentes</a>
+        <a href="#">Cátedras Odontológicas</a>
+      </nav>
+      <nav>
+        <h4>PROYECTO</h4>
+        <span>Proyecto Capstone</span>
+        <span>Duoc UC • Escuela de Salud</span>
+        <span>Python • FastAPI • Supabase</span>
+      </nav>
+      <nav>
+        <h4>EQUIPO</h4>
+        <span>Benjamín</span>
+        <span>Jorge</span>
+        <span>Joaquín</span>
+      </nav>
+    </div>
+    <div class="site-footer__bottom">
+      <span>DentMatch © 2026 • Proyecto Capstone • Chile</span>
+      <span>Versión en desarrollo</span>
+    </div>
+  </footer>
+
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/utils.js"></script>
+  <script src="/static/js/formulario-modal.js"></script>
+  <script src="/static/js/perfil-modal.js"></script>
+  <script src="/static/js/portal-estudiante.js"></script>
+</body>
+</html>

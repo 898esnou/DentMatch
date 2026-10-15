@@ -19,7 +19,9 @@ from app import models
 load_dotenv()
 
 # --- Config del token (cámbialas por variables de entorno reales en producción) ---
-SECRET_KEY = os.getenv("SECRET_KEY", "cambia-esta-clave-super-secreta")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("No se encontró SECRET_KEY en el archivo .env")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # 8 horas
 
@@ -63,3 +65,19 @@ def get_current_user(
     if usuario is None:
         raise credentials_exception
     return usuario
+
+
+def require_rol(*roles: str):
+    """
+    Dependencia para proteger endpoints por rol.
+    Uso: usuario = Depends(require_rol("estudiante"))
+    """
+    def verificar(usuario: models.Usuario = Depends(get_current_user)) -> models.Usuario:
+        if usuario.rol not in roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permiso para realizar esta acción",
+            )
+        return usuario
+
+    return verificar

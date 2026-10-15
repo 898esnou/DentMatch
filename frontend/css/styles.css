@@ -1,0 +1,345 @@
+/*=========================================================================
+    DENTMATCH - HOJA DE ESTILOS COMPARTIDA (login.html y register.html)
+  =========================================================================
+    Organización de este archivo:
+    1. Variables de diseño (colores, tipografía, espaciados)
+    2. Reset básico
+    3. Fondo de página
+    4. Marca (wordmark DentMatch)
+    5. Tarjeta del formulario
+    6. Selector de rol (Soy estudiante / Soy paciente)
+    7. Campos de formulario
+    8. Botón principal
+    9. Mensajes de error / ayuda
+    10. Responsive 
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+    1. VARIABLES DE DISEÑO
+    Todo el color y la tipografía del sitio vive aquí. Si el día de mañana
+    cambian la paleta, solo se edita esta sección.
+------------------------------------------------------------------------- */
+:root {
+  /* Paleta de azules (los 4 colores del equipo + variaciones del mismo tono) */
+  --color-primary-dark: #2C5EAD;   /* texto de marca, botón, títulos */
+  --color-primary: #1591DC;        /* enlaces, foco de inputs */
+  --color-primary-light: #4BB8FA;  /* acentos, hover */
+  --color-primary-pale: #C4E2F5;   /* bordes, fondos suaves */
+  --color-primary-paler: #EAF5FC;  /* fondo de página */
+
+  /* Neutros (afinados en azul, no negro puro, para que combinen con la paleta) */
+  --color-text: #16304D;
+  --color-text-muted: #5C7A96;
+  --color-surface: #FFFFFF;
+  --color-border: #DCEAF6;
+
+  /* Color semántico de error (necesario para validaciones, no es parte
+     de la marca, es un color funcional estándar) */
+  --color-error: #C0392B;
+  --color-error-bg: #FBEAE8;
+
+  /* Tipografía */
+  --font-heading: "Plus Jakarta Sans", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  /* Espaciados y formas */
+  --radius-card: 20px;
+  --radius-input: 10px;
+  --shadow-card: 0 24px 60px -20px rgba(44, 94, 173, 0.25);
+}
+
+/* -------------------------------------------------------------------------
+    2. RESET BÁSICO
+------------------------------------------------------------------------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-text);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* -------------------------------------------------------------------------
+    3. FONDO DE PÁGINA
+    Degradado suave entre los dos tonos más claros de la paleta, con un
+    "blob" decorativo detrás de la tarjeta (un único elemento decorativo,
+    no varios efectos repartidos por la página).
+------------------------------------------------------------------------- */
+.pagina {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  background: linear-gradient(180deg, var(--color-primary-paler) 0%, #FFFFFF 55%);
+  position: relative;
+  overflow: hidden;
+}
+
+.pagina::before {
+  content: "";
+  position: absolute;
+  top: -180px;
+  right: -160px;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--color-primary-light) 0%, transparent 70%);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.contenedor {
+  width: 100%;
+  max-width: 640px;
+  position: relative;
+  z-index: 1;
+}
+
+/* -------------------------------------------------------------------------
+    4. MARCA (wordmark)
+------------------------------------------------------------------------- */
+.marca {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.marca__nombre {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--color-primary-dark);
+  letter-spacing: -0.02em;
+}
+
+.marca__nombre span {
+  color: var(--color-primary-light);
+}
+
+/* -------------------------------------------------------------------------
+    5. TARJETA DEL FORMULARIO
+------------------------------------------------------------------------- */
+.tarjeta {
+  background: var(--color-surface);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+  padding: 40px;
+}
+
+.tarjeta__titulo {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 28px;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.tarjeta__subtitulo {
+  font-size: 15px;
+  color: var(--color-text-muted);
+  margin-bottom: 32px;
+  max-width: 46ch;
+}
+
+/* -------------------------------------------------------------------------
+    6. SELECTOR DE ROL (Soy estudiante / Soy paciente)
+------------------------------------------------------------------------- */
+.selector-rol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.opcion-rol {
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-input);
+  padding: 16px;
+  text-align: left;
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  font-family: var(--font-body);
+}
+
+.opcion-rol:hover {
+  border-color: var(--color-primary-light);
+}
+
+.opcion-rol[aria-pressed="true"] {
+  border-color: var(--color-primary);
+  background: var(--color-primary-paler);
+}
+
+.opcion-rol__titulo {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+
+.opcion-rol__descripcion {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* -------------------------------------------------------------------------
+    7. CAMPOS DE FORMULARIO
+------------------------------------------------------------------------- */
+.grupo-campos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo--ancho-completo {
+  grid-column: 1 / -1;
+}
+
+.campo label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.campo input,
+.campo select {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-text);
+  padding: 11px 14px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-input);
+  background: var(--color-surface);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.campo input::placeholder {
+  color: #9FB6CC;
+}
+
+.campo input:focus,
+.campo select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(21, 145, 220, 0.15);
+}
+
+.campo input:invalid:not(:placeholder-shown) {
+  border-color: var(--color-error);
+}
+
+/* Sección extra que solo aparece si el rol elegido es "estudiante" */
+.seccion-estudiante {
+  border-top: 1px dashed var(--color-border);
+  padding-top: 20px;
+  margin-top: 4px;
+  margin-bottom: 18px;
+}
+
+.seccion-estudiante__titulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+  margin-bottom: 16px;
+}
+
+.oculto {
+  display: none !important;
+}
+
+/* -------------------------------------------------------------------------
+    8. BOTÓN PRINCIPAL
+------------------------------------------------------------------------- */
+.boton-principal {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius-input);
+  background: linear-gradient(135deg, var(--color-primary-dark), var(--color-primary));
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.05s ease;
+  margin-top: 6px;
+}
+
+.boton-principal:hover {
+  opacity: 0.92;
+}
+
+.boton-principal:active {
+  transform: scale(0.99);
+}
+
+.boton-principal:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.enlace-secundario {
+  text-align: center;
+  margin-top: 22px;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.enlace-secundario a {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.enlace-secundario a:hover {
+  text-decoration: underline;
+}
+
+/* -------------------------------------------------------------------------
+    9. MENSAJES DE ERROR / AYUDA
+------------------------------------------------------------------------- */
+.mensaje-error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border-radius: var(--radius-input);
+  padding: 12px 14px;
+  font-size: 13.5px;
+  margin-bottom: 18px;
+}
+
+.texto-ayuda {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* -------------------------------------------------------------------------
+    10. RESPONSIVE
+------------------------------------------------------------------------- */
+@media (max-width: 560px) {
+  .tarjeta {
+    padding: 28px 22px;
+  }
+
+  .selector-rol,
+  .grupo-campos {
+    grid-template-columns: 1fr;
+  }
+
+  .tarjeta__titulo {
+    font-size: 24px;
+  }
+}

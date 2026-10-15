@@ -1,0 +1,45 @@
+/* =========================================================================
+    TOKENS DE DISEÑO - DentMatch
+    Es lo ÚNICO que hay que editar si cambia
+    Las demás hojas de estilo usan estas variables con var(--...).
+   ========================================================================= */
+:root {
+  /* Primary (azul) */
+  --primary: #0a3a75;
+  --primary-dark: #062a57;
+  --primary-soft: #e3ecfb;
+
+  /* Secondary (turquesa) */
+  --secondary: #2dd4bf;
+  --secondary-soft: #d9f7f2;
+  --secondary-dark: #0f766e;
+
+  /* Tertiary (verde) */
+  --tertiary: #40c090;
+
+  /* Neutrales */
+  --neutral: #64748b;
+  --text: #0f1f3a;
+  --text-muted: #5b6b82;
+  --border: #e2e8f4;
+  --surface: #ffffff;
+  --page-bg: #f4f6fd;
+  --panel-bg: #eef2fa;
+
+  /* Semánticos */
+  --danger: #c0392b;
+  --danger-soft: #fdeceb;
+  --warning: #f59e0b;
+  --warning-soft: #fff4e0;
+
+  /* Tipografía */
+  --font-main: "Plus Jakarta Sans", system-ui, sans-serif;
+
+  /* Formas */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+  --shadow-card: 0 2px 10px rgba(10, 58, 117, 0.06);
+  --shadow-button: 0 8px 20px -8px rgba(10, 58, 117, 0.5);
+}

@@ -1,0 +1,183 @@
+/* =========================================================================
+   AUTENTICACIÓN (login.html y register.html)
+   Secciones: 1 Layout · 2 Panel lateral · 3 Selector de rol · 4 Formulario
+              5 Campos · 6 Elección de rol (registro) · 7 Responsive
+   Base y botones: components.css. Colores: tokens.css.
+   El rol elegido vive en <body data-rol="estudiante|paciente"> y cambia
+   el color de acento de toda la página.
+   ========================================================================= */
+
+body {
+  --accent: var(--primary);
+  --accent-soft: var(--primary-soft);
+  --accent-ring: rgba(10, 58, 117, .16);
+  --panel-from: var(--primary-dark);
+  --panel-to: var(--primary);
+}
+body[data-rol="paciente"] {
+  --accent: var(--secondary-dark);
+  --accent-soft: var(--secondary-soft);
+  --accent-ring: rgba(15, 118, 110, .18);
+  --panel-from: #0b4f5c;
+  --panel-to: var(--secondary-dark);
+}
+
+/* ---------- 1. LAYOUT ---------- */
+.auth { min-height: 100vh; display: grid; grid-template-columns: minmax(340px, 5fr) 6fr; }
+
+/* ---------- 2. PANEL LATERAL ---------- */
+.side {
+  position: relative; overflow: hidden; color: #fff;
+  background: linear-gradient(150deg, var(--panel-from), var(--panel-to));
+  padding: 40px 48px; display: flex; flex-direction: column; justify-content: space-between; gap: 32px;
+  transition: background .4s;
+}
+.side::before, .side::after {
+  content: ""; position: absolute; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(45, 212, 191, .35), transparent 70%);
+}
+.side::before { width: 420px; height: 420px; top: -140px; right: -140px; }
+.side::after { width: 320px; height: 320px; bottom: -120px; left: -100px; opacity: .6; }
+.side > * { position: relative; z-index: 1; }
+
+.side__brand { display: flex; align-items: center; gap: 12px; }
+.side__brand img { height: 44px; width: 44px; border-radius: var(--radius-md); object-fit: cover; background: #fff; }
+.side__brand strong { font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
+
+.side__copy { margin: auto 0; }
+.side__copy h2 { font-size: 34px; line-height: 1.15; font-weight: 800; letter-spacing: -.6px; margin: 14px 0 12px; }
+.side__copy p { font-size: 14px; opacity: .85; max-width: 42ch; }
+.tag-light {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+  background: rgba(255, 255, 255, .14); border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 600;
+}
+.tag-light .material-symbols-rounded { font-size: 15px; color: var(--secondary); }
+
+.side__points { list-style: none; display: grid; gap: 12px; margin-top: 26px; }
+.side__points li {
+  display: flex; gap: 12px; align-items: center; padding: 12px 16px; font-size: 13px; font-weight: 500;
+  background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .12);
+  border-radius: var(--radius-md); backdrop-filter: blur(4px);
+}
+.side__points .material-symbols-rounded { color: var(--secondary); font-size: 22px; }
+
+/* El texto del panel cambia según el rol */
+.side .rol-texto, .side__points li.rol-texto { display: none; }
+body[data-rol="estudiante"] .side .rol-texto[data-para="estudiante"],
+body[data-rol="paciente"] .side .rol-texto[data-para="paciente"] { display: block; }
+body[data-rol="estudiante"] .side__points li.rol-texto[data-para="estudiante"],
+body[data-rol="paciente"] .side__points li.rol-texto[data-para="paciente"] { display: flex; }
+
+/* ---------- 3. SELECTOR DE ROL ---------- */
+.main { display: grid; place-items: center; padding: 40px 28px; }
+.panel { width: 100%; max-width: 520px; }
+
+.switch {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px;
+  background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  margin-bottom: 26px;
+}
+.switch__opt {
+  display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 10px;
+  border-radius: var(--radius-md); font-size: 13px; font-weight: 700; color: var(--text-muted);
+  transition: background .2s, color .2s, box-shadow .2s;
+}
+.switch__opt:hover { color: var(--text); }
+.switch__opt[aria-pressed="true"] { background: var(--accent); color: #fff; box-shadow: var(--shadow-button); }
+.switch__opt .material-symbols-rounded { font-size: 20px; }
+
+/* ---------- 4. FORMULARIO ---------- */
+.form-card { padding: 34px 36px; }
+.form-card h1 { font-size: 26px; font-weight: 800; letter-spacing: -.4px; line-height: 1.2; }
+.form-card .lead { margin: 6px 0 24px; font-size: 13px; color: var(--text-muted); }
+
+.btn--accent {
+  background: linear-gradient(90deg, var(--accent), var(--panel-to));
+  color: #fff; box-shadow: var(--shadow-button); width: 100%; margin-top: 8px;
+  padding: 14px 22px; font-size: 14px;
+}
+.btn--accent:disabled { opacity: .6; cursor: not-allowed; }
+
+.alt-link { text-align: center; margin-top: 22px; font-size: 13px; color: var(--text-muted); }
+.alt-link a { color: var(--accent); font-weight: 700; }
+.alt-link a:hover { text-decoration: underline; }
+
+.mensaje-error {
+  display: flex; gap: 8px; align-items: flex-start;
+  background: var(--danger-soft); color: var(--danger); border-radius: var(--radius-md);
+  padding: 12px 14px; font-size: 13px; font-weight: 500; margin-bottom: 18px;
+}
+.oculto { display: none !important; }
+
+/* ---------- 5. CAMPOS ---------- */
+.grupo-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+.campo { display: flex; flex-direction: column; gap: 6px; }
+.campo--ancho-completo { grid-column: 1 / -1; }
+.campo label { font-size: 12px; font-weight: 700; color: var(--text); }
+.input-icon { position: relative; }
+.input-icon > .material-symbols-rounded {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--neutral); pointer-events: none;
+}
+.campo .input-icon input { padding-left: 40px; }
+.campo input {
+  width: 100%; font-family: inherit; font-size: 14px; color: var(--text);
+  padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-md);
+  background: #f8f9ff; outline: none; transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.campo input::placeholder { color: #9aa9c0; }
+.campo input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px var(--accent-ring); }
+.campo input:user-invalid { border-color: var(--danger); }
+.texto-ayuda { font-size: 11px; color: var(--text-muted); }
+
+.seccion-estudiante {
+  margin: 10px 0 8px; padding: 18px; border-radius: var(--radius-md);
+  background: var(--accent-soft); border: 1px dashed var(--accent);
+}
+.seccion-estudiante__titulo {
+  display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700;
+  color: var(--accent); margin-bottom: 14px;
+}
+.seccion-estudiante input { background: #fff; }
+
+/* ---------- 6. ELECCIÓN DE ROL (solo registro) ---------- */
+.elegir { display: grid; gap: 14px; }
+.rol-card {
+  display: flex; align-items: center; gap: 16px; text-align: left; width: 100%;
+  padding: 18px 20px; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
+  transition: transform .15s, border-color .15s, box-shadow .15s;
+}
+.rol-card:hover { transform: translateY(-2px); border-color: var(--c); box-shadow: 0 14px 28px -14px var(--c); }
+.rol-card__icon {
+  width: 52px; height: 52px; border-radius: var(--radius-md); display: grid; place-items: center;
+  background: var(--c-soft); color: var(--c); flex-shrink: 0;
+}
+.rol-card__icon .material-symbols-rounded { font-size: 28px; }
+.rol-card strong { display: block; font-size: 16px; font-weight: 800; }
+.rol-card small { display: block; font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.rol-card > .material-symbols-rounded { margin-left: auto; color: var(--c); }
+.rol-card[data-rol="estudiante"] { --c: var(--primary); --c-soft: var(--primary-soft); }
+.rol-card[data-rol="paciente"] { --c: var(--secondary-dark); --c-soft: var(--secondary-soft); }
+
+.cambiar-rol {
+  display: inline-flex; align-items: center; gap: 4px; margin-bottom: 14px;
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+}
+.cambiar-rol:hover { color: var(--accent); }
+.rol-chip { margin-bottom: 14px; }
+.rol-chip .pill { background: var(--accent-soft); color: var(--accent); border: 0; }
+
+/* ---------- 7. RESPONSIVE ---------- */
+@media (max-width: 880px) {
+  .auth { grid-template-columns: 1fr; }
+  .side { padding: 24px 22px; gap: 18px; }
+  .side__copy h2 { font-size: 24px; }
+  .side__points { display: none; }
+  .main { padding: 24px 16px 40px; }
+}
+@media (max-width: 520px) {
+  .form-card { padding: 24px 20px; }
+  .grupo-campos { grid-template-columns: 1fr; }
+  .switch__opt { font-size: 12px; }
+}

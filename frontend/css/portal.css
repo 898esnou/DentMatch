@@ -1,0 +1,75 @@
+/* =========================================================================
+   PORTALES (paciente y estudiante) - estilos compartidos
+   Secciones: 1 Cabecera · 2 Contenedor · 3 Tarjeta de perfil · 4 Pestañas
+              5 Etiquetas · 6 Responsive
+   Base y componentes: components.css. Colores: tokens.css.
+   ========================================================================= */
+
+/* ---------- 1. CABECERA ---------- */
+.portal-header {
+  display: flex; align-items: center; gap: 22px; padding: 12px 36px;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+.portal-brand { display: flex; align-items: center; gap: 12px; }
+.portal-brand img { height: 44px; width: auto; display: block; }
+.portal-brand__text strong { display: block; font-size: 16px; line-height: 1.1; color: var(--primary); }
+.portal-brand__text small { font-size: 10px; font-weight: 800; letter-spacing: .6px; color: var(--secondary-dark); text-transform: uppercase; }
+
+.portal-nav { display: flex; gap: 4px; padding: 5px; margin: 0 auto; background: var(--panel-bg); border-radius: 14px; }
+.portal-nav__link { padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.portal-nav__link:hover { background: #fff; }
+.portal-nav__link--active { background: var(--primary); color: #fff; }
+.portal-nav__link--active:hover { background: var(--primary); }
+
+.portal-actions { display: flex; align-items: center; gap: 14px; }
+.portal-user { display: flex; align-items: center; gap: 10px; }
+.portal-user .avatar { width: 38px; height: 38px; font-size: 13px; }
+.btn--sm .material-symbols-rounded { font-size: 16px; }
+
+/* ---------- 2. CONTENEDOR ---------- */
+.portal-main { max-width: 1180px; margin: 0 auto; padding: 26px 20px 50px; }
+.portal-section-title { font-size: 26px; font-weight: 800; letter-spacing: -.6px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.portal-section-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+/* ---------- 3. TARJETA DE PERFIL ---------- */
+.profile { padding: 24px 28px; background: linear-gradient(135deg, #ffffff 55%, #eafaf6); border-radius: 22px; }
+.profile__top { display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+.profile__id { display: flex; align-items: center; gap: 18px; }
+.profile__avatar { width: 68px; height: 68px; font-size: 22px; border: 3px solid #fff; box-shadow: 0 4px 14px rgba(10, 58, 117, .18); flex-shrink: 0; }
+.profile__name { font-size: 28px; font-weight: 800; letter-spacing: -.5px; line-height: 1.1; display: inline; margin-right: 10px; }
+.profile__meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.profile__stats { display: grid; gap: 16px; margin-top: 22px; padding: 16px; background: var(--panel-bg); border-radius: var(--radius-lg); }
+.profile-stat { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: #fff; border-radius: var(--radius-md); box-shadow: var(--shadow-card); }
+.profile-stat__icon { width: 42px; height: 42px; border-radius: var(--radius-md); display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); flex-shrink: 0; }
+.profile-stat__icon--green { background: var(--secondary-soft); color: var(--secondary-dark); }
+.profile-stat small { display: block; font-size: 10px; font-weight: 700; letter-spacing: .5px; color: var(--text-muted); text-transform: uppercase; }
+.profile-stat strong { display: block; font-size: 18px; line-height: 1.2; }
+.profile-stat span.sub { font-size: 11px; color: var(--text-muted); }
+.stat-link { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--primary); display: inline-flex; align-items: center; gap: 4px; }
+.stat-link:hover { text-decoration: underline; }
+
+/* ---------- 4. PESTAÑAS DE FILTRO ---------- */
+.tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0 18px; }
+.tab { padding: 8px 18px; border-radius: var(--radius-pill); font-size: 12px; font-weight: 700; background: var(--panel-bg); color: var(--text-muted); }
+.tab:hover { background: var(--primary-soft); }
+.tab--active, .tab--active:hover { background: var(--primary); color: #fff; }
+
+/* ---------- 5. ETIQUETAS ---------- */
+.chip-tag {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: var(--radius-pill);
+  font-size: 11px; font-weight: 700; background: var(--primary-soft); color: var(--primary);
+}
+.chip-tag .material-symbols-rounded { font-size: 14px; }
+.chip-tag--green { background: var(--secondary-soft); color: var(--secondary-dark); }
+.chip-tag--soft { background: var(--panel-bg); color: var(--text-muted); font-weight: 600; }
+
+/* ---------- 6. RESPONSIVE ---------- */
+@media (max-width: 1100px) {
+  .portal-header { flex-wrap: wrap; padding: 12px 20px; }
+  .portal-nav { order: 3; width: 100%; overflow-x: auto; margin: 0; }
+}
+@media (max-width: 640px) {
+  .profile { padding: 20px 18px; }
+  .profile__name { font-size: 22px; }
+}

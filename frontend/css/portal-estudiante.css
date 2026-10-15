@@ -1,0 +1,72 @@
+/* =========================================================================
+   PORTAL DEL ESTUDIANTE
+   Secciones: 1 Perfil (extra) · 2 Casos clínicos · 3 Clínicas por ramo
+              4 Responsive
+   Compartido: components.css y portal.css. Colores: tokens.css.
+   ========================================================================= */
+
+/* ---------- 1. PERFIL (extra) ---------- */
+.badge--red { background: var(--danger); }
+.btn--lg { padding: 14px 22px; font-size: 14px; background: var(--primary); }
+.btn--soft { background: var(--primary-soft); color: var(--primary); }
+.profile__stats { grid-template-columns: 1fr 1fr 1.1fr; }
+.profile__faculty { font-size: 13px; color: var(--text-muted); }
+.profile-stat--col { flex-direction: column; align-items: stretch; gap: 8px; }
+.profile-stat__row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.profile-stat__row--end { align-items: flex-end; }
+.profile-stat .big { font-size: 28px; font-weight: 800; line-height: 1; }
+.profile-stat .unit { font-size: 12px; font-weight: 700; color: var(--secondary-dark); }
+.profile-stat .sub { display: block; margin-top: 6px; }
+.profile-stat:last-child { justify-content: space-between; flex-wrap: wrap; }
+.mini-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- 2. CASOS CLÍNICOS ---------- */
+.layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; margin-top: 30px; align-items: start; }
+.cases__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.cases__head .portal-section-title { font-size: 22px; }
+.cases__head .portal-section-title .material-symbols-rounded { color: var(--secondary-dark); font-size: 28px; }
+
+.case-row { display: flex; gap: 22px; padding: 20px 24px; margin-bottom: 14px; border-radius: var(--radius-lg); }
+.case-row--top { border-top: 3px solid var(--secondary-dark); }
+.case-row__main { flex: 1; min-width: 0; }
+.case-row__head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+.case-row__badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: var(--radius-pill); font-size: 11px; font-weight: 700; background: var(--primary-soft); color: var(--primary); }
+.case-row__badge--top { background: var(--secondary-soft); color: var(--secondary-dark); }
+.case-row__badge .material-symbols-rounded { font-size: 14px; }
+.case-row__note { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--secondary-dark); }
+.case-row__note--muted { color: #9aa6bd; font-weight: 600; }
+.case-row__note .material-symbols-rounded { font-size: 16px; }
+.case-row h3 { font-size: 17px; line-height: 1.3; }
+.case-row__desc { font-size: 12px; color: var(--text-muted); margin: 8px 0 12px; }
+.case-row__meta { display: flex; gap: 18px; flex-wrap: wrap; font-size: 11px; font-weight: 700; }
+.case-row__meta span { display: inline-flex; align-items: center; gap: 6px; }
+.case-row__meta .material-symbols-rounded { font-size: 16px; color: var(--primary); }
+.case-row__meta .area { color: var(--secondary-dark); }
+.case-row__meta .area .material-symbols-rounded { color: var(--secondary-dark); }
+.case-row__side { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 14px; text-align: center; }
+.case-row__subject { font-size: 14px; font-weight: 800; }
+.case-row__side .btn { padding: 13px 16px; }
+.btn[disabled] { opacity: .65; cursor: default; }
+.empty { text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 14px; }
+
+/* ---------- 3. CLÍNICAS POR RAMO ---------- */
+.clinics { padding: 22px; scroll-margin-top: 90px; }
+.clinics header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.clinics h3 { display: flex; align-items: center; gap: 8px; font-size: 17px; }
+.clinics h3 .material-symbols-rounded { color: var(--secondary-dark); }
+.clinic { padding: 14px 16px; margin-bottom: 12px; background: #eef2fc; border: 1px solid #dde5f6; border-radius: var(--radius-md); font-size: 12px; }
+.clinic__head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 10px; }
+.clinic__head > span:first-child { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+.clinic__day { padding: 2px 10px; border-radius: 6px; background: var(--primary); color: #fff; font-size: 11px; font-weight: 800; }
+.clinic__state { padding: 2px 10px; border-radius: var(--radius-pill); background: var(--secondary-soft); color: var(--secondary-dark); font-size: 10px; font-weight: 700; }
+.clinic p { display: flex; align-items: center; gap: 8px; margin-top: 6px; color: var(--text-muted); }
+.clinic p .material-symbols-rounded { font-size: 16px; color: var(--secondary-dark); }
+.clinic p.hours { color: var(--text); font-weight: 700; }
+
+/* ---------- 4. RESPONSIVE ---------- */
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .profile__stats { grid-template-columns: 1fr; }
+  .case-row { flex-direction: column; }
+  .case-row__side { width: 100%; }
+}

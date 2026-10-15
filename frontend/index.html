@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DentMatch · Proyecto Capstone</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/static/css/tokens.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+  <link rel="stylesheet" href="/static/css/index.css" />
+</head>
+<body>
+
+  <!-- ============ 1. CABECERA ============ -->
+  <header class="site-header">
+    <a href="/" class="site-header__brand">
+      <img src="/static/img/logo-dentmatch.jpg" alt="DentMatch" />
+      <span>DentMatch Proyecto Capstone</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Navegación principal">
+      <a href="#" class="site-nav__link site-nav__link--active">Inicio</a>
+      <a href="#" class="site-nav__link">Solicitudes</a>
+      <a href="#" class="site-nav__link">Estudiantes</a>
+      <a href="#" class="site-nav__link">Chat</a>
+      <a href="#" class="site-nav__link">Clínicas</a>
+      <a href="#" class="site-nav__link">Nosotros</a>
+    </nav>
+
+    <div class="site-header__actions">
+      <a href="/static/login.html" class="site-header__login">Iniciar Sesión</a>
+      <a href="/registro" class="btn btn--primary btn--pill">Registrar <span class="dot"></span></a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- ============ 2. HERO ============ -->
+    <section class="hero">
+      <span class="pill pill--ai pill--small"><span class="dot"></span> Conectando tus necesidades</span>
+      <div class="hero__row">
+        <div class="hero__text">
+          <h1>Conectamos Pacientes con Futuros Odontólogos</h1>
+          <p class="hero__lead"><strong>Pacientes:</strong> Encuentra costos más accesibles para tus dientes.</p>
+          <p class="hero__lead"><strong>Estudiantes:</strong> Aprueba tus procedimientos clínicos.</p>
+        </div>
+        <div class="hero__actions">
+          <a href="/registro?rol=paciente" class="btn btn--primary btn--lg">
+            <span class="material-symbols-rounded">add</span> Solicitar atención clínica
+          </a>
+          <a href="/registro?rol=estudiante" class="btn btn--outline btn--lg">
+            <span class="material-symbols-rounded">search</span> Busca pacientes para tus procedimientos
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 3. ELIGE TU PERFIL ============ -->
+    <section class="roles">
+      <article class="card role">
+        <header><span class="role__tag"><span class="dot"></span> Soy Paciente</span><small>Atención Universitaria</small></header>
+        <h2>¿Necesitas tratamientos dentales más accesibles?</h2>
+        <p>Cuéntanos qué necesitas y te conectamos con estudiantes de odontología que realizan procedimientos dentales supervisados, a un costo más accesible para ti.</p>
+        <footer>
+          <a href="/registro?rol=paciente" class="role__link">Pedir hora de evaluación <span class="material-symbols-rounded">chevron_right</span></a>
+          <span class="role__aside"><span class="dot dot--muted"></span> Ver clínicas docentes</span>
+        </footer>
+      </article>
+
+      <article class="card role">
+        <header><span class="role__tag role__tag--blue"><span class="dot"></span> Soy Estudiante de Odontología</span><small>Procedimientos</small></header>
+        <h2>¿Buscas pacientes para tus requisitos clínicos?</h2>
+        <p>Encuentra pacientes que necesitan justo los procedimientos que debes completar, y avanza en tu formación clínica de forma simple y ordenada.</p>
+        <footer>
+          <a href="/registro?rol=estudiante" class="role__link">Explorar casos disponibles <span class="material-symbols-rounded">chevron_right</span></a>
+          <span class="role__aside"><span class="dot dot--muted"></span> Portal de estudiantes</span>
+        </footer>
+      </article>
+    </section>
+  </main>
+
+  <!-- ============ 5. CASOS CLÍNICOS ============ -->
+  <section class="cases-band">
+    <div class="container">
+      <header class="cases__header">
+        <div>
+          <h2>Casos Clínicos Disponibles para Asignación</h2>
+          <p>Revisa la anamnesis preliminar y postula según el nivel clínico y requerimiento de tu cátedra.</p>
+        </div>
+        <div class="legend">
+          <span><span class="dot dot--warning"></span> <span id="leyenda-espera">0</span> en espera</span>
+          <span><span class="dot dot--blue"></span> <span id="leyenda-evaluacion">0</span> en evaluación docente</span>
+        </div>
+      </header>
+
+      <!-- La llena index.js -->
+      <div class="cases" id="lista-casos"></div>
+
+      <!-- ============ 6. PRÓXIMAMENTE ============ -->
+      <section class="soon">
+        <div class="soon__main">
+          <h2>Próximamente en la Plataforma</h2>
+          <p>
+            Estamos construyendo nuevas funciones para que encontrar y atender pacientes sea más
+            simple, rápido y seguro, tanto para pacientes como para estudiantes.
+          </p>
+          <div class="soon__cards">
+            <div class="mini-card">
+              <strong><span class="dot"></span> Matching con IA</strong>
+              <p>Describe lo que necesitas y el sistema te sugiere al estudiante más compatible con tu caso.</p>
+            </div>
+            <div class="mini-card">
+              <strong><span class="dot"></span> Chat en vivo</strong>
+              <p>Conversa en tiempo real con el estudiante o con el paciente para coordinar la atención.</p>
+            </div>
+          </div>
+        </div>
+
+        <aside class="guarantees card">
+          <h3><span class="material-symbols-rounded">verified_user</span> Verificación de estudiantes</h3>
+          <ul>
+            <li><span class="material-symbols-rounded">check</span><p><strong>Certificado de alumno regular:</strong> Los estudiantes lo subirán al registrarse para validar su perfil.</p></li>
+            <li><span class="material-symbols-rounded">check</span><p><strong>Estado de verificación:</strong> Cada perfil mostrará si está en verificación o ya verificado.</p></li>
+            <li><span class="material-symbols-rounded">check</span><p><strong>Más confianza:</strong> Los pacientes sabrán que se atienden con estudiantes verificados.</p></li>
+          </ul>
+          <footer><span>Estado de la función</span><span class="pill pill--small pill--soft">En desarrollo</span></footer>
+        </aside>
+      </section>
+    </div>
+  </section>
+
+  <!-- ============ 7. PIE DE PÁGINA ============ -->
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div class="site-footer__brand">
+        <img src="/static/img/logo-dentmatch.jpg" alt="DentMatch" />
+        <p>Proyecto Capstone: plataforma web que conecta pacientes con estudiantes de odontología para acceder a tratamientos dentales más accesibles.</p>
+      </div>
+      <nav>
+        <h4>PLATAFORMA</h4>
+        <a href="#">Solicitudes de Pacientes</a>
+        <a href="#">Portal para Estudiantes</a>
+        <a href="#">Red de Clínicas Docentes</a>
+        <a href="#">Cátedras Odontológicas</a>
+      </nav>
+      <nav>
+        <h4>PROYECTO</h4>
+        <span>Proyecto Capstone</span>
+        <span>Duoc UC • Escuela de Salud</span>
+        <span>Python • FastAPI • Supabase</span>
+      </nav>
+      <nav>
+        <h4>EQUIPO</h4>
+        <span>Benjamín</span>
+        <span>Jorge</span>
+        <span>Joaquín</span>
+      </nav>
+    </div>
+    <div class="site-footer__bottom">
+      <span>DentMatch © 2026 • Proyecto Capstone • Chile</span>
+      <span>Versión en desarrollo</span>
+    </div>
+  </footer>
+
+  <script src="/static/js/utils.js"></script>
+  <script src="/static/js/session.js"></script>
+  <script src="/static/js/index.js"></script>
+</body>
+</html>
