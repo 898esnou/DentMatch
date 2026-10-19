@@ -1,10 +1,18 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-psycopg2-binary
-pydantic[email]
-python-dotenv
-passlib[bcrypt]
-bcrypt==3.2.2
-python-jose[cryptography]
-python-multipart
+# Dependencias de DentMatch.
+# Instalar con: pip install -r requirements.txt
+
+# --- Servidor y API ---
+fastapi                    # Framework con el que se construye la API
+uvicorn[standard]          # Servidor que ejecuta la aplicación
+python-multipart           # Permite recibir formularios (registro de usuarios)
+pydantic[email]            # Validación de los datos que llegan a la API, incluidos los correos
+
+# --- Base de datos ---
+sqlalchemy                 # Manejo de las tablas desde Python (ORM)
+psycopg2-binary            # Conexión con PostgreSQL (Supabase)
+python-dotenv              # Lee las variables secretas del archivo .env
+
+# --- Seguridad ---
+passlib[bcrypt]            # Cifrado (hash) de contraseñas
+bcrypt==3.2.2              # Algoritmo de cifrado; versión fija por compatibilidad con passlib
+python-jose[cryptography]  # Creación y validación de tokens de sesión (JWT)
