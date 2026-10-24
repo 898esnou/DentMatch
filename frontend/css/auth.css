@@ -125,6 +125,12 @@ body[data-rol="paciente"] .side__points li.rol-texto[data-para="paciente"] { dis
   padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-md);
   background: #f8f9ff; outline: none; transition: border-color .15s, box-shadow .15s, background .15s;
 }
+.campo select {
+  width: 100%; font-family: inherit; font-size: 14px; color: var(--text);
+  padding: 11px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-md);
+  background: #f8f9ff; outline: none; transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.campo select:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px var(--accent-ring); }
 .campo input::placeholder { color: #9aa9c0; }
 .campo input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px var(--accent-ring); }
 .campo input:user-invalid { border-color: var(--danger); }

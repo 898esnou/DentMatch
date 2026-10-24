@@ -6,7 +6,8 @@ Requerimientos clínicos del estudiante (cada uno con su tutor):
 - PATCH  /api/requerimientos/{id}         editar datos
 - POST   /api/requerimientos/{id}/avance  sumar procedimientos realizados (manual)
 - DELETE /api/requerimientos/{id}         cancelar (no se borra: queda 'Cancelado')
-Solo estudiantes, y cada uno ve únicamente los suyos.
+Solo estudiantes, y cada uno ve únicamente los suyos. Para publicar, editar o
+sumar avance hay que estar verificado; ver y cancelar no lo exige.
 """
 from typing import List, Optional
 
@@ -15,7 +16,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import models
-from app.auth import require_rol
+from app.auth import require_estudiante_verificado, require_rol
 from app.catalogos import AREAS, ESTADOS_REQUERIMIENTO
 from app.database import get_db
 from app.schemas_dominio import AvanceIn, RequerimientoIn, RequerimientoOut, RequerimientoUpdate
@@ -73,7 +74,7 @@ def marcar_completado_si_corresponde(r: models.Requerimiento) -> None:
 @router.post("", response_model=RequerimientoOut, status_code=status.HTTP_201_CREATED)
 def declarar_requerimiento(
     datos: RequerimientoIn,
-    usuario: models.Usuario = Depends(require_rol("estudiante")),
+    usuario: models.Usuario = Depends(require_estudiante_verificado),
     db: Session = Depends(get_db),
 ):
     r = models.Requerimiento(estudiante_id=usuario.id, **datos.model_dump())
@@ -113,7 +114,7 @@ def ver_requerimiento(
 def editar_requerimiento(
     requerimiento_id: int,
     datos: RequerimientoUpdate,
-    usuario: models.Usuario = Depends(require_rol("estudiante")),
+    usuario: models.Usuario = Depends(require_estudiante_verificado),
     db: Session = Depends(get_db),
 ):
     r = _propio(db, requerimiento_id, usuario)
@@ -145,7 +146,7 @@ def editar_requerimiento(
 def registrar_avance(
     requerimiento_id: int,
     datos: AvanceIn,
-    usuario: models.Usuario = Depends(require_rol("estudiante")),
+    usuario: models.Usuario = Depends(require_estudiante_verificado),
     db: Session = Depends(get_db),
 ):
     r = _propio(db, requerimiento_id, usuario)

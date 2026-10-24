@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app import models
+from app import models, vigencia
 from app.auth import require_rol
 from app.database import get_db
 from app.schemas_dominio import ResumenOut
@@ -37,6 +37,12 @@ def resumen(
             ).scalar()
 
         recibidas = contar_post(True)
+        estado_verificacion = usuario.perfil_estudiante.estado_verificacion if usuario.perfil_estudiante else None
+        # Si rechazaron su certificado, la campana lo avisa (es algo que requiere su acción).
+        aviso_verificacion = 1 if estado_verificacion == "Rechazado" else 0
+        if estado_verificacion == "Activo":  # el certificado semestral terminó: avisar que renueve
+            vig = vigencia.vigencia_de(db, usuario.id)
+            aviso_verificacion = 1 if vig and vig.en_gracia(ahora().date()) else 0
         return ResumenOut(
             rol="estudiante",
             requerimientos_abiertos=contar_req("Abierto"),
@@ -52,7 +58,8 @@ def resumen(
             .join(P, C.postulacion_id == P.id)
             .filter(P.estudiante_id == usuario.id, proximas)
             .scalar(),
-            notificaciones=recibidas,
+            notificaciones=recibidas + aviso_verificacion,
+            estado_verificacion=estado_verificacion,
         )
 
     # paciente

@@ -20,7 +20,7 @@
   <script src="/static/js/session.js"></script>
   <script>protegerPagina("paciente");</script>
 </head>
-<body>
+<body class="tema-paciente">
 
   <!-- ============ 1. CABECERA ============ -->
   <header class="portal-header">
@@ -146,7 +146,7 @@
     </section>
 
     <!-- ============ 4. ESTUDIANTES DISPONIBLES ============ -->
-    <section class="results" id="resultados" style="scroll-margin-top:90px">
+    <section class="results" id="resultados">
       <h2 class="portal-section-title">Estudiantes Disponibles para tu Caso
         <span class="chip-tag chip-tag--green" id="contador">0 Cupos docentes abiertos</span>
       </h2>
@@ -164,7 +164,6 @@
         <button class="tab" data-filtro="coincidentes">Mi tipo de tratamiento</button>
         <button class="tab" data-filtro="manana">Horario de mañana</button>
         <button class="tab" data-filtro="tarde">Horario de tarde</button>
-        <button class="tab" data-filtro="verificados">Solo verificados</button>
       </div>
 
       <!-- La llena portal-paciente.js -->
@@ -201,8 +200,6 @@
         <h4>PLATAFORMA</h4>
         <a href="#">Solicitudes de Pacientes</a>
         <a href="#">Portal para Estudiantes</a>
-        <a href="#">Red de Clínicas Docentes</a>
-        <a href="#">Cátedras Odontológicas</a>
       </nav>
       <nav>
         <h4>PROYECTO</h4>

@@ -29,6 +29,8 @@
 
 /* ---------- 2. CONTENEDOR ---------- */
 .portal-main { max-width: 1180px; margin: 0 auto; padding: 26px 20px 50px; }
+/* que la cabecera fija no tape el título al saltar desde el menú */
+.portal-main [id] { scroll-margin-top: 90px; }
 .portal-section-title { font-size: 26px; font-weight: 800; letter-spacing: -.6px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .portal-section-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
 
@@ -68,8 +70,12 @@
 @media (max-width: 1100px) {
   .portal-header { flex-wrap: wrap; padding: 12px 20px; }
   .portal-nav { order: 3; width: 100%; overflow-x: auto; margin: 0; }
+  .portal-main [id] { scroll-margin-top: 130px; }  /* cabecera de dos filas */
 }
 @media (max-width: 640px) {
+  /* en el celular la cabecera de dos filas taparía un cuarto de la pantalla: deja de ser fija */
+  .portal-header { position: static; gap: 12px; }
+  .portal-actions { width: 100%; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
   .profile { padding: 20px 18px; }
   .profile__name { font-size: 22px; }
 }

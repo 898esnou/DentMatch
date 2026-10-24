@@ -5,12 +5,30 @@
    Compartido: components.css y portal.css. Colores: tokens.css.
    ========================================================================= */
 
+/* ---------- TEMA DEL PACIENTE ----------
+   Mismos colores que el inicio de sesión del paciente (auth.css, body[data-rol="paciente"]):
+   el azul del portal pasa a verde azulado. Basta redefinir las variables: el resto de las
+   hojas usa var(--primary...). Solo afecta a PortalPaciente.html (<body class="tema-paciente">). */
+body.tema-paciente {
+  --primary: #0f766e;
+  --primary-dark: #0b4f5c;
+  --primary-soft: #d9f7f2;
+  --shadow-button: 0 8px 20px -8px rgba(15, 118, 110, 0.5);
+}
+.tema-paciente .btn--lg { background: linear-gradient(90deg, #0f766e, #0b4f5c); }
+.tema-paciente .profile__avatar { box-shadow: 0 4px 14px rgba(15, 118, 110, .22); }
+.tema-paciente .pm { box-shadow: 0 24px 60px -20px rgba(11, 79, 92, .5); }
+.tema-paciente .pm::backdrop { background: rgba(11, 79, 92, .45); }
+.tema-paciente .pm input:focus, .tema-paciente .pm select:focus, .tema-paciente .pm textarea:focus {
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, .18);
+}
+
+
 /* ---------- 1. PERFIL (extra) ---------- */
-.profile__stats { grid-template-columns: 1fr 1fr 1fr; }
-.profile__stats .profile-stat:first-child { grid-column: span 1; }
+.profile__stats { grid-template-columns: 1fr 1fr; }
 
 /* ---------- 2. BUSCADOR ---------- */
-.finder { margin-top: 22px; padding: 28px 34px 30px; border-radius: 22px; background: linear-gradient(135deg, #fff 60%, #eafaf6); scroll-margin-top: 90px; }
+.finder { margin-top: 22px; padding: 28px 34px 30px; border-radius: 22px; background: linear-gradient(135deg, #fff 60%, #eafaf6); }
 .finder__top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .finder__title { font-size: 36px; line-height: 1.1; font-weight: 800; letter-spacing: -1px; max-width: 680px; margin: 20px 0 12px; }
 .finder__lead { max-width: 700px; font-size: 14px; color: var(--text-muted); }
@@ -59,7 +77,7 @@
 
 /* ---------- 4. SOLICITUDES ---------- */
 .requests { margin-top: 26px; padding: 22px 26px; }
-.requests header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; scroll-margin-top: 90px; }
+.requests header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
 .requests h2 { display: flex; align-items: center; gap: 10px; font-size: 18px; }
 .requests h2 .material-symbols-rounded { color: var(--primary); }
 .request { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; padding: 16px 20px; background: var(--panel-bg); border-radius: var(--radius-md); }

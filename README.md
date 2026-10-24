@@ -1,145 +1,122 @@
-# DentMatch
-Proyecto Capstone Grupo Ockham
+# DentMatch - Prototipo de Benjamín (Login / Register)
 
-## Descripción
-DentMatch es una plataforma web que conecta a estudiantes de Odontología que necesitan pacientes para sus prácticas clínicas con personas que buscan atención dental de bajo costo. Los estudiantes crean un perfil verificado con sus procedimientos pendientes, su disponibilidad y su lugar de atención. Los pacientes publican su necesidad y encuentran estudiantes que se ajusten a ella. La plataforma gestiona las postulaciones entre ambas partes y la agenda de citas, mostrando información que genera confianza (universidad, año de carrera, supervisión docente).
+Este es un proyecto **aislado** del repositorio oficial del equipo.
+Se conecta a la **misma base de datos de Supabase**, pero corre en un
+servidor local independiente (puerto **8001**, para no chocar con el
+backend oficial que corre en el puerto 8000).
 
-En etapas siguientes se incorporarán un sistema de coincidencia y clasificación de solicitudes con IA, un chat de coordinación y moderación de contenido.
+## Qué incluye
 
-## Integrantes
-- Benjamín Canales, Líder del Proyecto y Desarrollador Backend
-- Jorge Curiqueo, Desarrollo IA y Datos
-- Joaquín Rohland, Desarrollador Frontend y Desarrollo IA
+- Registro y login (estudiante / paciente) con sesión JWT y control por rol
+- Portal del estudiante: requerimientos clínicos (con su tutor), ramos/clínicas,
+  casos disponibles, postulaciones y citas
+- Portal del paciente: publicar solicitudes, ver estudiantes, solicitar atención,
+  responder candidatos y ver sus citas
+- Administración: verificar estudiantes (`/api/admin/...`)
+- Backend FastAPI. La documentación interactiva de toda la API está en `/docs`.
 
-## Tecnologías
-- **Backend:** Python con FastAPI y SQLAlchemy
-- **Frontend:** HTML, CSS y JavaScript (lo sirve el mismo backend)
-- **Base de datos:** PostgreSQL (Supabase)
-- **Autenticación:** tokens JWT y contraseñas con hash bcrypt
+## Cómo funciona el flujo (backend)
 
-## Requisitos previos
-- Python 3.10 o superior
-- Git
-- Acceso a una base de datos PostgreSQL (la del equipo en Supabase o una local)
+1. El **paciente** publica una *solicitud* (qué necesita, área, urgencia, comuna).
+2. Se vinculan por una *postulación*, que puede iniciar **cualquiera de los dos**:
+   el estudiante "postula a un caso" o el paciente "solicita" a un estudiante.
+   La **contraparte** la acepta o rechaza. Al aceptar, la solicitud queda *Asignada*
+   y las demás postulaciones pendientes se rechazan.
+3. El estudiante **agenda la cita** y, al terminar, marca el **tratamiento realizado**:
+   la solicitud queda *Completada* y suma al **requerimiento** vinculado
+   (que llega a *Completado* al alcanzar la cantidad requerida).
 
-## Puesta en marcha
+Tablas nuevas: `perfil_paciente`, `ramos_estudiante`, `requerimientos`, `solicitudes`,
+`postulaciones`, `citas`. Se crean solas al arrancar el servidor y **no modifican** las
+tablas existentes (`usuarios`, `perfil_estudiante`).
 
-### 1. Obtener el código
-```bash
-git clone <URL-del-repositorio>
-cd DentMatch
-```
+## Verificación de usuarios
 
-### 2. Crear y activar el entorno virtual
+- **Paciente:** el documento de identidad se valida al registrarse. Puede ser **RUT chileno**
+  (con dígito verificador, módulo 11; se rechazan los RUT de empresa, desde 50.000.000) o **documento extranjero** (pasaporte u otro: 5 a 16
+  letras/números; ahí solo se puede validar el formato). Si es válido, queda habilitado.
+- **Estudiante:** nace **"No verificado"**. Desde su portal pulsa **"Verificar tu perfil"** y sube su
+  certificado de alumno regular (PDF/JPG/PNG, máx. 5 MB). Estados: `No verificado` →
+  `En Verificación` → `Activo` | `Rechazado` (con motivo; puede volver a subirlo). También puede
+  renovarlo estando `Activo` sin perder el acceso.
+- Sin verificar, el estudiante **puede ver los casos** de pacientes pero **no postular, responder,
+  agendar ni publicar requerimientos** (lo exige el backend). Sus datos de perfil y ramos sí puede editarlos.
+- Los pacientes **solo ven estudiantes verificados**.
+- **Lectura automática del QR** (`app/verificacion_certificado.py`, certificados de la UNAB): se lee el QR,
+  se consulta `certificados.unab.cl` (solo ese dominio) y, si el RUT coincide con la cuenta, es alumno regular
+  de Odontología y el certificado es del semestre en curso, queda `Activo` solo. Si los datos no sirven se rechaza con
+  motivo. Si no se puede decidir (sin QR legible, web de la UNAB caída, nombre distinto), queda
+  `En Verificación` y lo resuelve un admin con
+  `PATCH /api/admin/estudiantes/{id}/verificacion` (`{estado, motivo}`); puede ver el archivo con
+  `GET /api/admin/estudiantes/{id}/certificado`.
+- **Vigencia semestral** (`app/vigencia.py`): cuenta el mes y año de emisión. Emitido de enero a junio vale hasta
+  el 30 de junio; de julio a diciembre, hasta el 31 de diciembre. Terminado el semestre hay **7 días de gracia**
+  (aviso en la campana y en el banner) para subir uno nuevo; después vuelve a `No verificado`. Antes de usar
+  esto contra Supabase ejecutar también `migraciones/002_vigencia_semestral.sql`.
+- Los certificados van a un **bucket privado** de Supabase Storage (`certificados`). Para eso el `.env`
+  necesita `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY` (ver `.env.example`). Sin ellas, en desarrollo
+  se guardan en la carpeta local `uploads/` (excluida de git).
+- **Antes de usar esta versión contra Supabase hay que ejecutar** `migraciones/001_verificacion_estudiante.sql`
+  en el SQL Editor (amplía el CHECK de estados, crea la tabla de certificados y el bucket).
+
+## Para quien haga el matching con IA
+
+El backend deja los datos listos, pero **no calcula compatibilidad**. Los puntos de enganche:
+
+- `GET /api/casos` (lo que ve el estudiante) y `GET /api/estudiantes` (lo que ve el paciente)
+  devuelven listas ordenadas de forma simple; ahí se puede ordenar/puntuar con IA y agregar
+  un campo `compatibilidad` a `CasoOut` / `EstudianteOut` (`app/schemas_dominio.py`).
+- Las áreas clínicas están en `app/catalogos.py` (`AREAS`): una solicitud trae su `area`
+  elegida por el paciente; la IA puede reclasificarla.
+- Cada estudiante expone sus `requerimientos_abiertos` (tratamiento, tutor, restantes) y
+  sus `ramos`: son los datos para emparejar.
+- Los portales ocultan el porcentaje mientras la API no lo envíe.
+
+## Pendiente (a propósito, para más adelante)
+
+- Matching con IA (ver sección anterior) y chat entre paciente y estudiante.
+- Para crear un admin: `python -m scripts.crear_admin`.
+
+## Instalación
+
+### 1. Crear y activar el entorno virtual
+
 ```bash
 python -m venv venv
+.\venv\Scripts\Activate.ps1
 ```
 
-Activarlo según tu sistema:
+### 2. Instalar dependencias
 
-| Sistema | Comando |
-|---|---|
-| Windows (PowerShell) | `.\venv\Scripts\Activate.ps1` |
-| Windows (CMD) | `venv\Scripts\activate.bat` |
-| macOS / Linux | `source venv/bin/activate` |
-
-Sabrás que funcionó cuando el inicio de la línea muestre `(venv)`.
-
-> En PowerShell, si aparece un error de permisos, ejecuta una vez:
-> `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`
-> y vuelve a activar el entorno.
-
-### 3. Instalar las dependencias
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configurar las variables de entorno
-Copia el archivo de ejemplo con el nombre `.env` (sin `.example`):
+### 3. Configurar el archivo `.env`
 
-```bash
-# Windows (PowerShell)
-Copy-Item .env.example .env
-# macOS / Linux
-cp .env.example .env
-```
+Copia `.env.example` como `.env` y completa `DATABASE_URL` con la
+**misma cadena de conexión de Supabase** que ya usa el equipo
+(pídesela a Jorge por el canal privado, nunca por chat).
 
-Luego edita `.env` y completa dos valores:
+### 4. Levantar el servidor
 
-| Variable | Qué es |
-|---|---|
-| `DATABASE_URL` | Dirección de conexión a PostgreSQL. Pídele la del equipo a quien administra la base de datos, o usa una local con el formato `postgresql://usuario:contraseña@localhost:5432/dentmatch`. |
-| `SECRET_KEY` | Clave con la que el servidor firma los tokens de sesión. Puede ser cualquier texto largo y aleatorio. |
-
-Para generar una `SECRET_KEY`:
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(48))"
-```
-
-> El archivo `.env` contiene secretos. **Nunca debe subirse a Git** (ya está en el `.gitignore`).
-
-### 5. Iniciar el servidor
 ```bash
 uvicorn app.main:app --reload --port 8001
 ```
 
-Al arrancar, la aplicación crea automáticamente las tablas que falten en la base de datos. Las que ya existen no se modifican.
+### 5. Probar
 
-Si todo salió bien verás:
-```
-INFO:     Uvicorn running on http://127.0.0.1:8001
-INFO:     Application startup complete.
-```
+Abre en el navegador:
 
-### 6. Abrir la aplicación
+- Login: http://127.0.0.1:8001/
+- Registro: http://127.0.0.1:8001/registro
+- Documentación de la API: http://127.0.0.1:8001/docs
 
-| Dirección | Qué es |
-|---|---|
-| http://127.0.0.1:8001/ | Página principal |
-| http://127.0.0.1:8001/login | Inicio de sesión |
-| http://127.0.0.1:8001/registro | Registro de estudiantes y pacientes |
-| http://127.0.0.1:8001/docs | Documentación interactiva de la API (Swagger) |
-> **Nota:** estas direcciones corresponden al entorno de desarrollo local: el servidor (Uvicorn) corre en tu propio computador (`localhost`), por lo que solo tú puedes acceder a ellas. Actualmente se están evaluando distintos servicios de alojamiento (hosting) para publicar la aplicación en internet, pero aún no hay uno definido. Esta sección se actualizará con la dirección pública cuando esté disponible.
+## Tests
 
-Después de iniciar sesión, cada usuario entra a su portal: `/paciente` o `/estudiante`.
+Corren contra SQLite en memoria (nunca tocan Supabase):
 
-> Usa siempre el puerto **8001**: el servidor solo acepta peticiones de ese origen.
-
-## Tareas habituales
-
-### Crear un usuario administrador
-El registro público no permite crear administradores. Para crear uno:
-```bash
-python -m scripts.crear_admin
-```
-Te pedirá nombre, RUT, correo y contraseña. El administrador puede verificar estudiantes mediante la API (`/docs`).
-
-### Ejecutar las pruebas automáticas
 ```bash
 pip install -r requirements-dev.txt
 pytest
 ```
-Las pruebas usan una base de datos temporal en memoria: **no tocan** la base real.
-
-### Detener el servidor
-Presiona `Ctrl + C` en la terminal. Para salir del entorno virtual, escribe `deactivate`.
-
-## Estructura del proyecto
-```
-app/            Backend (FastAPI)
-  routers/      Un archivo por sección de la API (auth, solicitudes, postulaciones, citas...)
-  models.py     Tablas de la base de datos
-  auth.py       Contraseñas, tokens y control de acceso por rol
-frontend/       Páginas, estilos y scripts del navegador
-scripts/        Herramientas de apoyo (crear administrador)
-tests/          Pruebas automáticas
-```
-
-## Solución de problemas
-
-| Problema | Posible causa |
-|---|---|
-| `No se encontró DATABASE_URL` o `SECRET_KEY` | Falta el archivo `.env` o alguna de las dos variables. |
-| `ModuleNotFoundError` | El entorno virtual no está activado o faltó instalar las dependencias. |
-| No conecta a la base de datos | `DATABASE_URL` incorrecta o sin acceso a internet (Supabase). |
-| La página no carga o el login falla | Estás usando un puerto distinto de 8001. |

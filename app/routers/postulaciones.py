@@ -2,6 +2,7 @@
 Postulaciones: el vínculo entre una solicitud (paciente) y un estudiante.
 Las puede iniciar cualquiera de los dos y las responde la contraparte.
 
+(Un estudiante sin verificar no puede iniciar, responder ni completar: ver app/auth.py)
 - POST /api/postulaciones                  iniciar
     · estudiante: {solicitud_id, requerimiento_id?, mensaje?}  ("Postular a caso")
     · paciente:   {solicitud_id, estudiante_id, requerimiento_id?, mensaje?}  ("Solicitar")
@@ -17,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
 
 from app import models
-from app.auth import require_rol
+from app.auth import exigir_estudiante_verificado, require_estudiante_verificado, require_rol
 from app.catalogos import ESTADOS_POSTULACION
 from app.database import get_db
 from app.routers.requerimientos import marcar_completado_si_corresponde
@@ -83,6 +84,8 @@ def iniciar_postulacion(
     usuario: models.Usuario = Depends(ambos_roles),
     db: Session = Depends(get_db),
 ):
+    # Un estudiante sin verificar puede mirar los casos, pero no postular.
+    exigir_estudiante_verificado(usuario)
     solicitud = db.get(models.Solicitud, datos.solicitud_id)
     if solicitud is None:
         raise HTTPException(status_code=404, detail="Solicitud no encontrada")
@@ -97,6 +100,8 @@ def iniciar_postulacion(
         estudiante = db.get(models.Usuario, datos.estudiante_id)
         if estudiante is None or estudiante.rol != "estudiante" or estudiante.perfil_estudiante is None:
             raise HTTPException(status_code=404, detail="Estudiante no encontrado")
+        if estudiante.perfil_estudiante.estado_verificacion != "Activo":
+            raise HTTPException(status_code=409, detail="Este estudiante todavía no está verificado")
 
     if not solicitud.abierta:
         raise HTTPException(status_code=409, detail=f"La solicitud está {solicitud.estado_api.lower()}")
@@ -183,6 +188,7 @@ def responder_postulacion(
     usuario: models.Usuario = Depends(ambos_roles),
     db: Session = Depends(get_db),
 ):
+    exigir_estudiante_verificado(usuario)
     p = _visible(db, postulacion_id, usuario)
     if p.iniciada_por == usuario.rol:
         raise HTTPException(status_code=403, detail="Solo la otra parte puede responder esta postulación")
@@ -237,7 +243,7 @@ def cancelar_postulacion(
 @router.post("/{postulacion_id}/completar", response_model=PostulacionOut)
 def completar_tratamiento(
     postulacion_id: int,
-    usuario: models.Usuario = Depends(require_rol("estudiante")),
+    usuario: models.Usuario = Depends(require_estudiante_verificado),
     db: Session = Depends(get_db),
 ):
     """El estudiante declara que el tratamiento se realizó: suma al requerimiento."""

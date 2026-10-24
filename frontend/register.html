@@ -108,11 +108,20 @@
                 </div>
 
                 <div class="campo">
-                  <label for="rut">RUT</label>
+                  <label for="tipo_documento">Tipo de documento</label>
+                  <select id="tipo_documento" name="tipo_documento">
+                    <option value="rut" selected>RUT chileno</option>
+                    <option value="extranjero">Documento extranjero (pasaporte u otro)</option>
+                  </select>
+                </div>
+
+                <div class="campo">
+                  <label for="rut" id="etiqueta-documento">RUT</label>
                   <div class="input-icon">
                     <span class="material-symbols-rounded">badge</span>
-                    <input type="text" id="rut" name="rut" placeholder="12345678-9" required />
+                    <input type="text" id="rut" name="rut" placeholder="12345678-5" autocomplete="off" required />
                   </div>
+                  <span class="texto-ayuda" id="ayuda-documento">Con dígito verificador, con o sin puntos.</span>
                 </div>
 
                 <div class="campo">
@@ -171,6 +180,7 @@
 
   <script src="/static/js/session.js"></script>
   <script src="/static/js/api.js"></script>
+  <script src="/static/js/documento.js"></script>
   <script src="/static/js/register.js"></script>
 </body>
 </html>

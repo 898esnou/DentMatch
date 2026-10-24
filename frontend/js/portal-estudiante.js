@@ -41,7 +41,7 @@ const poner = (id, texto) => { document.getElementById(id).textContent = texto; 
 
 function claseEstado(estado) {
   if (["Aceptada", "Completado", "Completada", "Realizada", "Activo"].includes(estado)) return "chip-tag chip-tag--green";
-  if (["Rechazada", "Cancelada", "Cancelado"].includes(estado)) return "chip-tag chip-tag--danger";
+  if (["Rechazada", "Rechazado", "Cancelada", "Cancelado"].includes(estado)) return "chip-tag chip-tag--danger";
   return "chip-tag chip-tag--warn";
 }
 
@@ -59,7 +59,9 @@ async function cargarPerfil() {
   poner("perfil-ano", `${e.ano_carrera}° Año de Carrera`);
   const zona = e.comuna_atencion && e.comuna_atencion !== "Por definir" ? ` · Atiende en ${e.comuna_atencion}` : "";
   poner("perfil-universidad", `${e.universidad}${zona}`);
-  poner("estado-verificacion", e.estado_verificacion || "En Verificación");
+  const estado = e.estado_verificacion || "No verificado";
+  poner("estado-verificacion", estado === "Activo" ? "Perfil verificado" : estado);
+  document.getElementById("estado-verificacion").className = claseEstado(estado);
 }
 
 async function cargarResumen() {
@@ -82,6 +84,10 @@ function filaCaso(c) {
   const yaPostule = c.mi_postulacion_estado !== null && c.mi_postulacion_estado !== undefined;
   const boton = yaPostule
     ? `<button class="btn btn--soft" disabled>Postulación ${esc(c.mi_postulacion_estado.toLowerCase())}</button>`
+    : !estaVerificado()
+    ? `<button class="btn btn--soft" data-accion="verificar-perfil">
+         <span class="material-symbols-rounded" style="color:inherit">lock</span> Verifica tu perfil para postular
+       </button>`
     : `<button class="btn ${c.urgente ? "btn--primary" : "btn--soft"}" data-accion="postular" data-id="${c.id}">
          Postular a Caso <span class="material-symbols-rounded" style="color:inherit">arrow_forward</span>
        </button>`;
@@ -93,7 +99,7 @@ function filaCaso(c) {
           <span class="case-row__note case-row__note--muted">${esc(c.codigo)}</span>
         </div>
         <h3>${esc(c.titulo)}</h3>
-        <p class="case-row__desc">${esc(c.descripcion)}</p>
+        ${c.descripcion && c.descripcion !== c.titulo ? `<p class="case-row__desc">${esc(c.descripcion)}</p>` : ""}
         <div class="case-row__meta">
           <span><span class="material-symbols-rounded">person</span>${esc(c.paciente)}</span>
           <span><span class="material-symbols-rounded">location_on</span>${esc(c.comuna || "Comuna sin especificar")}${c.disponibilidad ? ` (${esc(c.disponibilidad)})` : ""}</span>
@@ -396,10 +402,17 @@ async function accion(ruta, metodo, cuerpo, mensaje, recarga = recargarFlujo) {
   await recarga();
 }
 
+// Acciones que exigen perfil verificado (el backend también lo exige: esto solo lo explica).
+const ACCIONES_PROTEGIDAS = [
+  "nuevo-requerimiento", "editar-requerimiento", "avance", "postular",
+  "responder", "agendar", "completar", "cita-editar",
+];
+
 document.addEventListener("click", (evento) => {
   const el = evento.target.closest("[data-accion]");
   if (!el) return;
   const id = Number(el.dataset.id);
+  if (ACCIONES_PROTEGIDAS.includes(el.dataset.accion) && !estaVerificado()) return pedirVerificacion();
   switch (el.dataset.accion) {
     case "nuevo-requerimiento": return abrirNuevoRequerimiento();
     case "editar-requerimiento": return abrirEditarRequerimiento(id);
@@ -437,12 +450,21 @@ document.getElementById("tabs").addEventListener("click", async (evento) => {
 
 document.addEventListener("perfil-actualizado", () => cargarPerfil().catch(() => {}));
 
+// Al cambiar la verificación se refrescan el perfil, la campana y los botones de los casos.
+document.addEventListener("verificacion-actualizada", () => {
+  cargarPerfil().catch(() => {});
+  cargarResumen().catch(() => {});
+  cargarCasos().catch(() => {});
+});
+
 /* ---------- INICIO ---------- */
 async function iniciar() {
   const catalogos = await cargar("/api/catalogos");
   AREAS = catalogos.areas;
   DIAS = catalogos.dias_semana;
-  // requerimientos primero: se usan al postular a un caso
+  // la verificación primero: define si los botones de los casos están activos
+  await cargarVerificacion(false).catch(() => mostrarAviso("No se pudo cargar tu estado de verificación.", true));
+  // requerimientos después: se usan al postular a un caso
   await cargarRequerimientos();
   const tareas = [cargarPerfil, cargarResumen, cargarRamos, cargarCasos, cargarPostulaciones, cargarCitas];
   const resultados = await Promise.allSettled(tareas.map((t) => t()));

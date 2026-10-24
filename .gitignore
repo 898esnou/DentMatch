@@ -1,25 +1,19 @@
-# Lista de archivos y carpetas que Git no debe subir al repositorio.
-# Sirve para no publicar información privada ni archivos que cada
-# integrante genera en su propio computador.
-
-# Archivos de entorno y credenciales (contraseñas y claves secretas)
+# Archivos de entorno y credenciales
 .env
 
-# Entorno virtual de Python (pesa mucho y cada integrante crea el suyo)
+# Entorno virtual de Python (pesa muchísimo y cada compañero debe instalar el suyo)
 venv/
 env/
 
-# Caché de Python (archivos generados automáticamente)
+# Caché de Python (archivos compilados que se autogeneran y causan conflictos)
 __pycache__/
 *.pyc
 *.pyo
 
-# Archivos subidos por los usuarios (por ejemplo, certificados de alumno regular).
-# Se excluyen para que documentos personales no queden públicos en GitHub.
-# Esta carpeta se utilizará cuando se implemente la subida de certificados.
-uploads/
-
-# Archivos de sistema y configuración del editor
+# Archivos de sistema y configuración del editor (VS Code)
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Certificados de alumno regular subidos en desarrollo (datos personales)
+uploads/

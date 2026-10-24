@@ -1,0 +1,33 @@
+/* =========================================================================
+   VERIFICACIÓN DEL ESTUDIANTE (banner de estado y acciones bloqueadas)
+   ========================================================================= */
+.verif {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 16px 20px; margin-bottom: 20px; border-radius: var(--radius-lg);
+  border: 1px solid var(--border); background: var(--surface); box-shadow: var(--shadow-card);
+}
+.verif[hidden] { display: none; }
+.verif__icono { font-size: 28px; flex: 0 0 auto; }
+.verif__texto { flex: 1 1 280px; min-width: 0; }
+.verif__texto strong { display: block; font-size: 15px; }
+.verif__texto p { margin: 4px 0 0; font-size: 13px; color: var(--text-muted); }
+
+.verif--pendiente { background: var(--warning-soft); border-color: #f6d79b; }
+.verif--pendiente .verif__icono { color: #b45309; }
+.verif--revision { background: var(--primary-soft); border-color: #c5d7f5; }
+.verif--revision .verif__icono { color: var(--primary); }
+.verif--rechazado { background: var(--danger-soft); border-color: #f1c4c0; }
+.verif--rechazado .verif__icono { color: var(--danger); }
+
+/* Mientras no esté verificado, los botones que no puede usar se ven atenuados
+   (siguen siendo clicables: explican por qué no se puede). */
+body.no-verificado [data-accion="nuevo-requerimiento"],
+body.no-verificado [data-accion="editar-requerimiento"],
+body.no-verificado [data-accion="avance"],
+body.no-verificado [data-accion="responder"],
+body.no-verificado [data-accion="agendar"],
+body.no-verificado [data-accion="completar"],
+body.no-verificado [data-accion="cita-editar"] {
+  opacity: .5; filter: grayscale(.4);
+}
+#boton-verificar:disabled { opacity: .6; cursor: not-allowed; }

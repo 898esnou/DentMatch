@@ -18,6 +18,9 @@ const seccionEstudiante = document.getElementById("seccion-estudiante");
 const campoUniversidad = document.getElementById("universidad");
 const campoAnoCarrera = document.getElementById("ano_carrera");
 
+const selectTipoDocumento = document.getElementById("tipo_documento");
+const campoDocumento = document.getElementById("rut");
+
 const formulario = document.getElementById("form-registro");
 const botonEnviar = document.getElementById("boton-enviar");
 const cajaMensajeError = document.getElementById("mensaje-error");
@@ -86,6 +89,11 @@ function validarFormulario() {
     return "Selecciona si eres estudiante o paciente para continuar.";
   }
 
+  const errorDocumento = validarDocumento(selectTipoDocumento.value, campoDocumento.value);
+  if (errorDocumento) {
+    return errorDocumento;
+  }
+
   if (contrasena !== confirmarContrasena) {
     return "Las contraseñas no coinciden.";
   }
@@ -109,6 +117,16 @@ function mostrarError(mensaje) {
 function ocultarError() {
   cajaMensajeError.classList.add("oculto");
 }
+
+// Cambia las etiquetas según el tipo de documento elegido.
+selectTipoDocumento.addEventListener("change", () => {
+  const esExtranjero = selectTipoDocumento.value === "extranjero";
+  document.getElementById("etiqueta-documento").textContent = esExtranjero ? "Número de documento" : "RUT";
+  document.getElementById("ayuda-documento").textContent = esExtranjero
+    ? "Pasaporte u otro documento: letras y números, entre 5 y 16 caracteres."
+    : "Con dígito verificador, con o sin puntos.";
+  campoDocumento.placeholder = esExtranjero ? "AB123456" : "12345678-5";
+});
 
 /* =========================================================================
     3. ENVÍO DEL FORMULARIO

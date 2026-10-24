@@ -159,7 +159,6 @@ async function cargarEstudiantes() {
   const activa = solicitudActiva();
   if (activa) params.set("solicitud_id", activa.id);
   if (filtroActual === "manana" || filtroActual === "tarde") params.set("turno", filtroActual);
-  if (filtroActual === "verificados") params.set("solo_verificados", "true");
   if (filtroActual === "coincidentes" && activa) params.set("area", activa.area);
 
   estudiantes = await cargar(`/api/estudiantes?${params}`);

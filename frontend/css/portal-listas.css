@@ -4,7 +4,7 @@
    ========================================================================= */
 
 /* ---------- Paneles con filas ---------- */
-.panel { margin-top: 26px; padding: 22px 26px; scroll-margin-top: 90px; }
+.panel { margin-top: 26px; padding: 22px 26px; }
 .panel__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .panel__head h2 { display: flex; align-items: center; gap: 10px; font-size: 18px; margin: 0; }
 .panel__head h2 .material-symbols-rounded { color: var(--primary); }

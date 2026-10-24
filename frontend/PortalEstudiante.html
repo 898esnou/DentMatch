@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/static/css/portal-estudiante.css" />
   <link rel="stylesheet" href="/static/css/portal-listas.css" />
   <link rel="stylesheet" href="/static/css/perfil-modal.css" />
+  <link rel="stylesheet" href="/static/css/verificacion.css" />
 
   <script src="/static/js/session.js"></script>
   <script>protegerPagina("estudiante");</script>
@@ -56,6 +57,9 @@
 
   <main class="portal-main">
 
+    <!-- ============ 1b. VERIFICACIÓN (la llena verificacion.js; se oculta si ya está verificado) ============ -->
+    <section id="banner-verificacion" class="verif" role="status" hidden></section>
+
     <!-- ============ 2. PERFIL ============ -->
     <section class="card profile">
       <div class="profile__top">
@@ -70,6 +74,9 @@
         <div class="fila__acciones">
           <button type="button" class="btn btn--outline btn--pill" data-accion="editar-perfil">
             <span class="material-symbols-rounded">edit</span> Editar perfil
+          </button>
+          <button type="button" class="btn btn--outline btn--pill" id="boton-verificar" data-accion="verificar-perfil">
+            <span class="material-symbols-rounded">verified_user</span> <span>Verificar tu perfil</span>
           </button>
           <button type="button" class="btn btn--primary btn--lg" data-accion="nuevo-requerimiento">
             <span class="material-symbols-rounded">add_circle</span> Declarar Requerimiento
@@ -115,7 +122,7 @@
     <!-- ============ 3. CASOS + CLÍNICAS ============ -->
     <div class="layout">
 
-      <section class="cases" id="casos" style="scroll-margin-top:90px">
+      <section class="cases" id="casos">
         <div class="cases__head">
           <div>
             <h2 class="portal-section-title"><span class="material-symbols-rounded">hub</span> Casos Clínicos Disponibles para Asignación</h2>
@@ -136,7 +143,7 @@
         <div id="lista-casos"></div>
       </section>
 
-      <aside class="card clinics" id="clinicas" style="scroll-margin-top:90px">
+      <aside class="card clinics" id="clinicas">
         <header>
           <div>
             <h3><span class="material-symbols-rounded">calendar_month</span> Mis Clínicas por Ramo</h3>
@@ -189,8 +196,6 @@
         <h4>PLATAFORMA</h4>
         <a href="#">Solicitudes de Pacientes</a>
         <a href="#">Portal para Estudiantes</a>
-        <a href="#">Red de Clínicas Docentes</a>
-        <a href="#">Cátedras Odontológicas</a>
       </nav>
       <nav>
         <h4>PROYECTO</h4>
@@ -215,6 +220,7 @@
   <script src="/static/js/utils.js"></script>
   <script src="/static/js/formulario-modal.js"></script>
   <script src="/static/js/perfil-modal.js"></script>
+  <script src="/static/js/verificacion.js"></script>
   <script src="/static/js/portal-estudiante.js"></script>
 </body>
 </html>

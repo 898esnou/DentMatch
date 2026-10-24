@@ -14,7 +14,10 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
-from app.catalogos import ESTADOS_CITA, ESTADOS_POSTULACION, ESTADOS_REQUERIMIENTO, sql_in
+from app.catalogos import (
+    ESTADOS_CERTIFICADO, ESTADOS_CITA, ESTADOS_POSTULACION, ESTADOS_REQUERIMIENTO,
+    ESTADOS_VERIFICACION, sql_in,
+)
 from app.database import Base
 
 
@@ -59,20 +62,47 @@ class PerfilEstudiante(Base):
     ano_carrera = Column(Integer, nullable=False)
     comuna_atencion = Column(String(100), nullable=False)
     disponibilidad = Column(Text)
-    estado_verificacion = Column(String(30), default="En Verificación")
-    # NOTA: certificado_documento queda como columna opcional (nullable) en la
-    # base de datos. El formulario de este prototipo TODAVÍA no lo pide
-    # (se agregará en una etapa posterior), así que puede quedar en NULL.
+    estado_verificacion = Column(String(30), default="No verificado")
+    # Ruta (en el bucket privado "certificados") del último certificado subido.
+    # El historial completo y los motivos de rechazo están en `verificaciones_estudiante`.
     certificado_documento = Column(String(255))
 
     __table_args__ = (
         CheckConstraint(
-            "estado_verificacion IN ('En Verificación', 'Activo', 'Rechazado')",
+            f"estado_verificacion IN ({sql_in(ESTADOS_VERIFICACION)})",
             name="chk_estado_verificacion",
         ),
     )
 
     usuario = relationship("Usuario", back_populates="perfil_estudiante")
+
+
+class VerificacionEstudiante(Base):
+    """
+    Cada certificado de alumno regular que sube un estudiante (historial).
+    Guardamos todos, no solo el último: sirve para auditar y para renovar.
+    """
+    __tablename__ = "verificaciones_estudiante"
+
+    id = Column(Integer, primary_key=True, index=True)
+    estudiante_id = Column(
+        Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    archivo = Column(String(255), nullable=False)          # ruta dentro del bucket
+    tipo_contenido = Column(String(50), nullable=False)    # application/pdf | image/png | image/jpeg
+    tamano_bytes = Column(Integer, nullable=False)
+    estado = Column(String(20), nullable=False, default="Pendiente")
+    motivo = Column(Text)                                  # por qué se rechazó (se muestra al estudiante)
+    resuelta_por = Column(String(20))                      # 'sistema' | 'admin'
+    fecha_subida = Column(TIMESTAMP, server_default=func.now())
+    fecha_resolucion = Column(TIMESTAMP)
+    fecha_emision = Column(Date)                           # emisión según la UNAB; define el semestre de vigencia
+
+    __table_args__ = (
+        CheckConstraint(f"estado IN ({sql_in(ESTADOS_CERTIFICADO)})", name="chk_estado_certificado"),
+    )
+
+    estudiante = relationship("Usuario")
 
 
 class PerfilPaciente(Base):

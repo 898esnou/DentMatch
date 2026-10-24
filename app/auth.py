@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models
+from app.vigencia import vencer_caducadas
 
 load_dotenv()
 
@@ -64,6 +65,37 @@ def get_current_user(
     usuario = db.query(models.Usuario).filter(models.Usuario.id == int(usuario_id)).first()
     if usuario is None:
         raise credentials_exception
+    # Vence a los estudiantes cuyo certificado semestral caducó (ver app/vigencia.py).
+    if vencer_caducadas(db):
+        db.refresh(usuario)
+    return usuario
+
+
+def exigir_estudiante_verificado(usuario: models.Usuario) -> None:
+    """
+    Un estudiante solo puede interactuar con pacientes (postular, responder,
+    agendar, publicar requerimientos) cuando su certificado fue verificado.
+    Los pacientes no pasan por esta regla. Sin verificar puede seguir
+    entrando y viendo los casos disponibles.
+    """
+    if usuario.rol != "estudiante":
+        return
+    perfil = usuario.perfil_estudiante
+    if perfil is None or perfil.estado_verificacion != "Activo":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Debes verificar tu perfil de estudiante (certificado de alumno regular) para realizar esta acción",
+        )
+
+
+def require_estudiante_verificado(usuario: models.Usuario = Depends(get_current_user)) -> models.Usuario:
+    """Dependencia: solo estudiantes con estado 'Activo'."""
+    if usuario.rol != "estudiante":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tienes permiso para realizar esta acción",
+        )
+    exigir_estudiante_verificado(usuario)
     return usuario
 
 

@@ -2,7 +2,7 @@
 Esquemas Pydantic: definen la forma de los datos que entran y salen de la API.
 """
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
 # ---------- LOGIN ----------
@@ -38,8 +38,7 @@ class UsuarioOut(BaseModel):
     correo: EmailStr
     rol: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ---------- PERFILES ----------
@@ -50,8 +49,7 @@ class PerfilEstudianteOut(BaseModel):
     disponibilidad: Optional[str] = None
     estado_verificacion: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PerfilEstudianteUpdate(BaseModel):
@@ -66,8 +64,7 @@ class PerfilPacienteOut(BaseModel):
     descripcion: Optional[str] = None
     disponibilidad: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PerfilPacienteUpdate(BaseModel):

@@ -1,6 +1,8 @@
 """
 Rutas de autenticación:
-- POST /api/registro -> crea un usuario (estudiante o paciente)
+- POST /api/registro -> crea un usuario (estudiante o paciente). El documento
+                        (RUT chileno o extranjero) debe ser válido; el paciente queda
+                        habilitado de inmediato, el estudiante debe verificar su certificado.
 - POST /api/login    -> valida correo + contraseña y devuelve un token JWT
 - GET  /api/me       -> datos del usuario autenticado
 """
@@ -10,6 +12,7 @@ from sqlalchemy.orm import Session
 from app import models, schemas
 from app.auth import create_access_token, get_current_user, hash_password, verify_password
 from app.database import get_db
+from app.documentos import normalizar_documento, variantes_guardadas
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
@@ -18,6 +21,7 @@ router = APIRouter(prefix="/api", tags=["auth"])
 def registrar_usuario(
     nombre_completo: str = Form(...),
     rut: str = Form(...),
+    tipo_documento: str = Form("rut"),  # "rut" (chileno) | "extranjero" (pasaporte u otro)
     correo: str = Form(...),
     contrasena: str = Form(...),
     rol: str = Form(...),
@@ -32,8 +36,15 @@ def registrar_usuario(
     if db.query(models.Usuario).filter(models.Usuario.correo == correo).first():
         raise HTTPException(status_code=400, detail="Ese correo ya está registrado")
 
-    if db.query(models.Usuario).filter(models.Usuario.rut == rut).first():
-        raise HTTPException(status_code=400, detail="Este RUT ya está registrado en el sistema")
+    # Documento de identidad: se valida y se guarda siempre en su forma canónica
+    # ('12345678-5'), para que el mismo RUT no se pueda registrar escrito distinto.
+    try:
+        rut = normalizar_documento(tipo_documento, rut)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error))
+
+    if db.query(models.Usuario).filter(models.Usuario.rut.in_(variantes_guardadas(rut))).first():
+        raise HTTPException(status_code=400, detail="Este documento ya está registrado en el sistema")
 
     # Validar siempre en el backend: el frontend se puede saltar.
     if rol == "estudiante" and (ano_carrera is None or ano_carrera < 4):
@@ -54,8 +65,8 @@ def registrar_usuario(
     db.refresh(nuevo_usuario)
 
     if rol == "estudiante":
-        # TODO (certificado de alumno regular): desactivado por ahora; ver
-        # el main.py oficial del equipo para la subida del PDF/JPG/PNG.
+        # El estudiante entra "No verificado" y verifica su perfil desde el portal
+        # subiendo su certificado de alumno regular (app/routers/verificacion.py).
         db.add(models.PerfilEstudiante(
             usuario_id=nuevo_usuario.id,
             universidad=universidad or "Por definir",
@@ -63,7 +74,7 @@ def registrar_usuario(
             comuna_atencion="Por definir",
             disponibilidad=None,
             certificado_documento=None,
-            estado_verificacion="En Verificación",
+            estado_verificacion="No verificado",
         ))
     else:
         db.add(models.PerfilPaciente(usuario_id=nuevo_usuario.id))

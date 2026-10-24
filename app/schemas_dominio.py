@@ -6,7 +6,7 @@ postulaciones, citas, resumen y administración.
 from datetime import date, datetime
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from app.catalogos import AREAS, DIAS_SEMANA, ESTADOS_VERIFICACION
 
@@ -31,8 +31,7 @@ class RamoIn(BaseModel):
 class RamoOut(RamoIn):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 # ---------- REQUERIMIENTOS ----------
@@ -244,6 +243,7 @@ class ResumenOut(BaseModel):
     postulaciones_pendientes: int = 0  # esperando respuesta de la otra parte
     citas_proximas: int = 0
     notificaciones: int = 0  # cosas que requieren mi acción
+    estado_verificacion: Optional[str] = None  # solo estudiante
 
 
 # ---------- ADMIN ----------
@@ -260,3 +260,18 @@ class EstudianteAdminOut(BaseModel):
 
 class VerificacionIn(BaseModel):
     estado: Verificacion
+    # Se muestra al estudiante cuando el estado es "Rechazado" (qué debe corregir).
+    motivo: Optional[str] = Field(None, max_length=500)
+
+
+class VerificacionEstadoOut(BaseModel):
+    """Estado de verificación del estudiante, para su portal."""
+    estado: str
+    mensaje: str
+    motivo: Optional[str] = None
+    certificado_subido: bool = False
+    fecha_subida: Optional[datetime] = None
+    puede_subir: bool = True
+    vence_el: Optional[date] = None        # fin del semestre del certificado (solo Activo)
+    en_gracia: bool = False                # el semestre terminó y corre el plazo para renovar
+    acceso_hasta: Optional[date] = None    # último día con acceso mientras está en gracia

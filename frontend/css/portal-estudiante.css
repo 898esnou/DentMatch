@@ -36,8 +36,8 @@
 .case-row__note { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: var(--secondary-dark); }
 .case-row__note--muted { color: #9aa6bd; font-weight: 600; }
 .case-row__note .material-symbols-rounded { font-size: 16px; }
-.case-row h3 { font-size: 17px; line-height: 1.3; }
-.case-row__desc { font-size: 12px; color: var(--text-muted); margin: 8px 0 12px; }
+.case-row h3 { font-size: 17px; line-height: 1.3; margin-bottom: 8px; }
+.case-row__desc { font-size: 12px; color: var(--text-muted); margin: 0 0 12px; }
 .case-row__meta { display: flex; gap: 18px; flex-wrap: wrap; font-size: 11px; font-weight: 700; }
 .case-row__meta span { display: inline-flex; align-items: center; gap: 6px; }
 .case-row__meta .material-symbols-rounded { font-size: 16px; color: var(--primary); }
@@ -50,7 +50,7 @@
 .empty { text-align: center; padding: 36px 20px; color: var(--text-muted); font-size: 14px; }
 
 /* ---------- 3. CLÍNICAS POR RAMO ---------- */
-.clinics { padding: 22px; scroll-margin-top: 90px; }
+.clinics { padding: 22px; }
 .clinics header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
 .clinics h3 { display: flex; align-items: center; gap: 8px; font-size: 17px; }
 .clinics h3 .material-symbols-rounded { color: var(--secondary-dark); }

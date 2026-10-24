@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session, joinedload
 
 from app import models
-from app.auth import require_rol
+from app.auth import exigir_estudiante_verificado, require_estudiante_verificado, require_rol
 from app.catalogos import ESTADOS_CITA
 from app.database import get_db
 from app.schemas_dominio import CitaIn, CitaOut, CitaUpdate, ParticipanteOut
@@ -73,7 +73,7 @@ def _filtrar_por_usuario(consulta, usuario: models.Usuario):
 @router.post("", response_model=CitaOut, status_code=status.HTTP_201_CREATED)
 def agendar_cita(
     datos: CitaIn,
-    usuario: models.Usuario = Depends(require_rol("estudiante")),
+    usuario: models.Usuario = Depends(require_estudiante_verificado),
     db: Session = Depends(get_db),
 ):
     p = db.get(models.Postulacion, datos.postulacion_id)
@@ -127,6 +127,9 @@ def actualizar_cita(
         raise HTTPException(status_code=409, detail=f"La cita ya está {c.estado.lower()}")
 
     cambios = datos.model_dump(exclude_unset=True)
+    # Sin verificar, un estudiante solo puede cancelar una cita que ya tenía.
+    if cambios != {"estado": "Cancelada"}:
+        exigir_estudiante_verificado(usuario)
     if usuario.rol == "paciente":
         if set(cambios) - {"estado"} or cambios.get("estado") != "Cancelada":
             raise HTTPException(status_code=403, detail="Un paciente solo puede cancelar la cita")

@@ -24,12 +24,11 @@
     </a>
 
     <nav class="site-nav" aria-label="Navegación principal">
-      <a href="#" class="site-nav__link site-nav__link--active">Inicio</a>
-      <a href="#" class="site-nav__link">Solicitudes</a>
-      <a href="#" class="site-nav__link">Estudiantes</a>
-      <a href="#" class="site-nav__link">Chat</a>
-      <a href="#" class="site-nav__link">Clínicas</a>
-      <a href="#" class="site-nav__link">Nosotros</a>
+      <a href="#inicio" class="site-nav__link site-nav__link--active">Inicio</a>
+      <a href="#solicitudes" class="site-nav__link">Solicitudes</a>
+      <a href="#estudiantes" class="site-nav__link">Estudiantes</a>
+      <a href="#chat" class="site-nav__link">Chat</a>
+      <a href="#nosotros" class="site-nav__link">Nosotros</a>
     </nav>
 
     <div class="site-header__actions">
@@ -38,10 +37,10 @@
     </div>
   </header>
 
-  <main class="container">
+  <main>
 
-    <!-- ============ 2. HERO ============ -->
-    <section class="hero">
+    <div class="container">
+    <section class="hero" id="inicio">
       <span class="pill pill--ai pill--small"><span class="dot"></span> Conectando tus necesidades</span>
       <div class="hero__row">
         <div class="hero__text">
@@ -68,7 +67,7 @@
         <p>Cuéntanos qué necesitas y te conectamos con estudiantes de odontología que realizan procedimientos dentales supervisados, a un costo más accesible para ti.</p>
         <footer>
           <a href="/registro?rol=paciente" class="role__link">Pedir hora de evaluación <span class="material-symbols-rounded">chevron_right</span></a>
-          <span class="role__aside"><span class="dot dot--muted"></span> Ver clínicas docentes</span>
+          <a href="#solicitudes" class="role__aside"><span class="dot dot--muted"></span> Cómo funciona</a>
         </footer>
       </article>
 
@@ -78,61 +77,190 @@
         <p>Encuentra pacientes que necesitan justo los procedimientos que debes completar, y avanza en tu formación clínica de forma simple y ordenada.</p>
         <footer>
           <a href="/registro?rol=estudiante" class="role__link">Explorar casos disponibles <span class="material-symbols-rounded">chevron_right</span></a>
-          <span class="role__aside"><span class="dot dot--muted"></span> Portal de estudiantes</span>
+          <a href="#estudiantes" class="role__aside"><span class="dot dot--muted"></span> Requisitos para postular</a>
         </footer>
       </article>
     </section>
-  </main>
-
-  <!-- ============ 5. CASOS CLÍNICOS ============ -->
-  <section class="cases-band">
-    <div class="container">
-      <header class="cases__header">
-        <div>
-          <h2>Casos Clínicos Disponibles para Asignación</h2>
-          <p>Revisa la anamnesis preliminar y postula según el nivel clínico y requerimiento de tu cátedra.</p>
-        </div>
-        <div class="legend">
-          <span><span class="dot dot--warning"></span> <span id="leyenda-espera">0</span> en espera</span>
-          <span><span class="dot dot--blue"></span> <span id="leyenda-evaluacion">0</span> en evaluación docente</span>
-        </div>
-      </header>
-
-      <!-- La llena index.js -->
-      <div class="cases" id="lista-casos"></div>
-
-      <!-- ============ 6. PRÓXIMAMENTE ============ -->
-      <section class="soon">
-        <div class="soon__main">
-          <h2>Próximamente en la Plataforma</h2>
-          <p>
-            Estamos construyendo nuevas funciones para que encontrar y atender pacientes sea más
-            simple, rápido y seguro, tanto para pacientes como para estudiantes.
-          </p>
-          <div class="soon__cards">
-            <div class="mini-card">
-              <strong><span class="dot"></span> Matching con IA</strong>
-              <p>Describe lo que necesitas y el sistema te sugiere al estudiante más compatible con tu caso.</p>
-            </div>
-            <div class="mini-card">
-              <strong><span class="dot"></span> Chat en vivo</strong>
-              <p>Conversa en tiempo real con el estudiante o con el paciente para coordinar la atención.</p>
-            </div>
-          </div>
-        </div>
-
-        <aside class="guarantees card">
-          <h3><span class="material-symbols-rounded">verified_user</span> Verificación de estudiantes</h3>
-          <ul>
-            <li><span class="material-symbols-rounded">check</span><p><strong>Certificado de alumno regular:</strong> Los estudiantes lo subirán al registrarse para validar su perfil.</p></li>
-            <li><span class="material-symbols-rounded">check</span><p><strong>Estado de verificación:</strong> Cada perfil mostrará si está en verificación o ya verificado.</p></li>
-            <li><span class="material-symbols-rounded">check</span><p><strong>Más confianza:</strong> Los pacientes sabrán que se atienden con estudiantes verificados.</p></li>
-          </ul>
-          <footer><span>Estado de la función</span><span class="pill pill--small pill--soft">En desarrollo</span></footer>
-        </aside>
-      </section>
     </div>
-  </section>
+
+    <!-- ============ 3. SOLICITUDES ============ -->
+    <section class="band band--alt" id="solicitudes">
+      <div class="container">
+        <header class="section-head">
+          <span class="eyebrow">Solicitudes</span>
+          <h2>Pacientes publican, estudiantes responden</h2>
+          <p>DentMatch reúne en un mismo lugar lo que necesitan los pacientes y lo que necesitan los estudiantes de Odontología, para que se encuentren de forma ordenada y segura.</p>
+        </header>
+
+        <div class="duo">
+          <article class="card panel">
+            <span class="role__tag"><span class="dot"></span> Pacientes</span>
+            <h3>Publican una solicitud</h3>
+            <p>Cuentan qué necesitan con sus propias palabras, indican su comuna y qué tan urgente es. No hace falta saber el nombre técnico del tratamiento.</p>
+            <ul class="checks">
+              <li><span class="material-symbols-rounded">check_circle</span> Describen su necesidad en lenguaje cotidiano</li>
+              <li><span class="material-symbols-rounded">check_circle</span> Ven solo estudiantes con el perfil verificado</li>
+              <li><span class="material-symbols-rounded">check_circle</span> Aceptan o rechazan a quien les escribe</li>
+            </ul>
+          </article>
+          <article class="card panel">
+            <span class="role__tag role__tag--blue"><span class="dot"></span> Estudiantes</span>
+            <h3>Declaran sus requerimientos</h3>
+            <p>Registran los procedimientos clínicos que necesitan completar en su carrera, con su disponibilidad, y revisan los casos de pacientes que calzan con eso.</p>
+            <ul class="checks">
+              <li><span class="material-symbols-rounded">check_circle</span> Publican los procedimientos que deben realizar</li>
+              <li><span class="material-symbols-rounded">check_circle</span> Postulan a casos de pacientes de su interés</li>
+              <li><span class="material-symbols-rounded">check_circle</span> Agendan la cita una vez aceptados</li>
+            </ul>
+          </article>
+        </div>
+
+        <ol class="steps" aria-label="Cómo funciona">
+          <li><span class="steps__n">1</span><strong>Crean su perfil</strong><p>Pacientes con su RUT o documento; estudiantes con su certificado de alumno regular.</p></li>
+          <li><span class="steps__n">2</span><strong>Publican</strong><p>El paciente su solicitud y el estudiante su requerimiento.</p></li>
+          <li><span class="steps__n">3</span><strong>Se vinculan</strong><p>Cualquiera de los dos puede iniciar el contacto; la otra parte acepta o rechaza.</p></li>
+          <li><span class="steps__n">4</span><strong>Agendan la cita</strong><p>Acuerdan fecha y hora, y la solicitud queda asignada.</p></li>
+        </ol>
+
+        <aside class="note card">
+          <span class="material-symbols-rounded">auto_awesome</span>
+          <div>
+            <strong>Coincidencias con inteligencia artificial <span class="pill pill--small pill--soft">En desarrollo</span></strong>
+            <p>Estamos construyendo un motor que entiende la descripción del paciente, la asocia a un procedimiento y sugiere al estudiante más compatible según procedimiento, comuna y disponibilidad.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ============ 4. ESTUDIANTES ============ -->
+    <section class="band" id="estudiantes">
+      <div class="container">
+        <header class="section-head">
+          <span class="eyebrow">Estudiantes</span>
+          <h2>Quiénes te pueden atender</h2>
+          <p>Son estudiantes de Odontología que necesitan practicar procedimientos reales como parte de su formación. En DentMatch solo pueden atender quienes cursan <strong>4º año o más</strong> y tienen su perfil verificado.</p>
+        </header>
+
+        <div class="trust">
+          <article class="card trust__item">
+            <span class="trust__icon material-symbols-rounded">school</span>
+            <h3>4º año en adelante</h3>
+            <p>No se puede crear una cuenta de estudiante por debajo de 4º año. La plataforma lo exige desde el registro.</p>
+          </article>
+          <article class="card trust__item">
+            <span class="trust__icon material-symbols-rounded">verified_user</span>
+            <h3>Alumno regular comprobado</h3>
+            <p>Cada estudiante sube su certificado de alumno regular y el sistema lo valida con la universidad mediante el código QR del documento.</p>
+          </article>
+          <article class="card trust__item">
+            <span class="trust__icon material-symbols-rounded">event_repeat</span>
+            <h3>Se renueva cada semestre</h3>
+            <p>La verificación vale por el semestre en curso. Al terminar debe presentar un certificado nuevo; si no lo hace, pierde el acceso a postular.</p>
+          </article>
+          <article class="card trust__item">
+            <span class="trust__icon material-symbols-rounded">how_to_reg</span>
+            <h3>Tú decides</h3>
+            <p>Nada ocurre sin tu aprobación: un estudiante no puede agendar contigo hasta que aceptes su postulación.</p>
+          </article>
+        </div>
+
+        <div class="guarantees card">
+          <h3><span class="material-symbols-rounded">lock</span> Qué hacemos para que te sientas seguro</h3>
+          <ul>
+            <li><span class="material-symbols-rounded">check</span><p><strong>Solo ves perfiles verificados.</strong> Un estudiante sin verificar no aparece en el listado de estudiantes.</p></li>
+            <li><span class="material-symbols-rounded">check</span><p><strong>Datos protegidos.</strong> El certificado se guarda de forma privada y solo lo revisa el equipo de DentMatch; nunca se muestra a otros usuarios.</p></li>
+            <li><span class="material-symbols-rounded">check</span><p><strong>Atención en contexto formativo.</strong> Los procedimientos forman parte de la práctica clínica de la carrera, en el marco de la supervisión académica de cada universidad.</p></li>
+            <li><span class="material-symbols-rounded">check</span><p><strong>Costos más accesibles.</strong> La atención universitaria busca ser una alternativa económica; el valor lo acuerdas directamente con el estudiante y su institución.</p></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5. CHAT ============ -->
+    <section class="band band--alt" id="chat">
+      <div class="container">
+        <div class="soon-chat card">
+          <div>
+            <span class="pill pill--ai pill--small"><span class="dot"></span> Próximamente</span>
+            <h2>Chat de coordinación con moderación</h2>
+            <p>Una vez vinculados, paciente y estudiante podrán conversar dentro de DentMatch para acordar la fecha, la hora y el lugar de la atención, sin salir de la plataforma.</p>
+          </div>
+          <ul class="checks">
+            <li><span class="material-symbols-rounded">check_circle</span> Conversación directa, sin compartir redes sociales personales</li>
+            <li><span class="material-symbols-rounded">check_circle</span> Moderación asistida por IA que detecta spam y contenido inapropiado</li>
+            <li><span class="material-symbols-rounded">check_circle</span> Un entorno pensado para mantener el trato profesional</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 6. NOSOTROS ============ -->
+    <section class="band" id="nosotros">
+      <div class="container">
+        <header class="section-head">
+          <span class="eyebrow">Nosotros</span>
+          <h2>Qué es DentMatch</h2>
+          <p>DentMatch es una plataforma web que conecta a estudiantes de Odontología que necesitan pacientes para sus procedimientos clínicos, con personas que buscan atención dental más accesible. Es el proyecto de título (Capstone) de Ingeniería Informática de Duoc UC.</p>
+        </header>
+
+        <div class="duo">
+          <article class="card panel">
+            <h3>Cómo surgió la idea</h3>
+            <p>El problema lo vivió alguien del propio equipo: una estudiante de Odontología que tuvo que buscar por redes sociales los pacientes que necesitaba para cumplir sus requisitos clínicos. Esas búsquedas son lentas, sin garantía de que el procedimiento calce, y con contactos que cancelan o no se presentan.</p>
+            <p>Al mismo tiempo, muchas personas no se atienden por el costo y no saben dónde encontrar atención dental accesible. DentMatch une las dos necesidades en un solo lugar.</p>
+          </article>
+          <article class="card panel">
+            <h3>Por qué se llama así</h3>
+            <p><strong>Dent</strong> viene de dental y <strong>Match</strong> de coincidencia: la idea central es que cada paciente encuentre al estudiante cuyo procedimiento, comuna y disponibilidad coincidan con lo que necesita, y viceversa.</p>
+            <h3 class="panel__sub">Lo que buscamos</h3>
+            <ul class="checks">
+              <li><span class="material-symbols-rounded">check_circle</span> Facilitar que los estudiantes completen su práctica clínica</li>
+              <li><span class="material-symbols-rounded">check_circle</span> Acercar la atención dental a quienes no pueden costearla</li>
+              <li><span class="material-symbols-rounded">check_circle</span> Hacerlo de forma segura, ordenada y confiable</li>
+            </ul>
+          </article>
+        </div>
+
+        <h3 class="subhead">El equipo</h3>
+        <div class="team">
+          <article class="card member">
+            <span class="avatar member__avatar">BC</span>
+            <strong>Benjamín Canales</strong>
+            <span class="member__role">Líder de proyecto y Backend</span>
+            <p>Coordina el proyecto y construye el servidor: cuentas, verificación de estudiantes, solicitudes, postulaciones y citas.</p>
+          </article>
+          <article class="card member">
+            <span class="avatar member__avatar">JC</span>
+            <strong>Jorge Curiqueo</strong>
+            <span class="member__role">Inteligencia artificial y datos</span>
+            <p>Diseña la base de datos y el motor de clasificación y coincidencias con inteligencia artificial.</p>
+          </article>
+          <article class="card member">
+            <span class="avatar member__avatar">JR</span>
+            <strong>Joaquín Rohland</strong>
+            <span class="member__role">Frontend e inteligencia artificial</span>
+            <p>Diseña la experiencia de uso de la plataforma y aporta a la integración de la inteligencia artificial.</p>
+          </article>
+        </div>
+
+        <div class="card skills">
+          <h3><span class="material-symbols-rounded">workspace_premium</span> Cómo se une con nuestra carrera</h3>
+          <p>El proyecto reúne las competencias del perfil de egreso de Ingeniería Informática en una solución con impacto social concreto:</p>
+          <ul class="chips">
+            <li>Desarrollo web</li>
+            <li>Arquitectura de software</li>
+            <li>Bases de datos</li>
+            <li>Inteligencia artificial</li>
+            <li>Análisis de datos</li>
+            <li>Gestión de proyectos ágil</li>
+            <li>Especificación de requisitos (IEEE 830)</li>
+          </ul>
+          <p class="skills__stack">Construido con Python, FastAPI y Supabase (PostgreSQL), con desarrollo iterativo por épicas, en equipo de tres integrantes.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
 
   <!-- ============ 7. PIE DE PÁGINA ============ -->
   <footer class="site-footer">
@@ -143,10 +271,10 @@
       </div>
       <nav>
         <h4>PLATAFORMA</h4>
-        <a href="#">Solicitudes de Pacientes</a>
-        <a href="#">Portal para Estudiantes</a>
-        <a href="#">Red de Clínicas Docentes</a>
-        <a href="#">Cátedras Odontológicas</a>
+        <a href="#solicitudes">Solicitudes de Pacientes</a>
+        <a href="#estudiantes">Estudiantes verificados</a>
+        <a href="#chat">Chat con moderación</a>
+        <a href="#nosotros">Sobre DentMatch</a>
       </nav>
       <nav>
         <h4>PROYECTO</h4>
@@ -156,9 +284,9 @@
       </nav>
       <nav>
         <h4>EQUIPO</h4>
-        <span>Benjamín</span>
-        <span>Jorge</span>
-        <span>Joaquín</span>
+        <span>Benjamín Canales</span>
+        <span>Jorge Curiqueo</span>
+        <span>Joaquín Rohland</span>
       </nav>
     </div>
     <div class="site-footer__bottom">

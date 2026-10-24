@@ -21,7 +21,9 @@ ESTADOS_REQUERIMIENTO = ("Abierto", "Completado", "Cancelado")
 ESTADOS_SOLICITUD = ("Abierta", "En Revisión", "Asignada", "Completada", "Cancelada")
 ESTADOS_POSTULACION = ("Pendiente", "Aceptada", "Rechazada", "Cancelada")
 ESTADOS_CITA = ("Agendada", "Realizada", "Cancelada")
-ESTADOS_VERIFICACION = ("En Verificación", "Activo", "Rechazado")
+# 'No verificado': aún no subió su certificado. 'En Verificación': lo subió y se está revisando.
+ESTADOS_VERIFICACION = ("No verificado", "En Verificación", "Activo", "Rechazado")
+ESTADOS_CERTIFICADO = ("Pendiente", "Aprobada", "Rechazada")
 
 
 def sql_in(valores) -> str:

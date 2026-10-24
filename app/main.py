@@ -11,6 +11,7 @@ Estructura:
 - app/routers/ramos.py, requerimientos.py  -> el estudiante declara sus ramos y requerimientos
 - app/routers/solicitudes.py, casos.py, estudiantes.py -> solicitudes del paciente y cómo se ven
 - app/routers/postulaciones.py, citas.py   -> el vínculo paciente<->estudiante y su agenda
+- app/routers/verificacion.py -> el estudiante sube su certificado de alumno regular
 - app/routers/resumen.py, catalogos.py, admin.py
 La documentación interactiva de toda la API queda en /docs.
 
@@ -26,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 from app.database import Base, engine
 from app.routers import (
     admin, auth, casos, catalogos, citas, estudiantes, paginas, perfil, postulaciones,
-    ramos, requerimientos, resumen, solicitudes,
+    ramos, requerimientos, resumen, solicitudes, verificacion,
 )
 
 
@@ -65,6 +66,6 @@ app.include_router(auth.router)
 app.include_router(perfil.router)
 for modulo in (
     catalogos, ramos, requerimientos, solicitudes, casos, estudiantes,
-    postulaciones, citas, resumen, admin,
+    postulaciones, citas, resumen, admin, verificacion,
 ):
     app.include_router(modulo.router)

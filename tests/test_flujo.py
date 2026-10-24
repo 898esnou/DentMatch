@@ -231,7 +231,6 @@ def test_estudiantes_para_el_paciente_con_filtros(paciente, estudiante, estudian
     assert [x["id"] for x in paciente.get("/api/estudiantes?comuna=uñoa").json()] == [estudiante2.id]
     assert [x["id"] for x in paciente.get("/api/estudiantes?turno=manana").json()] == [estudiante.id]
     assert [x["id"] for x in paciente.get("/api/estudiantes?turno=tarde").json()] == [estudiante2.id]
-    assert paciente.get("/api/estudiantes?solo_verificados=true").json() == []  # nadie está 'Activo' aún
     assert paciente.get(f"/api/estudiantes/{estudiante.id}").status_code == 200
     assert paciente.get(f"/api/estudiantes/{paciente.id}").status_code == 404
 

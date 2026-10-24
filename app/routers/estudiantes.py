@@ -1,7 +1,7 @@
 """
 Estudiantes disponibles para el paciente:
 - GET /api/estudiantes        (?area=, ?comuna=, ?turno=manana|tarde, ?solicitud_id=,
-                               ?solo_verificados=, ?limit=, ?offset=)
+                               ?limit=, ?offset=)  -- solo estudiantes verificados
 - GET /api/estudiantes/{id}
 Del estudiante solo se muestra el nombre abreviado (nunca RUT ni correo).
 Con ?solicitud_id=X, mi_postulacion_estado indica si ya lo solicité para esa solicitud.
@@ -84,7 +84,6 @@ def listar_estudiantes(
     comuna: Optional[str] = Query(None),
     turno: Optional[str] = Query(None, pattern="^(manana|tarde)$"),
     solicitud_id: Optional[int] = Query(None),
-    solo_verificados: bool = Query(False, description="Solo estudiantes con estado 'Activo'"),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     usuario: models.Usuario = Depends(require_rol("paciente")),
@@ -97,10 +96,12 @@ def listar_estudiantes(
     consulta = (
         db.query(models.Usuario)
         .join(models.PerfilEstudiante, models.PerfilEstudiante.usuario_id == models.Usuario.id)
-        .filter(models.Usuario.rol == "estudiante")
+        .filter(
+            models.Usuario.rol == "estudiante",
+            models.PerfilEstudiante.estado_verificacion == "Activo",
+        )
     )
-    if solo_verificados:
-        consulta = consulta.filter(models.PerfilEstudiante.estado_verificacion == "Activo")
+    # Los pacientes solo ven estudiantes verificados (estado 'Activo').
     if comuna:
         consulta = consulta.filter(models.PerfilEstudiante.comuna_atencion.ilike(f"%{comuna}%"))
     if turno:
@@ -128,7 +129,10 @@ def ver_estudiante(
     db: Session = Depends(get_db),
 ):
     e = db.get(models.Usuario, estudiante_id)
-    if e is None or e.rol != "estudiante" or e.perfil_estudiante is None:
+    if (
+        e is None or e.rol != "estudiante" or e.perfil_estudiante is None
+        or e.perfil_estudiante.estado_verificacion != "Activo"
+    ):
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
     estados = _estados_para_solicitud(db, usuario, solicitud_id)
     ramos, reqs = _cargar(db, [e])
