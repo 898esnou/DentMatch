@@ -10,5 +10,6 @@ python-jose[cryptography]
 python-multipart
 httpx
 
-pymupdf
-opencv-python-headless
+pypdfium2
+zxing-cpp
+pillow

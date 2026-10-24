@@ -1,0 +1,12 @@
+# Lo que NO hace falta en producción (Vercel tiene un tope de 500 MB por función).
+Fase 1/
+Fase 2/
+Videos de Prueba/
+tests/
+scripts/
+migraciones/
+uploads/
+venv/
+.pytest_cache/
+Pruebas.md
+Instrucciones de Levantamiento.txt

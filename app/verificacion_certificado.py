@@ -23,6 +23,7 @@ se rescatan el folio y el id (solo dígitos) y se arma la URL con el dominio
 oficial fijo; las redirecciones solo se siguen dentro de ese mismo dominio.
 """
 import html
+import io
 import re
 import unicodedata
 import urllib.error
@@ -63,29 +64,27 @@ def _limpiar_rut(texto: str) -> str:
 
 
 def _leer_qr(contenido: bytes, tipo_contenido: str) -> Optional[str]:
-    """Devuelve el texto del primer QR legible, o None."""
+    """Devuelve el texto del primer QR legible, o None.
+
+    Librerías livianas a propósito (pypdfium2 + zxing-cpp + Pillow, ~30 MB): el despliegue en
+    Vercel tiene un tope de 500 MB y OpenCV + PyMuPDF solos pesaban ~250 MB.
+    """
     try:
-        import cv2
-        import numpy as np
+        import zxingcpp
+        from PIL import Image
 
         if tipo_contenido == "application/pdf":
-            import pymupdf
+            import pypdfium2
 
-            with pymupdf.open(stream=contenido, filetype="pdf") as pdf:
-                imagenes = []
-                for pagina in list(pdf)[:3]:
-                    pix = pagina.get_pixmap(dpi=250)
-                    img = np.frombuffer(pix.samples, np.uint8).reshape(pix.h, pix.w, pix.n)
-                    imagenes.append(cv2.cvtColor(img, cv2.COLOR_RGBA2BGR if pix.n == 4 else cv2.COLOR_RGB2BGR))
+            pdf = pypdfium2.PdfDocument(contenido)
+            imagenes = [pdf[i].render(scale=250 / 72).to_pil() for i in range(min(len(pdf), 3))]
         else:
-            img = cv2.imdecode(np.frombuffer(contenido, np.uint8), cv2.IMREAD_COLOR)
-            imagenes = [img] if img is not None else []
+            imagenes = [Image.open(io.BytesIO(contenido)).convert("RGB")]
 
-        detector = cv2.QRCodeDetector()
-        for img in imagenes:
-            texto, _, _ = detector.detectAndDecode(img)
-            if texto:
-                return texto
+        for imagen in imagenes:
+            for codigo in zxingcpp.read_barcodes(imagen):
+                if codigo.format == zxingcpp.BarcodeFormat.QRCode and codigo.text:
+                    return codigo.text
     except Exception:
         return None
     return None
