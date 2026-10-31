@@ -1,0 +1,14 @@
+[
+  {"consulta": "me duele una muela y no aguanto más, quiero sacarla", "esperado": "extraccion"},
+  {"consulta": "necesito que me saquen un diente", "esperado": "extraccion"},
+  {"consulta": "tengo la muela del juicio mala", "esperado": "extraccion"},
+  {"consulta": "quiero una limpieza dental barata", "esperado": "limpieza"},
+  {"consulta": "me sangran las encías y tengo sarro", "esperado": "limpieza"},
+  {"consulta": "se me quebró un diente al comer", "esperado": "restauracion"},
+  {"consulta": "tengo un hoyito en una muela", "esperado": "restauracion"},
+  {"consulta": "me falta un diente y quiero una opción económica", "esperado": "protesis"},
+  {"consulta": "necesito una dentadura", "esperado": "protesis"},
+  {"consulta": "hace mucho que no me reviso la boca", "esperado": "evaluacion"},
+  {"consulta": "quiero comprar una pizza", "esperado": null},
+  {"consulta": "vendo criptomonedas, escríbeme al whatsapp", "esperado": null}
+]

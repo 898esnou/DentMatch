@@ -26,9 +26,11 @@ from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine
 from app.routers import (
-    admin, auth, casos, catalogos, citas, estudiantes, paginas, perfil, postulaciones,
+    admin, auth, busqueda, casos, catalogos, citas, estudiantes, paginas, perfil, postulaciones,
     ramos, requerimientos, resumen, solicitudes, verificacion,
 )
+
+
 
 
 @asynccontextmanager
@@ -66,6 +68,6 @@ app.include_router(auth.router)
 app.include_router(perfil.router)
 for modulo in (
     catalogos, ramos, requerimientos, solicitudes, casos, estudiantes,
-    postulaciones, citas, resumen, admin, verificacion,
+    postulaciones, citas, resumen, admin, verificacion, busqueda,
 ):
     app.include_router(modulo.router)

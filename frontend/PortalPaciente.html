@@ -37,7 +37,7 @@
     </nav>
 
     <div class="portal-actions">
-      <a href="#buscador" class="btn btn--primary">
+      <a href="#buscador" class="btn btn--primary" data-modo="publicar">
         <span class="material-symbols-rounded">add_circle</span> Nueva Solicitud Clínica
       </a>
       <a class="icon-btn" href="#solicitudes" aria-label="Notificaciones">
@@ -72,7 +72,7 @@
           <button type="button" class="btn btn--outline btn--pill" data-accion="editar-perfil">
             <span class="material-symbols-rounded">edit</span> Editar perfil
           </button>
-          <a href="#buscador" class="btn btn--primary btn--lg">
+          <a href="#buscador" class="btn btn--primary btn--lg" data-modo="publicar">
             <span class="material-symbols-rounded">add_circle</span> Crear Nueva Solicitud
           </a>
         </div>
@@ -91,57 +91,98 @@
       </div>
     </section>
 
-    <!-- ============ 3. BUSCADOR CON IA ============ -->
+    <!-- ============ 3. BUSCADOR (un solo recuadro, dos modos: consultar / publicar) ============ -->
     <section class="card finder" id="buscador">
       <div class="finder__top">
         <span class="chip-tag chip-tag--green"><span class="material-symbols-rounded">auto_awesome</span> Matching Clínico Docente Inteligente</span>
         <span class="chip-tag chip-tag--soft"><span class="material-symbols-rounded">my_location</span> TU ZONA ACTIVA: <strong id="zona-activa">define tu comuna en "Editar perfil"</strong></span>
       </div>
       <h2 class="finder__title">¡Hola, <span data-usuario="primer-nombre">Camila</span>! ¿Qué molestia o necesidad dental tienes hoy?</h2>
-      <p class="finder__lead">
-        Describe tus síntomas o dudas en tus propias palabras. Nuestro sistema clasificará tu necesidad
-        clínica y encontrará a los estudiantes de odontología supervisados ideales para ti en tu comuna.
-      </p>
+      <!-- Interruptor de modo: lo controla cambiarModo() en portal-paciente.js -->
+      <div class="fila__acciones" id="modo-buscador" role="group" aria-label="¿Qué quieres hacer?" style="margin:12px 0">
+        <button type="button" class="btn btn--primary btn--pill" data-modo="consultar" aria-pressed="true">
+          <span class="material-symbols-rounded">search</span> Haz tu consulta
+        </button>
+        <button type="button" class="btn btn--outline btn--pill" data-modo="publicar" aria-pressed="false">
+          <span class="material-symbols-rounded">edit_note</span> Publicar solicitud
+        </button>
+      </div>
 
-      <form class="searchbox" id="search-form">
-        <div class="searchbox__input">
-          <span class="material-symbols-rounded">psychology</span>
-          <textarea id="consulta" rows="2" aria-label="Describe tu necesidad"
-            placeholder="Siento molestia en una muela al comer cosas dulces y noto un punto oscuro cerca de la encía"></textarea>
-        </div>
-        <div class="searchbox__bottom">
-          <div class="searchbox__filters">
-            <label class="select-wrap">
-              <span class="material-symbols-rounded">healing</span>
-              <select id="area" aria-label="Tipo de tratamiento"></select>
-            </label>
-            <label class="select-wrap">
-              <span class="material-symbols-rounded">explore</span>
-              <select id="distancia" aria-label="Distancia máxima">
-                <option value="">Cualquier distancia</option>
-                <option value="3">Hasta 3 km de mi comuna</option>
-                <option value="7">Hasta 7 km de mi comuna</option>
-                <option value="10">Hasta 10 km de mi comuna</option>
-              </select>
-            </label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600">
-              <input type="checkbox" id="urgente" /> Tengo dolor / es urgente
-            </label>
+      <!-- MODO 1: Haz tu consulta (búsqueda semántica, no publica nada) -->
+      <div id="panel-consultar">
+        <p class="finder__lead">
+          Cuéntanos con tus palabras qué procedimiento buscas (por ejemplo "quiero sacarme una muela" o "me falta un diente").
+          Te mostraremos procedimientos relacionados y estudiantes que hoy necesitan pacientes para ellos.
+        </p>
+
+        <form class="searchbox" id="consulta-form">
+          <div class="searchbox__input">
+            <span class="material-symbols-rounded">search</span>
+            <textarea id="consulta-semantica" rows="2" maxlength="300" aria-label="Describe qué procedimiento buscas"
+              placeholder="Ej: quiero una limpieza dental, necesito sacarme una muela, me falta un diente"></textarea>
           </div>
-          <button type="submit" class="btn btn--primary btn--lg" id="boton-publicar">
-            <span class="material-symbols-rounded">send</span> Publicar solicitud y buscar estudiantes
-          </button>
-        </div>
-      </form>
+          <div class="searchbox__bottom">
+            <small>
+              Esta búsqueda solo relaciona tus palabras con procedimientos; no es un diagnóstico ni reemplaza
+              la evaluación de un profesional. No escribas tu nombre, RUT ni teléfono. Si tienes dudas sobre si este procedimiento es el adecuado para tu búsqueda, consultalo con uno de los estudiantes recomendados.
+            </small>
+            <button type="submit" class="btn btn--primary btn--lg" id="boton-consulta">
+              <span class="material-symbols-rounded">search</span> Haz tu consulta
+            </button>
+          </div>
+        </form>
 
-      <div class="chips">
-        <span class="chips__label">CONSULTAS FRECUENTES:</span>
-        <button type="button" class="chip" data-area="prevencion" data-consulta="Necesito una limpieza y destartraje profundo">Limpieza y destartraje profundo</button>
-        <button type="button" class="chip" data-area="operatoria" data-consulta="Tengo una caries en una muela y necesito una tapadura">Tapadura / Caries en molar</button>
-        <button type="button" class="chip" data-area="endodoncia" data-urgente="1" data-consulta="Siento dolor o sensibilidad al frío o al calor">Dolor o sensibilidad al frío/calor</button>
-        <button type="button" class="chip" data-area="diagnostico" data-consulta="Quiero una evaluación general y diagnóstico">Evaluación general y diagnóstico</button>
-        <button type="button" class="chip" data-area="rehabilitacion" data-consulta="Necesito una prótesis o reemplazo dental">Prótesis o reemplazo dental</button>
-        <button type="button" class="chip" data-area="endodoncia" data-consulta="Creo que necesito un tratamiento de conducto">Tratamiento de conducto</button>
+        <!-- La llena portal-paciente.js -->
+        <div id="consulta-resultados" aria-live="polite"></div>
+      </div>
+
+      <!-- MODO 2: Publicar solicitud (el formulario de siempre) -->
+      <div id="panel-publicar" hidden>
+        <p class="finder__lead">
+          Describe tus síntomas o dudas en tus propias palabras. Nuestro sistema clasificará tu necesidad
+          clínica y encontrará a los estudiantes de odontología supervisados ideales para ti en tu comuna.
+        </p>
+
+        <form class="searchbox" id="search-form">
+          <div class="searchbox__input">
+            <span class="material-symbols-rounded">psychology</span>
+            <textarea id="consulta" rows="2" aria-label="Describe tu necesidad"
+              placeholder="Siento molestia en una muela al comer cosas dulces y noto un punto oscuro cerca de la encía"></textarea>
+          </div>
+          <div class="searchbox__bottom">
+            <div class="searchbox__filters">
+              <label class="select-wrap">
+                <span class="material-symbols-rounded">healing</span>
+                <select id="area" aria-label="Tipo de tratamiento"></select>
+              </label>
+              <label class="select-wrap">
+                <span class="material-symbols-rounded">explore</span>
+                <select id="distancia" aria-label="Distancia máxima">
+                  <option value="">Cualquier distancia</option>
+                  <option value="3">Hasta 3 km de mi comuna</option>
+                  <option value="7">Hasta 7 km de mi comuna</option>
+                  <option value="10">Hasta 10 km de mi comuna</option>
+                </select>
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600">
+                <input type="checkbox" id="urgente" /> Tengo dolor / es urgente
+              </label>
+            </div>
+            <button type="submit" class="btn btn--primary btn--lg" id="boton-publicar">
+              <span class="material-symbols-rounded">send</span> Publicar solicitud y buscar estudiantes
+            </button>
+          </div>
+        </form>
+
+        <div class="chips">
+          <span class="chips__label">CONSULTAS FRECUENTES:</span>
+          <button type="button" class="chip" data-area="prevencion" data-consulta="Necesito una limpieza y destartraje profundo">Limpieza y destartraje profundo</button>
+          <button type="button" class="chip" data-area="operatoria" data-consulta="Tengo una caries en una muela y necesito una tapadura">Tapadura / Caries en molar</button>
+          <button type="button" class="chip" data-area="endodoncia" data-urgente="1" data-consulta="Siento dolor o sensibilidad al frío o al calor">Dolor o sensibilidad al frío/calor</button>
+          <button type="button" class="chip" data-area="diagnostico" data-consulta="Quiero una evaluación general y diagnóstico">Evaluación general y diagnóstico</button>
+          <button type="button" class="chip" data-area="rehabilitacion" data-consulta="Necesito una prótesis o reemplazo dental">Prótesis o reemplazo dental</button>
+          <button type="button" class="chip" data-area="endodoncia" data-consulta="Creo que necesito un tratamiento de conducto">Tratamiento de conducto</button>
+        </div>
       </div>
     </section>
 

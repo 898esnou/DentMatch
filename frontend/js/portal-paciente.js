@@ -3,6 +3,7 @@
    1. Ayudas y catálogos
    2. Perfil y resumen
    3. Publicar una solicitud (buscador)
+   4b. Haz tu consulta (búsqueda semántica)
    4. Estudiantes disponibles y "Solicitar atención"
    5. Mis solicitudes con sus candidatos (postulaciones)
    6. Mis citas
@@ -176,10 +177,11 @@ async function solicitar(estudianteId) {
   const activa = solicitudActiva();
   if (!activa) {
     mostrarAviso("Primero publica una solicitud para poder pedir atención.", true);
+    cambiarModo("publicar");
     document.getElementById("buscador").scrollIntoView({ behavior: "smooth" });
     return;
   }
-  const est = estudiantes.find((e) => e.id === estudianteId);
+  const est = [...estudiantes, ...estudiantesDeConsulta()].find((e) => e.id === estudianteId);
   // Si el estudiante tiene un requerimiento abierto de tu misma área, se vincula automáticamente.
   const req = est && est.requerimientos_abiertos.find((r) => r.area === activa.area);
   const r = await apiJson("/api/postulaciones", "POST", {
@@ -189,6 +191,7 @@ async function solicitar(estudianteId) {
   });
   if (!r.ok) return mostrarAviso(textoDeError(r), true);
   mostrarAviso("Solicitud enviada. El estudiante debe aceptarla.");
+  marcarSolicitadoEnConsulta(estudianteId);
   await recargarTodo(activa.id);
 }
 
@@ -202,6 +205,151 @@ document.getElementById("tabs").addEventListener("click", async (evento) => {
 
 document.getElementById("solicitud-activa").addEventListener("change", () => {
   cargarEstudiantes().catch((e) => mostrarAviso(e.message, true));
+});
+
+/* ---------- 4b-0. INTERRUPTOR: CONSULTAR / PUBLICAR ---------- */
+// El recuadro del buscador tiene dos modos. Cada uno conserva su propio campo de texto;
+// al cambiar de modo, si el campo de destino está vacío, se le copia lo ya escrito.
+let modoActual = "consultar";
+
+function cambiarModo(modo) {
+  if (modo === modoActual) return;
+  const desde = document.getElementById(modo === "publicar" ? "consulta-semantica" : "consulta");
+  const hacia = document.getElementById(modo === "publicar" ? "consulta" : "consulta-semantica");
+  const texto = desde.value.trim();
+  if (texto && !hacia.value.trim()) {
+    hacia.value = hacia.maxLength > 0 ? texto.slice(0, hacia.maxLength) : texto;
+  }
+  modoActual = modo;
+  document.getElementById("panel-consultar").hidden = modo !== "consultar";
+  document.getElementById("panel-publicar").hidden = modo !== "publicar";
+  document.querySelectorAll("#modo-buscador [data-modo]").forEach((boton) => {
+    const activo = boton.dataset.modo === modo;
+    boton.classList.toggle("btn--primary", activo);
+    boton.classList.toggle("btn--outline", !activo);
+    boton.setAttribute("aria-pressed", String(activo));
+  });
+}
+
+// Sirve para el interruptor y para los botones "Nueva solicitud" del encabezado y del perfil.
+document.addEventListener("click", (evento) => {
+  const el = evento.target.closest("[data-modo]");
+  if (el) cambiarModo(el.dataset.modo);
+});
+
+/* ---------- 4b. HAZ TU CONSULTA (búsqueda semántica) ---------- */
+// Respuesta de la última consulta: { procedimientos, area_sugerida, estudiantes }.
+let consultaActual = null;
+const estudiantesDeConsulta = () => (consultaActual ? consultaActual.estudiantes : []);
+
+// Qué tan parecido es lo escrito al procedimiento (no es un diagnóstico ni una probabilidad).
+// El color ayuda, pero lo que informa es el texto, para que no dependa solo del color.
+const NIVELES_COINCIDENCIA = {
+  alta: { etiqueta: "Coincidencia alta", clase: "chip-tag chip-tag--green" },
+  media: { etiqueta: "Coincidencia media", clase: "chip-tag chip-tag--warn" },
+  baja: { etiqueta: "Coincidencia baja", clase: "chip-tag chip-tag--soft" },
+};
+
+function chipProcedimiento(p) {
+  const nivel = NIVELES_COINCIDENCIA[p.coincidencia] || NIVELES_COINCIDENCIA.baja; // si falta el dato, lo más prudente
+  return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
+    <span class="chip-tag chip-tag--soft">
+      <span class="material-symbols-rounded">medical_services</span> ${esc(p.nombre)} · ${esc(p.area_nombre)}
+    </span>
+    <span class="${nivel.clase}">${esc(nivel.etiqueta)}</span>
+  </span>`;
+}
+
+// Botón que lleva la consulta al formulario de publicar (lo atiende el oyente de "usar-consulta").
+function botonPublicar(etiqueta, principal) {
+  return `<div style="display:flex;justify-content:center;margin-top:16px">
+    <button type="button" class="btn ${principal ? "btn--primary" : "btn--outline"}" data-accion="usar-consulta">
+      <span class="material-symbols-rounded">edit_note</span> ${etiqueta}
+    </button>
+  </div>`;
+}
+
+function pintarConsulta() {
+  const caja = document.getElementById("consulta-resultados");
+  if (!consultaActual) {
+    caja.innerHTML = "";
+    return;
+  }
+  const { procedimientos, estudiantes: lista } = consultaActual;
+
+  // Caso 1: no se reconoció ningún procedimiento.
+  if (!procedimientos.length) {
+    caja.innerHTML = `
+      <p class="empty">No encontramos procedimientos relacionados con lo que escribiste. Prueba con otras palabras
+      (por ejemplo "extracción", "limpieza" o "prótesis"), o publica tu solicitud para que los estudiantes
+      interesados puedan postular a ella.</p>
+      ${botonPublicar("Publicar mi solicitud con este texto", false)}`;
+    return;
+  }
+
+  const chips = `
+    <p class="portal-section-sub">Procedimientos relacionados con tu consulta:</p>
+    <div class="cand__tags" style="margin:8px 0 6px">${procedimientos.map(chipProcedimiento).join("")}</div>
+    <small style="display:block;margin-bottom:16px">La coincidencia indica qué tan parecido es tu texto a cada procedimiento.
+      No es un diagnóstico: si no es lo que buscabas, prueba con otras palabras.</small>`;
+
+  // Caso 2: hay procedimientos, pero ningún estudiante busca pacientes para ellos -> invitar a publicar.
+  if (!lista.length) {
+    const nombres = procedimientos.map((p) => p.nombre).join(", ");
+    caja.innerHTML = `${chips}
+      <p class="empty">Por ahora ningún estudiante está buscando pacientes para <strong>${esc(nombres)}</strong>.
+      Publica tu solicitud: los estudiantes que cumplan con lo que necesitas podrán postular a ella.</p>
+      ${botonPublicar(`Publicar mi solicitud de ${esc(procedimientos[0].nombre)}`, true)}`;
+    return;
+  }
+
+  // Caso 3: hay estudiantes -> tarjetas, y la opción de publicar como alternativa.
+  caja.innerHTML = `${chips}
+    ${lista.map(tarjetaEstudiante).join("")}
+    ${botonPublicar("Usar esta consulta para publicar mi solicitud", false)}`;
+}
+
+// Tras pedir atención desde los resultados, el botón pasa a "Solicitud pendiente" sin volver a consultar la IA.
+function marcarSolicitadoEnConsulta(estudianteId) {
+  const estudiante = estudiantesDeConsulta().find((e) => e.id === estudianteId);
+  if (!estudiante) return;
+  estudiante.mi_postulacion_estado = "Pendiente";
+  pintarConsulta();
+}
+
+document.getElementById("consulta-form").addEventListener("submit", async (evento) => {
+  evento.preventDefault();
+  const texto = document.getElementById("consulta-semantica").value.trim();
+  if (texto.length < 4) return mostrarAviso("Escribe al menos unas palabras sobre lo que necesitas.", true);
+
+  const boton = document.getElementById("boton-consulta");
+  boton.disabled = true; // cada consulta usa la API de IA: evitamos envíos repetidos
+  try {
+    const activa = solicitudActiva();
+    const r = await apiJson("/api/busqueda", "POST", {
+      texto,
+      solicitud_id: activa ? activa.id : undefined,
+    });
+    if (!r.ok) return mostrarAviso(textoDeError(r), true);
+    consultaActual = r.data;
+    pintarConsulta();
+  } catch (error) {
+    mostrarAviso("No se pudo conectar con el servidor.", true);
+  } finally {
+    boton.disabled = false;
+  }
+});
+
+// Lleva la consulta (y el área sugerida) al formulario de "publicar solicitud".
+document.getElementById("consulta-resultados").addEventListener("click", (evento) => {
+  if (!evento.target.closest('[data-accion="usar-consulta"]')) return;
+  cambiarModo("publicar"); // el formulario de publicar está oculto en el modo consulta
+  document.getElementById("consulta").value = document.getElementById("consulta-semantica").value.trim();
+  if (consultaActual && consultaActual.area_sugerida) {
+    document.getElementById("area").value = consultaActual.area_sugerida;
+  }
+  document.getElementById("buscador").scrollIntoView({ behavior: "smooth", block: "start" });
+  document.getElementById("consulta").focus();
 });
 
 /* ---------- 5. MIS SOLICITUDES Y CANDIDATOS ---------- */

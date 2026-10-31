@@ -17,3 +17,5 @@ Thumbs.db
 
 # Certificados de alumno regular subidos en desarrollo (datos personales)
 uploads/
+
+app/datos/embeddings_cache.npz

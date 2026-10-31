@@ -13,3 +13,7 @@ httpx
 pypdfium2
 zxing-cpp
 pillow
+google-genai
+numpy
+python-dotenv
+

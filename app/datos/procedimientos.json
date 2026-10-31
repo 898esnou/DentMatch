@@ -1,0 +1,66 @@
+[
+  {
+    "id": "extraccion",
+    "nombre_profesional": "Exodoncia",
+    "area": "cirugia",
+    "frases": [
+      "Exodoncia",
+      "Extracción dental",
+      "Sacar una muela",
+      "Sacarme un diente",
+      "Quiero que me saquen una muela",
+      "Me duele una muela y quiero que me la saquen"
+    ]
+  },
+  {
+    "id": "limpieza",
+    "nombre_profesional": "Profilaxis dental",
+    "area": "prevencion",
+    "frases": [
+      "Profilaxis dental",
+      "Limpieza dental",
+      "Destartraje",
+      "Quiero limpiarme los dientes",
+      "Sacar el sarro",
+      "Tengo sarro y quiero una limpieza"
+    ]
+  },
+  {
+    "id": "restauracion",
+    "nombre_profesional": "Restauración con resina",
+    "area": "operatoria",
+    "frases": [
+      "Restauración con resina",
+      "Obturación dental",
+      "Tapadura",
+      "Arreglar un diente roto",
+      "Me quebré un diente",
+      "Tapar un hoyito en la muela"
+    ]
+  },
+  {
+    "id": "protesis",
+    "nombre_profesional": "Prótesis removible",
+    "area": "rehabilitacion",
+    "frases": [
+      "Prótesis removible",
+      "Dentadura postiza",
+      "Placa para los dientes",
+      "Me falta un diente y quiero reponerlo",
+      "Me faltan varios dientes y quiero una opción económica",
+      "Reemplazar dientes que perdí"
+    ]
+  },
+  {
+    "id": "evaluacion",
+    "nombre_profesional": "Evaluación dental general",
+    "area": "diagnostico",
+    "frases": [
+      "Evaluación dental",
+      "Control dental",
+      "Revisión general de mis dientes",
+      "Hace años que no voy al dentista y quiero un chequeo",
+      "Que me revisen la boca"
+    ]
+  }
+]
