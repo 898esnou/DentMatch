@@ -30,7 +30,7 @@ from .catalogos import AREAS
 MODELO = "gemini-embedding-001"
 CARPETA_DATOS = Path(__file__).parent / "datos"   # independiente de dónde se ejecute Python
 RUTA_JSON = CARPETA_DATOS / "procedimientos.json"
-RUTA_CACHE = os.path.join(tempfile.gettempdir(), "embeddings_cache.npz")
+RUTA_CACHE = CARPETA_DATOS / "embeddings_cache.npz"
 TAMANO_LOTE = 50           # frases enviadas por llamada a la API
 MAX_REINTENTOS = 3         # intentos ante errores temporales
 CODIGOS_TEMPORALES = {429, 500, 502, 503, 504}  # cuota agotada o servidor ocupado
