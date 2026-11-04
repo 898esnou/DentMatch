@@ -16,4 +16,5 @@ pillow
 google-genai
 numpy
 python-dotenv
-
+PyYAML
+psycopg[binary]
