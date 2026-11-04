@@ -116,6 +116,16 @@ function llenarSelectorSolicitud(seleccionarId) {
   if (abiertas_.some((s) => String(s.id) === actual)) select.value = actual;
 }
 
+// Puntaje de coincidencia (solo viene en los resultados de "Haz tu consulta").
+function bloqueAfinidad(e) {
+  if (e.puntaje === undefined || e.puntaje === null) return "";
+  const motivos = (e.motivos || []).map((m) => `<li>${esc(m)}</li>`).join("");
+  return `<div class="afinidad">
+      <span class="chip-tag chip-tag--green"><span class="material-symbols-rounded">insights</span> Afinidad ${esc(e.puntaje)} de 100</span>
+      ${motivos ? `<ul class="afinidad__motivos">${motivos}</ul>` : ""}
+    </div>`;
+}
+
 function tarjetaEstudiante(e) {
   const verificado = e.estado_verificacion === "Activo";
   const necesidades = e.requerimientos_abiertos.length
@@ -145,6 +155,7 @@ function tarjetaEstudiante(e) {
           <span class="chip-tag"><span class="material-symbols-rounded">bookmark</span> ${e.ramos.length ? `Ramos: ${esc(e.ramos.join(", "))}` : "Sin ramos registrados"}</span>
           <span class="chip-tag chip-tag--soft"><span class="material-symbols-rounded">location_on</span> ${esc(e.comuna_atencion)}</span>
         </div>
+        ${bloqueAfinidad(e)}
         <p class="cand__desc">${esc(necesidades)}</p>
         <div class="cand__avail"><span class="material-symbols-rounded">calendar_month</span><strong>${esc(e.disponibilidad || "Disponibilidad por definir")}</strong></div>
         <div class="cand__foot">
@@ -238,8 +249,11 @@ document.addEventListener("click", (evento) => {
 });
 
 /* ---------- 4b. HAZ TU CONSULTA (búsqueda semántica) ---------- */
-// Respuesta de la última consulta: { procedimientos, area_sugerida, estudiantes }.
+// Respuesta de la última consulta: { procedimientos, area_sugerida, estudiantes, mensaje,
+// aviso_urgencia, pagina, paginas, total_estudiantes }.
 let consultaActual = null;
+let consultaTexto = "";      // texto con el que se hizo la consulta (para pedir más páginas)
+let opinionEnviada = false;  // una opinión por consulta
 const estudiantesDeConsulta = () => (consultaActual ? consultaActual.estudiantes : []);
 
 // Qué tan parecido es lo escrito al procedimiento (no es un diagnóstico ni una probabilidad).
@@ -252,12 +266,46 @@ const NIVELES_COINCIDENCIA = {
 
 function chipProcedimiento(p) {
   const nivel = NIVELES_COINCIDENCIA[p.coincidencia] || NIVELES_COINCIDENCIA.baja; // si falta el dato, lo más prudente
-  return `<span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
-    <span class="chip-tag chip-tag--soft">
-      <span class="material-symbols-rounded">medical_services</span> ${esc(p.nombre)} · ${esc(p.area_nombre)}
+  // "Se parece a": la frase del catálogo que coincidió, para que se entienda por qué se sugiere.
+  const motivo = p.coincide_con ? `<small class="coincide">Se parece a: “${esc(p.coincide_con)}”</small>` : "";
+  return `<span style="display:inline-flex;flex-direction:column;gap:2px">
+    <span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span class="chip-tag chip-tag--soft">
+        <span class="material-symbols-rounded">medical_services</span> ${esc(p.nombre)} · ${esc(p.area_nombre)}
+      </span>
+      <span class="${nivel.clase}">${esc(nivel.etiqueta)}</span>
     </span>
-    <span class="${nivel.clase}">${esc(nivel.etiqueta)}</span>
+    ${motivo}
   </span>`;
+}
+
+// Aviso de posible urgencia: va primero y con rol "alert" para que lo lea un lector de pantalla.
+function bloqueUrgencia(consulta) {
+  if (!consulta.aviso_urgencia) return "";
+  return `<div class="alerta-urgencia" role="alert">
+    <span class="material-symbols-rounded">emergency</span>
+    <p>${esc(consulta.aviso_urgencia)}</p>
+  </div>`;
+}
+
+// "¿Te sirvió esta sugerencia?": opinión anónima, una vez por consulta.
+function bloqueOpinion() {
+  if (opinionEnviada) return `<p class="opinion opinion--gracias">Gracias por tu opinión.</p>`;
+  return `<div class="opinion">
+    <span>¿Te sirvió esta sugerencia?</span>
+    <button type="button" class="btn btn--outline btn--sm" data-accion="opinion" data-util="1">Sí</button>
+    <button type="button" class="btn btn--outline btn--sm" data-accion="opinion" data-util="0">No</button>
+  </div>`;
+}
+
+function bloqueMas(consulta) {
+  const total = consulta.total_estudiantes;
+  const resumen = `<small>Mostrando ${consulta.estudiantes.length} de ${total} estudiante${total === 1 ? "" : "s"}, ordenados por afinidad.</small>`;
+  if (consulta.pagina >= consulta.paginas) return `<div class="consulta__mas">${resumen}</div>`;
+  return `<div class="consulta__mas">
+    ${resumen}
+    <button type="button" class="btn btn--outline" data-accion="mas-resultados">Ver más estudiantes</button>
+  </div>`;
 }
 
 // Botón que lleva la consulta al formulario de publicar (lo atiende el oyente de "usar-consulta").
@@ -276,13 +324,15 @@ function pintarConsulta() {
     return;
   }
   const { procedimientos, estudiantes: lista } = consultaActual;
+  const urgencia = bloqueUrgencia(consultaActual);
+  // Mensaje del servidor cuando la coincidencia es débil: sugiere hablar con el estudiante.
+  const mensaje = consultaActual.mensaje ? `<p class="consulta__mensaje">${esc(consultaActual.mensaje)}</p>` : "";
 
   // Caso 1: no se reconoció ningún procedimiento.
   if (!procedimientos.length) {
-    caja.innerHTML = `
-      <p class="empty">No encontramos procedimientos relacionados con lo que escribiste. Prueba con otras palabras
-      (por ejemplo "extracción", "limpieza" o "prótesis"), o publica tu solicitud para que los estudiantes
-      interesados puedan postular a ella.</p>
+    caja.innerHTML = `${urgencia}
+      <p class="empty">${esc(consultaActual.mensaje || "No encontramos procedimientos relacionados con lo que escribiste. Prueba con otras palabras o publica tu solicitud para que los estudiantes interesados puedan postular a ella.")}</p>
+      ${bloqueOpinion()}
       ${botonPublicar("Publicar mi solicitud con este texto", false)}`;
     return;
   }
@@ -290,22 +340,26 @@ function pintarConsulta() {
   const chips = `
     <p class="portal-section-sub">Procedimientos relacionados con tu consulta:</p>
     <div class="cand__tags" style="margin:8px 0 6px">${procedimientos.map(chipProcedimiento).join("")}</div>
-    <small style="display:block;margin-bottom:16px">La coincidencia indica qué tan parecido es tu texto a cada procedimiento.
-      No es un diagnóstico: si no es lo que buscabas, prueba con otras palabras.</small>`;
+    <small style="display:block;margin-bottom:12px">La coincidencia indica qué tan parecido es tu texto a cada procedimiento.
+      No es un diagnóstico: son recomendaciones, no una verdad absoluta. Si no es lo que buscabas, prueba con otras palabras.</small>
+    ${mensaje}`;
 
   // Caso 2: hay procedimientos, pero ningún estudiante busca pacientes para ellos -> invitar a publicar.
   if (!lista.length) {
     const nombres = procedimientos.map((p) => p.nombre).join(", ");
-    caja.innerHTML = `${chips}
+    caja.innerHTML = `${urgencia}${chips}
       <p class="empty">Por ahora ningún estudiante está buscando pacientes para <strong>${esc(nombres)}</strong>.
       Publica tu solicitud: los estudiantes que cumplan con lo que necesitas podrán postular a ella.</p>
+      ${bloqueOpinion()}
       ${botonPublicar(`Publicar mi solicitud de ${esc(procedimientos[0].nombre)}`, true)}`;
     return;
   }
 
-  // Caso 3: hay estudiantes -> tarjetas, y la opción de publicar como alternativa.
-  caja.innerHTML = `${chips}
+  // Caso 3: hay estudiantes -> tarjetas ordenadas por afinidad, y la opción de publicar como alternativa.
+  caja.innerHTML = `${urgencia}${chips}
     ${lista.map(tarjetaEstudiante).join("")}
+    ${bloqueMas(consultaActual)}
+    ${bloqueOpinion()}
     ${botonPublicar("Usar esta consulta para publicar mi solicitud", false)}`;
 }
 
@@ -332,12 +386,60 @@ document.getElementById("consulta-form").addEventListener("submit", async (event
     });
     if (!r.ok) return mostrarAviso(textoDeError(r), true);
     consultaActual = r.data;
+    consultaTexto = texto;
+    opinionEnviada = false;
     pintarConsulta();
   } catch (error) {
     mostrarAviso("No se pudo conectar con el servidor.", true);
   } finally {
     boton.disabled = false;
   }
+});
+
+// "Ver más estudiantes": pide la página siguiente con el mismo texto y la agrega a la lista.
+async function cargarMasResultados(boton) {
+  if (!consultaActual || consultaActual.pagina >= consultaActual.paginas) return;
+  boton.disabled = true;
+  try {
+    const activa = solicitudActiva();
+    const r = await apiJson("/api/busqueda", "POST", {
+      texto: consultaTexto,
+      solicitud_id: activa ? activa.id : undefined,
+      pagina: consultaActual.pagina + 1,
+    });
+    if (!r.ok) return mostrarAviso(textoDeError(r), true);
+    const yaMostrados = new Set(consultaActual.estudiantes.map((e) => e.id));
+    consultaActual = {
+      ...r.data,
+      estudiantes: [...consultaActual.estudiantes, ...r.data.estudiantes.filter((e) => !yaMostrados.has(e.id))],
+    };
+    pintarConsulta();
+  } catch (error) {
+    mostrarAviso("No se pudo conectar con el servidor.", true);
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+// Opinión anónima: solo se envía si fue útil y qué procedimiento se sugirió; nunca el texto escrito.
+async function enviarOpinion(util) {
+  const primero = consultaActual && consultaActual.procedimientos[0];
+  const r = await apiJson("/api/busqueda/retroalimentacion", "POST", {
+    util,
+    procedimiento_id: primero ? primero.id : undefined,
+    coincidencia: primero ? primero.coincidencia : undefined,
+  });
+  if (!r.ok) return mostrarAviso(textoDeError(r), true);
+  opinionEnviada = true;
+  pintarConsulta();
+}
+
+// Acciones propias de los resultados de la consulta (las demás, como "solicitar", las atiende el oyente general).
+document.getElementById("consulta-resultados").addEventListener("click", (evento) => {
+  const mas = evento.target.closest('[data-accion="mas-resultados"]');
+  if (mas) return cargarMasResultados(mas);
+  const opinion = evento.target.closest('[data-accion="opinion"]');
+  if (opinion) return enviarOpinion(opinion.dataset.util === "1").catch(() => mostrarAviso("No se pudo enviar tu opinión.", true));
 });
 
 // Lleva la consulta (y el área sugerida) al formulario de "publicar solicitud".

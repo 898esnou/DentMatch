@@ -16,6 +16,7 @@ load_dotenv() antes (ver scripts/evaluar.py).
 """
 import hashlib
 import json
+import logging
 import os
 import time
 from pathlib import Path
@@ -26,15 +27,18 @@ from google.genai import errors, types
 
 from .catalogos import AREAS
 
+logger = logging.getLogger(__name__)
+
 # --- Configuración ---------------------------------------------------------
 MODELO = "gemini-embedding-001"
 CARPETA_DATOS = Path(__file__).parent / "datos"   # independiente de dónde se ejecute Python
 RUTA_JSON = CARPETA_DATOS / "procedimientos.json"
 RUTA_CACHE = CARPETA_DATOS / "embeddings_cache.npz"
-TAMANO_LOTE = 50           # frases enviadas por llamada a la API
+TAMANO_LOTE = 45           # frases por llamada: la capa gratuita permite 100 solicitudes por minuto
+PAUSA_ENTRE_LOTES = 62     # segundos de espera entre llamadas al construir el índice (solo catálogos grandes)
 MAX_REINTENTOS = 3         # intentos ante errores temporales
 CODIGOS_TEMPORALES = {429, 500, 502, 503, 504}  # cuota agotada o servidor ocupado
-UMBRAL_POR_DEFECTO = 0.5   # valor inicial: se calibra con scripts/evaluar.py
+UMBRAL_POR_DEFECTO = 0.75  # calibrado con scripts/evaluar.py: consultas correctas >= 0.816, irrelevantes <= 0.668
 
 # Niveles de "coincidencia" que se muestran al paciente. NO son probabilidades de
 # acierto: indican qué tan parecido es el texto escrito al procedimiento del catálogo.
@@ -98,6 +102,10 @@ def embeber(textos: list[str], tipo_tarea: str) -> np.ndarray:
     """
     vectores = []
     for inicio in range(0, len(textos), TAMANO_LOTE):
+        if inicio > 0:
+            # Cada texto cuenta como una solicitud: sin esta pausa, un catálogo de más de
+            # 100 frases agota la cuota por minuto y la construcción del índice falla (429).
+            time.sleep(PAUSA_ENTRE_LOTES)
         lote = textos[inicio : inicio + TAMANO_LOTE]
         vectores.extend(_llamar_api_con_reintentos(lote, tipo_tarea))
 
@@ -144,6 +152,16 @@ def construir_indice() -> tuple[np.ndarray, list[str], dict[str, dict]]:
         if str(cache["hash"]) == hash_actual:
             return cache["vectores"], cache["ids"].tolist(), datos_por_id
 
+    if os.getenv("VERCEL"):
+        # En Vercel no se puede construir el índice: cada función tiene muy poco tiempo, el
+        # límite de la API obliga a esperar varios minutos y el disco es de solo lectura.
+        # El caché debe viajar en el repositorio, junto con la misma versión del JSON.
+        raise BuscadorNoDisponible(
+            "No hay un índice de búsqueda válido en el despliegue. Ejecuta "
+            "`python -m scripts.construir_cache` y sube app/datos/embeddings_cache.npz "
+            "junto con app/datos/procedimientos.json."
+        )
+
     frases, ids = [], []
     for procedimiento in catalogo:
         for frase in procedimiento["frases"]:
@@ -151,7 +169,11 @@ def construir_indice() -> tuple[np.ndarray, list[str], dict[str, dict]]:
             ids.append(procedimiento["id"])
 
     vectores = embeber(frases, "RETRIEVAL_DOCUMENT")
-    np.savez(RUTA_CACHE, vectores=vectores, ids=np.array(ids), hash=hash_actual)
+    try:
+        np.savez(RUTA_CACHE, vectores=vectores, ids=np.array(ids), hash=hash_actual)
+    except OSError:
+        # Disco de solo lectura: se usa el índice en memoria y se sigue sin guardar el caché.
+        logger.warning("No se pudo guardar el caché de embeddings (¿disco de solo lectura?)")
     return vectores, ids, datos_por_id
 
 
@@ -171,6 +193,27 @@ def ordenar_por_procedimiento(
     return [(id_proc, puntaje) for id_proc, puntaje in ranking[:top_k] if puntaje >= umbral]
 
 
+def mejor_fila_por_procedimiento(puntajes: np.ndarray, ids: list[str]) -> dict[str, tuple[float, int]]:
+    """Para cada procedimiento: (mejor puntaje, fila de la frase que lo logró).
+
+    Permite explicar por qué coincidió: la fila identifica la frase del catálogo
+    (nunca el texto del paciente) que más se parece a lo que se escribió.
+    """
+    mejor: dict[str, tuple[float, int]] = {}
+    for fila, (id_procedimiento, puntaje) in enumerate(zip(ids, puntajes)):
+        puntaje = float(puntaje)
+        if id_procedimiento not in mejor or puntaje > mejor[id_procedimiento][0]:
+            mejor[id_procedimiento] = (puntaje, fila)
+    return mejor
+
+
+def frase_de_la_fila(fila: int, ids: list[str], datos_por_id: dict[str, dict]) -> str:
+    """Texto de la frase del catálogo que corresponde a una fila de la matriz de vectores."""
+    id_procedimiento = ids[fila]
+    posicion = ids[:fila].count(id_procedimiento)  # las frases de cada procedimiento van en orden
+    return datos_por_id[id_procedimiento]["frases"][posicion]
+
+
 def nivel_coincidencia(puntaje: float) -> str:
     """Traduce un puntaje de similitud a 'alta', 'media' o 'baja'.
 
@@ -187,7 +230,8 @@ def nivel_coincidencia(puntaje: float) -> str:
 def buscar(consulta: str, top_k: int = 3, umbral: float = UMBRAL_POR_DEFECTO) -> list[dict]:
     """Devuelve los procedimientos del catálogo más parecidos a la consulta.
 
-    Cada resultado: {"id", "nombre", "area", "puntaje", "coincidencia"}.
+    Cada resultado: {"id", "nombre", "area", "puntaje", "coincidencia", "frase"}, donde
+    "frase" es la frase del catálogo que más se pareció a la consulta.
     Devuelve lista vacía si ninguno supera el umbral (consulta no relacionada).
     No envíes datos personales en la consulta (nombre, RUT, teléfono).
     """
@@ -199,6 +243,7 @@ def buscar(consulta: str, top_k: int = 3, umbral: float = UMBRAL_POR_DEFECTO) ->
     vector_consulta = embeber([consulta], "RETRIEVAL_QUERY")[0]
     puntajes = vectores @ vector_consulta  # similitud coseno con cada frase
 
+    mejores = mejor_fila_por_procedimiento(puntajes, ids)
     resultados = []
     for id_procedimiento, puntaje in ordenar_por_procedimiento(puntajes, ids, top_k, umbral):
         datos = datos_por_id[id_procedimiento]
@@ -209,6 +254,7 @@ def buscar(consulta: str, top_k: int = 3, umbral: float = UMBRAL_POR_DEFECTO) ->
                 "area": datos["area"],
                 "puntaje": round(puntaje, 3),
                 "coincidencia": nivel_coincidencia(puntaje),
+                "frase": frase_de_la_fila(mejores[id_procedimiento][1], ids, datos_por_id),
             }
         )
     return resultados

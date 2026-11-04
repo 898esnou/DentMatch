@@ -335,3 +335,20 @@ class Cita(Base):
     )
 
     postulacion = relationship("Postulacion", back_populates="citas")
+
+
+class RetroalimentacionBusqueda(Base):
+    """
+    Opinión anónima sobre una sugerencia de la búsqueda semántica ("¿Te sirvió?").
+
+    No guarda el texto que escribió el paciente ni quién opinó: solo qué procedimiento se
+    sugirió, con qué nivel de coincidencia y si la sugerencia fue útil. Sirve para medir
+    qué tan bien funciona el buscador con personas reales.
+    """
+    __tablename__ = "retroalimentacion_busqueda"
+
+    id = Column(Integer, primary_key=True, index=True)
+    procedimiento_id = Column(String(50), index=True)  # id del catálogo; NULL si no hubo sugerencia
+    coincidencia = Column(String(10))                  # 'alta' | 'media' | 'baja'
+    util = Column(Boolean, nullable=False)
+    fecha = Column(TIMESTAMP, server_default=func.now())

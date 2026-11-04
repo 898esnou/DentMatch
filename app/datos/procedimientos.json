@@ -6,10 +6,38 @@
     "frases": [
       "Exodoncia",
       "Extracción dental",
+      "Extracción de muela del juicio",
+      "Exodoncia de tercer molar",
+      "Extracción de cordales",
+
       "Sacar una muela",
       "Sacarme un diente",
       "Quiero que me saquen una muela",
-      "Me duele una muela y quiero que me la saquen"
+      "Necesito que me saquen un diente",
+      "Quiero sacarme la muela del juicio",
+      "Me tienen que sacar una muela",
+      "Quiero que me saquen un diente que ya no sirve",
+
+      "Me duele una muela y quiero que me la saquen",
+      "Me duele una muela y no aguanto más, quiero sacarla",
+      "Tengo la muela del juicio mala",
+      "Me salió la muela del juicio y me duele",
+      "Tengo la muela del juicio chueca",
+      "Tengo una muela que ya no tiene arreglo",
+      "Se me quebró una muela y no se puede arreglar",
+      "Tengo un diente muy flojo y quiero sacarlo",
+      "Se me mueve un diente y me molesta",
+      "El dentista me dijo que hay que sacar esta muela",
+      "Tengo un resto de muela que me duele",
+
+      "Quiero que me arranquen una muela",
+      "Me quiero sacar esta muela pa' no sufrir más",
+      "Ando con un dolor de muela terrible y quiero sacarla",
+      "No aguanto el dolor de muela, sáquenmela",
+      "Me quiero sacar la muela del juicio que me está molestando caleta",
+      "Tengo una muela súper mala y quiero que me la saquen",
+      "Necesito sacarme una muela al tiro",
+      "Me duele harto una muela, ya no quiero tenerla"
     ]
   },
   {
@@ -20,9 +48,36 @@
       "Profilaxis dental",
       "Limpieza dental",
       "Destartraje",
+      "Remoción de sarro",
+      "Limpieza dental profesional",
+      "Higiene dental profesional",
+
       "Quiero limpiarme los dientes",
       "Sacar el sarro",
-      "Tengo sarro y quiero una limpieza"
+      "Tengo sarro y quiero una limpieza",
+      "Quiero una limpieza de boca",
+      "Necesito una limpieza dental barata",
+      "Hace mucho que no me hago una limpieza dental",
+      "Quiero que me limpien los dientes",
+
+      "Me sangran las encías al cepillarme los dientes",
+      "Me sangran las encías y tengo sarro",
+      "Tengo las encías inflamadas y rojas",
+      "Tengo mal aliento",
+      "Tengo mal olor en la boca y no se me quita",
+      "Tengo los dientes amarillos",
+      "Tengo los dientes manchados por el café o el cigarro",
+      "Tengo mal aliento, dolor en la boca y los dientes amarillentos",
+      "Tengo una capa amarilla pegada en los dientes",
+      "Tengo sarro en los dientes de abajo",
+
+      "Tengo los dientes súper sucios y quiero dejarlos limpios",
+      "Tengo mugre pegada en los dientes",
+      "Me huele mal la boca y ya no sé qué hacer",
+      "Quiero dejar mis dientes limpiecitos",
+      "Tengo las encías malas y me sangran caleta",
+      "Se me hizo una costra en los dientes",
+      "Me quiero hacer una limpieza barata pa' mis dientes"
     ]
   },
   {
@@ -32,10 +87,37 @@
     "frases": [
       "Restauración con resina",
       "Obturación dental",
+      "Empaste dental",
       "Tapadura",
+      "Reconstrucción de un diente",
+      "Tratamiento de caries",
+
       "Arreglar un diente roto",
+      "Tapar un hoyito en la muela",
+      "Quiero tapar una muela picada",
+      "Quiero que me arreglen un diente quebrado",
+      "Necesito una tapadura",
+      "Quiero que me traten una caries",
+
       "Me quebré un diente",
-      "Tapar un hoyito en la muela"
+      "Se me quebró un diente al comer",
+      "Se me saltó un pedacito de diente",
+      "Se me desportilló un diente",
+      "Tengo un hoyito en una muela",
+      "Tengo una caries",
+      "Tengo un diente picado",
+      "Se me salió la tapadura",
+      "Se me cayó el empaste",
+      "Tengo una mancha café en un diente",
+      "Se me quebró una paleta",
+
+      "Se me picó una muela",
+      "Tengo una muela con un hoyo y se me queda la comida",
+      "Se me rompió un diente y quiero que me lo dejen bien",
+      "Tengo una muela carcomida",
+      "Se me quebró una paleta y se nota harto",
+      "Me salió un hoyo negro en una muela",
+      "Se me soltó la tapadura de la muela"
     ]
   },
   {
@@ -44,11 +126,31 @@
     "area": "rehabilitacion",
     "frases": [
       "Prótesis removible",
+      "Prótesis dental",
+      "Prótesis parcial removible",
+      "Prótesis total",
+
       "Dentadura postiza",
       "Placa para los dientes",
+      "Dientes postizos",
+      "Necesito una dentadura",
       "Me falta un diente y quiero reponerlo",
       "Me faltan varios dientes y quiero una opción económica",
-      "Reemplazar dientes que perdí"
+      "Reemplazar dientes que perdí",
+
+      "Me faltan muelas y no puedo masticar bien",
+      "Perdí varios dientes y quiero poder comer bien",
+      "Me quedé sin dientes",
+      "Me falta un diente de adelante y se nota al sonreír",
+      "Me sacaron varias muelas y quiero reponerlas",
+      "No tengo los dientes de atrás y me cuesta comer",
+
+      "Me falta una paleta y quiero ponerme un diente",
+      "Quiero una placa pa' los dientes que me faltan",
+      "Quiero unos dientes postizos baratos",
+      "Me faltan dientes y me da vergüenza sonreír",
+      "Necesito una dentadura que no sea tan cara",
+      "Perdí las muelas y ya no puedo comer bien"
     ]
   },
   {
@@ -58,9 +160,36 @@
     "frases": [
       "Evaluación dental",
       "Control dental",
+      "Examen dental",
+      "Diagnóstico dental",
+      "Revisión dental general",
+
       "Revisión general de mis dientes",
+      "Chequeo dental",
+      "Que me revisen la boca",
+      "Quiero que me miren los dientes",
+      "Quiero saber cómo están mis dientes",
+      "Quiero que me digan qué tratamiento necesito",
+
       "Hace años que no voy al dentista y quiero un chequeo",
-      "Que me revisen la boca"
+      "Hace mucho que no me reviso la boca",
+      "No sé qué tengo en la boca y quiero que me vean",
+      "Me duele un diente y no sé qué es",
+      "Me duele una muela hace días y no sé qué tengo",
+      "Me duele un diente cuando tomo algo frío",
+      "Me arde el diente cuando tomo agua fría",
+      "Siento sensibilidad en los dientes con lo frío o lo caliente",
+      "Me duele una muela al comer dulce",
+      "Siento molestias al masticar y no sé por qué",
+
+      "Ando con un dolor de muela y no sé qué tengo",
+      "Hace siglos que no voy al dentista",
+      "Quiero que me echen un vistazo a la boca",
+      "Me palpita una muela y quiero saber qué es",
+      "Me duele la muela y no sé si es grave",
+      "Quiero un chequeo completo de la boca",
+      "Me da miedo que tenga algo malo en los dientes y quiero que me revisen",
+      "Me arde un diente con el frío y no sé qué es"
     ]
   }
 ]

@@ -18,4 +18,6 @@ Thumbs.db
 # Certificados de alumno regular subidos en desarrollo (datos personales)
 uploads/
 
-app/datos/embeddings_cache.npz
+# app/datos/embeddings_cache.npz  <- NO se ignora a propósito: Vercel no puede construirlo
+# (disco de solo lectura y límite de la API), así que viaja en el repositorio junto con
+# app/datos/procedimientos.json. Regenerar con: python -m scripts.construir_cache

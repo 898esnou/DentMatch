@@ -10,5 +10,32 @@
   {"consulta": "necesito una dentadura", "esperado": "protesis"},
   {"consulta": "hace mucho que no me reviso la boca", "esperado": "evaluacion"},
   {"consulta": "quiero comprar una pizza", "esperado": null},
-  {"consulta": "vendo criptomonedas, escríbeme al whatsapp", "esperado": null}
+  {"consulta": "vendo criptomonedas, escríbeme al whatsapp", "esperado": null},
+
+  {"consulta": "me arde el diente cuando tomo agua fría", "esperado": "evaluacion"},
+  {"consulta": "siento sensibilidad en los dientes con lo helado", "esperado": "evaluacion"},
+  {"consulta": "quiero que me echen un vistazo a la boca", "esperado": "evaluacion"},
+  {"consulta": "hace siglos que no voy al dentista", "esperado": "evaluacion"},
+  {"consulta": "ando con dolor de muela y no sé qué tengo", "esperado": "evaluacion"},
+
+  {"consulta": "se me picó una muela y tengo un hoyo", "esperado": "restauracion"},
+  {"consulta": "se me salió la tapadura", "esperado": "restauracion"},
+  {"consulta": "se me quebró una paleta", "esperado": "restauracion"},
+
+  {"consulta": "tengo mal aliento y los dientes amarillos", "esperado": "limpieza"},
+  {"consulta": "me sangran las encías cuando me cepillo", "esperado": "limpieza"},
+  {"consulta": "tengo los dientes manchados por el café", "esperado": "limpieza"},
+
+  {"consulta": "me quiero sacar la muela del juicio", "esperado": "extraccion"},
+  {"consulta": "necesito sacarme una muela al tiro", "esperado": "extraccion"},
+  {"consulta": "tengo una muela que ya no se puede arreglar", "esperado": "extraccion"},
+
+  {"consulta": "me faltan varias muelas y no puedo masticar", "esperado": "protesis"},
+  {"consulta": "me falta una paleta y se nota al sonreír", "esperado": "protesis"},
+  {"consulta": "quiero una placa pa' los dientes que me faltan", "esperado": "protesis"},
+
+  {"consulta": "necesito un abogado para un divorcio", "esperado": null},
+  {"consulta": "cómo estará el clima mañana", "esperado": null},
+  {"consulta": "quiero arrendar un departamento en Ñuñoa", "esperado": null},
+  {"consulta": "vendo mi auto, tratar por mensaje", "esperado": null}
 ]
