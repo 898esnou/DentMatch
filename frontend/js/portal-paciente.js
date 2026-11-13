@@ -18,6 +18,26 @@ let postulaciones = [];
 let estudiantes = [];
 let filtroActual = "todos";
 const abiertas = new Set(); // ids de solicitudes con sus candidatos desplegados
+let citas = [];
+
+// "Mostrar más / menos": cuántos elementos se ven al inicio en cada lista.
+const LIMITE_ESTUDIANTES = 3;
+const LIMITE_SOLICITUDES = 5;
+const LIMITE_CITAS = 3;
+const expandido = {};
+
+function conVerMas(clave, items, limite, fila) {
+  const visibles = expandido[clave] ? items : items.slice(0, limite);
+  const boton = items.length <= limite ? "" :
+    `<button type="button" class="ver-mas" data-accion="ver-mas" data-lista="${clave}">
+      ${expandido[clave] ? "Mostrar menos" : `Mostrar más (${items.length - limite})`}</button>`;
+  return visibles.map(fila).join("") + boton;
+}
+
+const botonEliminar = (accion, id, etiqueta) =>
+  `<button class="icon-btn" aria-label="${etiqueta}" title="${etiqueta}" data-accion="${accion}" data-id="${id}">
+    <span class="material-symbols-rounded">delete</span>
+  </button>`;
 
 const nombreArea = (clave) => (AREAS.find((a) => a.clave === clave) || {}).nombre || clave;
 const poner = (id, texto) => { document.getElementById(id).textContent = texto; };
@@ -49,7 +69,6 @@ async function cargarPerfil() {
   const datos = await cargar("/api/perfil");
   const comuna = datos.paciente && datos.paciente.comuna;
   poner("perfil-comuna", comuna || "sin definir");
-  poner("zona-activa", comuna || 'define tu comuna en "Editar perfil"');
 }
 
 async function cargarResumen() {
@@ -177,11 +196,17 @@ async function cargarEstudiantes() {
   const aviso = filtroActual === "coincidentes" && !activa
     ? `<p class="empty">Crea una solicitud para ver estudiantes de tu tipo de tratamiento.</p>`
     : `<p class="empty">No hay estudiantes disponibles con ese filtro.</p>`;
-  document.getElementById("lista-estudiantes").innerHTML = estudiantes.length
-    ? estudiantes.map(tarjetaEstudiante).join("")
-    : aviso;
+  avisoEstudiantes = aviso;
+  pintarEstudiantes();
   const n = estudiantes.length;
   poner("contador", `${n} Estudiante${n === 1 ? "" : "s"}`);
+}
+
+let avisoEstudiantes = "";
+function pintarEstudiantes() {
+  document.getElementById("lista-estudiantes").innerHTML = estudiantes.length
+    ? conVerMas("estudiantes", estudiantes, LIMITE_ESTUDIANTES, tarjetaEstudiante)
+    : avisoEstudiantes;
 }
 
 async function solicitar(estudianteId) {
@@ -460,9 +485,12 @@ function botonesPostulacion(p) {
     return `<button class="btn btn--primary btn--sm" data-accion="responder" data-respuesta="aceptar" data-id="${p.id}">Aceptar</button>
             <button class="btn btn--danger-soft btn--sm" data-accion="responder" data-respuesta="rechazar" data-id="${p.id}">Rechazar</button>`;
   }
+  // Aceptada: se puede chatear (también después, para leer el historial) y cancelar si sigue en curso.
+  const chat = p.estado === "Aceptada" ? `<button class="btn btn--outline btn--sm" data-accion="chatear" data-id="${p.id}"><span class="material-symbols-rounded">chat</span> Chatear</button>` : "";
   if (p.estado === "Pendiente" || (p.estado === "Aceptada" && p.solicitud.estado !== "Completada")) {
-    return `<button class="btn btn--outline btn--sm" data-accion="cancelar-postulacion" data-id="${p.id}">Cancelar</button>`;
+    return chat + `<button class="btn btn--outline btn--sm" data-accion="cancelar-postulacion" data-id="${p.id}">Cancelar</button>`;
   }
+  if (chat) return chat;
   return "";
 }
 
@@ -507,6 +535,7 @@ function filaSolicitud(s) {
             Candidatos (${candidatos.length}) <span class="material-symbols-rounded">${desplegada ? "expand_less" : "expand_more"}</span>
           </button>
           ${activa ? `<button class="btn btn--danger-soft btn--sm" data-accion="cancelar-solicitud" data-id="${s.id}">Cancelar</button>` : ""}
+          ${s.estado === "Cancelada" ? botonEliminar("eliminar-solicitud", s.id, "Eliminar solicitud") : ""}
         </div>
       </div>
       ${desplegada ? `<div class="fila__sub">${candidatos.length ? candidatos.map(filaCandidato).join("") : `<p class="vacio">Aún no hay candidatos. Los estudiantes pueden postular o puedes solicitarles atención arriba.</p>`}</div>` : ""}
@@ -518,8 +547,12 @@ async function cargarSolicitudes() {
   // Las solicitudes con postulaciones por responder se muestran desplegadas.
   postulaciones.filter((p) => p.puede_responder).forEach((p) => abiertas.add(p.solicitud.id));
   poner("total-solicitudes", solicitudes.length);
+  pintarSolicitudes();
+}
+
+function pintarSolicitudes() {
   document.getElementById("lista-solicitudes").innerHTML = solicitudes.length
-    ? solicitudes.map(filaSolicitud).join("")
+    ? conVerMas("solicitudes", solicitudes, LIMITE_SOLICITUDES, filaSolicitud)
     : `<p class="vacio">Aún no has publicado solicitudes. Cuéntanos qué necesitas en el recuadro de arriba.</p>`;
 }
 
@@ -539,14 +572,19 @@ function filaCita(c) {
           ${c.notas ? `<p class="fila__texto">${esc(c.notas)}</p>` : ""}
         </div>
         ${c.estado === "Agendada" ? `<button class="btn btn--danger-soft btn--sm" data-accion="cita-cancelar" data-id="${c.id}">Cancelar cita</button>` : ""}
+        ${["Cancelada", "Realizada"].includes(c.estado) ? botonEliminar("eliminar-cita", c.id, "Eliminar cita") : ""}
       </div>
     </div>`;
 }
 
 async function cargarCitas() {
-  const citas = await cargar("/api/citas");
+  citas = await cargar("/api/citas");
+  pintarCitas();
+}
+
+function pintarCitas() {
   document.getElementById("lista-citas").innerHTML = citas.length
-    ? citas.map(filaCita).join("")
+    ? conVerMas("citas", citas, LIMITE_CITAS, filaCita)
     : `<p class="vacio">Aún no tienes citas. Cuando un estudiante acepte tu solicitud, agendará la cita aquí.</p>`;
 }
 
@@ -572,7 +610,7 @@ document.addEventListener("click", (evento) => {
     case "solicitar": return solicitar(id);
     case "candidatos":
       if (abiertas.has(id)) abiertas.delete(id); else abiertas.add(id);
-      document.getElementById("lista-solicitudes").innerHTML = solicitudes.map(filaSolicitud).join("");
+      pintarSolicitudes();
       return;
     case "responder":
       return accion(`/api/postulaciones/${id}/responder`, "POST", { accion: el.dataset.respuesta },
@@ -582,6 +620,17 @@ document.addEventListener("click", (evento) => {
       return;
     case "cancelar-solicitud":
       if (confirm("¿Cancelar esta solicitud? También se cancelarán sus postulaciones y citas.")) accion(`/api/solicitudes/${id}/cancelar`, "POST", undefined, "Solicitud cancelada.");
+      return;
+    case "ver-mas": {
+      const lista = el.dataset.lista;
+      expandido[lista] = !expandido[lista];
+      return { estudiantes: pintarEstudiantes, solicitudes: pintarSolicitudes, citas: pintarCitas }[lista]();
+    }
+    case "eliminar-solicitud":
+      if (confirm("¿Eliminar esta solicitud cancelada? Dejará de aparecer en tu lista.")) accion(`/api/solicitudes/${id}/definitivo`, "DELETE", undefined, "Solicitud eliminada.");
+      return;
+    case "eliminar-cita":
+      if (confirm("¿Eliminar esta cita? Dejará de aparecer en tu lista.")) accion(`/api/citas/${id}/definitivo`, "DELETE", undefined, "Cita eliminada.");
       return;
     case "cita-cancelar":
       if (confirm("¿Cancelar esta cita?")) accion(`/api/citas/${id}`, "PATCH", { estado: "Cancelada" }, "Cita cancelada.");

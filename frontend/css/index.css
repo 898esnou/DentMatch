@@ -20,15 +20,15 @@
 .site-header__brand { display: flex; align-items: center; gap: 16px; }
 .site-header__brand img { height: 46px; width: auto; display: block; }
 .site-header__brand span { font-size: 11px; font-weight: 600; letter-spacing: 1px; color: var(--text-muted); text-transform: uppercase; }
-.site-nav { display: flex; gap: 6px; }
-.site-nav__link { padding: 8px 18px; border-radius: var(--radius-pill); font-size: 13px; font-weight: 600; color: var(--primary); }
-.site-nav__link:hover { background: var(--primary-soft); }
+/* menú igual al de los portales: barra gris con la opción activa en azul */
+.site-nav { display: flex; gap: 4px; padding: 5px; background: var(--panel-bg); border-radius: 14px; }
+.site-nav__link { padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.site-nav__link:hover { background: #fff; }
 .site-nav__link--active { background: var(--primary); color: #fff; }
 .site-nav__link--active:hover { background: var(--primary); }
-.site-header__actions { display: flex; align-items: center; gap: 22px; }
-.site-header__login { font-size: 13px; font-weight: 700; color: var(--primary); }
-.site-header__login:hover { text-decoration: underline; }
-.btn--pill .dot { background: var(--secondary); }
+.site-header__actions { display: flex; align-items: center; gap: 12px; }
+/* «Iniciar Sesión» es un botón como «Registrar», pero en el verde de la paleta de Paciente */
+.site-header__login { background: var(--secondary-dark); color: #fff; }
 
 /* ---------- 3. HERO ---------- */
 .container { max-width: 1180px; }
@@ -36,10 +36,9 @@
 .hero__row { display: flex; justify-content: space-between; align-items: flex-end; gap: 30px; flex-wrap: wrap; margin-top: 16px; }
 .hero__text { max-width: 560px; }
 .hero h1 { font-size: 48px; line-height: 1.02; font-weight: 800; letter-spacing: -1.5px; }
-.hero__lead { margin-top: 12px; font-size: 18px; line-height: 1.4; color: var(--text-muted); }
-.hero__lead:first-of-type { margin-top: 18px; }
-.hero__lead strong { color: var(--primary); }
 .hero__actions { display: flex; gap: 14px; flex-wrap: wrap; }
+/* el botón secundario del hero usa el verde de la paleta de Paciente */
+.hero__actions .btn--outline { background: var(--secondary-dark); color: #fff; border-color: var(--secondary-dark); }
 
 /* ---------- 4. PERFILES ---------- */
 .roles { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 34px 0 60px; }
@@ -51,7 +50,7 @@
   background: var(--secondary-soft); color: var(--secondary-dark); font-size: 11px; font-weight: 700;
 }
 .role__tag--blue { background: var(--primary-soft); color: var(--primary); }
-.role__tag--blue .dot { background: var(--primary); }
+.role__tag--blue .dot, .dot--primary { background: var(--primary); }
 .role h2 { font-size: 16px; margin-bottom: 8px; }
 .role p { font-size: 12px; color: var(--text-muted); }
 .role footer { display: flex; align-items: center; gap: 14px; margin-top: 16px; font-size: 12px; }
@@ -80,6 +79,7 @@ section[id] { scroll-margin-top: 78px; }  /* que la cabecera fija no tape el tí
 .section-head p, .soon-chat p { font-size: 15px; color: var(--text-muted); }
 
 .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.duo--uno { grid-template-columns: 1fr; }
 .panel { padding: 26px 28px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
 .panel h3 { font-size: 20px; letter-spacing: -.3px; }
 .panel p { font-size: 14px; color: var(--text-muted); }
@@ -126,7 +126,7 @@ section[id] { scroll-margin-top: 78px; }  /* que la cabecera fija no tape el tí
   display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; padding: 38px 40px;
   background: linear-gradient(180deg, #f6f8fe, #ecf1fb); border-radius: 28px;
 }
-.soon-chat h2 { margin-top: 16px; }
+.soon-chat h2 { margin-top: 0; }
 
 .subhead { font-size: 22px; letter-spacing: -.4px; margin: 40px 0 16px; }
 .team { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
@@ -145,16 +145,21 @@ section[id] { scroll-margin-top: 78px; }  /* que la cabecera fija no tape el tí
 .skills__stack { font-size: 12px !important; }
 
 /* ---------- 9. RESPONSIVE ---------- */
-@media (max-width: 980px) {
+@media (max-width: 1100px) {
+  /* fila 1: logo y acciones; fila 2: la barra se ajusta a sus opciones (igual que los portales) */
   .site-header { padding: 12px 20px; flex-wrap: wrap; }
-  .site-nav { order: 3; width: 100%; overflow-x: auto; }
+  .site-header__actions { margin-left: auto; }
+  .site-nav { order: 3; width: fit-content; max-width: 100%; overflow-x: auto; margin: 0 auto; }
+  section[id] { scroll-margin-top: 130px; }
+}
+@media (max-width: 980px) {
   .hero h1 { font-size: 38px; }
   .roles, .duo, .soon-chat, .guarantees ul { grid-template-columns: 1fr; }
   .steps, .trust { grid-template-columns: repeat(2, 1fr); }
   .team { grid-template-columns: 1fr; }
-  section[id] { scroll-margin-top: 120px; }
 }
 @media (max-width: 640px) {
+  .site-header { position: static; gap: 12px; }  /* en celular la cabecera de dos filas no queda fija */
   .site-header__brand span { display: none; }
   .hero h1 { font-size: 32px; }
   .steps, .trust { grid-template-columns: 1fr; }

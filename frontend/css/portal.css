@@ -23,8 +23,10 @@
 .portal-nav__link--active:hover { background: var(--primary); }
 
 .portal-actions { display: flex; align-items: center; gap: 14px; }
-.portal-user { display: flex; align-items: center; gap: 10px; }
-.portal-user .avatar { width: 38px; height: 38px; font-size: 13px; }
+.portal-actions .avatar { width: 38px; height: 38px; font-size: 13px; }
+/* el avatar de la cabecera es un botón: abre «Editar mi perfil» (ahí está «Cerrar sesión») */
+.avatar--boton { border: 0; cursor: pointer; font-family: inherit; transition: box-shadow .15s; }
+.avatar--boton:hover, .avatar--boton:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--primary-soft); }
 .btn--sm .material-symbols-rounded { font-size: 16px; }
 
 /* ---------- 2. CONTENEDOR ---------- */
@@ -69,13 +71,15 @@
 /* ---------- 6. RESPONSIVE ---------- */
 @media (max-width: 1100px) {
   .portal-header { flex-wrap: wrap; padding: 12px 20px; }
-  .portal-nav { order: 3; width: 100%; overflow-x: auto; margin: 0; }
+  /* fila 1: logo a la izquierda y acciones a la derecha; fila 2: la barra se ajusta a sus opciones */
+  .portal-actions { margin-left: auto; }
+  .portal-nav { order: 3; width: fit-content; max-width: 100%; overflow-x: auto; margin: 0 auto; }
   .portal-main [id] { scroll-margin-top: 130px; }  /* cabecera de dos filas */
 }
 @media (max-width: 640px) {
   /* en el celular la cabecera de dos filas taparía un cuarto de la pantalla: deja de ser fija */
   .portal-header { position: static; gap: 12px; }
-  .portal-actions { width: 100%; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
+  .portal-actions { width: 100%; margin-left: 0; flex-wrap: wrap; justify-content: space-between; gap: 10px; }
   .profile { padding: 20px 18px; }
   .profile__name { font-size: 22px; }
 }

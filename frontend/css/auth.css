@@ -41,18 +41,12 @@ body[data-rol="paciente"] {
 .side > * { position: relative; z-index: 1; }
 
 .side__brand { display: flex; align-items: center; gap: 12px; }
-.side__brand img { height: 44px; width: 44px; border-radius: var(--radius-md); object-fit: cover; background: #fff; }
+/* solo el diente, sin caja: un borde blanco fino mantiene visible la parte azul sobre el fondo oscuro */
+.side__brand img { height: 48px; width: auto; display: block; filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 0 1px #fff); }
 .side__brand strong { font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
 
 .side__copy { margin: auto 0; }
-.side__copy h2 { font-size: 34px; line-height: 1.15; font-weight: 800; letter-spacing: -.6px; margin: 14px 0 12px; }
-.side__copy p { font-size: 14px; opacity: .85; max-width: 42ch; }
-.tag-light {
-  display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
-  background: rgba(255, 255, 255, .14); border-radius: var(--radius-pill);
-  font-size: 11px; font-weight: 600;
-}
-.tag-light .material-symbols-rounded { font-size: 15px; color: var(--secondary); }
+.side__copy h2 { font-size: 34px; line-height: 1.15; font-weight: 800; letter-spacing: -.6px; }
 
 .side__points { list-style: none; display: grid; gap: 12px; margin-top: 26px; }
 .side__points li {
@@ -62,7 +56,7 @@ body[data-rol="paciente"] {
 }
 .side__points .material-symbols-rounded { color: var(--secondary); font-size: 22px; }
 
-/* El texto del panel cambia según el rol */
+/* El título y los puntos del panel cambian según el rol */
 .side .rol-texto, .side__points li.rol-texto { display: none; }
 body[data-rol="estudiante"] .side .rol-texto[data-para="estudiante"],
 body[data-rol="paciente"] .side .rol-texto[data-para="paciente"] { display: block; }

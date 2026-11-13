@@ -53,9 +53,20 @@ function protegerPagina(rolRequerido) {
   return true;
 }
 
+// 'monserrat canales oportus' -> 'Monserrat Canales Oportus' (de/del/la/y quedan en minúscula).
+const PARTICULAS_NOMBRE = new Set(["de", "del", "la", "las", "los", "y"]);
+function nombrePropio(texto) {
+  return texto.trim().split(/\s+/).map((palabra, i) => {
+    const minuscula = palabra.toLowerCase();
+    if (i > 0 && PARTICULAS_NOMBRE.has(minuscula)) return minuscula;
+    return minuscula.charAt(0).toUpperCase() + minuscula.slice(1);
+  }).join(" ");
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  const nombre = localStorage.getItem("dentmatch_nombre");
-  if (!nombre) return;
+  const guardado = localStorage.getItem("dentmatch_nombre");
+  if (!guardado) return;
+  const nombre = nombrePropio(guardado);
   const partes = nombre.trim().split(/\s+/);
   const valores = {
     nombre,

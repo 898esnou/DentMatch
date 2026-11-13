@@ -5,6 +5,7 @@ Solicitudes clínicas del paciente:
 - GET   /api/solicitudes/{id}
 - PATCH /api/solicitudes/{id}            editar (solo Abierta / En Revisión)
 - POST  /api/solicitudes/{id}/cancelar
+- DELETE /api/solicitudes/{id}/definitivo  eliminar una ya cancelada (deja de aparecer)
 Solo pacientes, y cada uno ve únicamente las suyas. Los estudiantes ven las
 solicitudes abiertas por /api/casos.
 
@@ -13,7 +14,7 @@ lo demás en `solicitud_detalle` (ver app/models.py).
 """
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app import models
@@ -167,3 +168,18 @@ def cancelar_solicitud(
     db.commit()
     db.refresh(s)
     return _out_con_conteo(db, s)
+
+
+@router.delete("/{solicitud_id}/definitivo", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_solicitud_cancelada(
+    solicitud_id: int,
+    usuario: models.Usuario = Depends(require_rol("paciente")),
+    db: Session = Depends(get_db),
+):
+    """Borra de verdad una solicitud cancelada, junto con su detalle, postulaciones y citas."""
+    s = _propia(db, solicitud_id, usuario)
+    if s.estado_api != "Cancelada":
+        raise HTTPException(status_code=409, detail="Solo se pueden eliminar solicitudes canceladas")
+    db.delete(s)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

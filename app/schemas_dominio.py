@@ -275,3 +275,33 @@ class VerificacionEstadoOut(BaseModel):
     vence_el: Optional[date] = None        # fin del semestre del certificado (solo Activo)
     en_gracia: bool = False                # el semestre terminó y corre el plazo para renovar
     acceso_hasta: Optional[date] = None    # último día con acceso mientras está en gracia
+
+
+# ---------- CHAT ----------
+class MensajeIn(BaseModel):
+    contenido: str = Field(..., min_length=1, max_length=1000)
+
+
+class MensajeOut(BaseModel):
+    id: int
+    mio: bool                      # lo escribí yo (se dibuja a la derecha)
+    contenido: str
+    fecha_creacion: datetime
+    leido: bool                    # la otra persona ya lo vio
+
+
+class ConversacionOut(BaseModel):
+    postulacion_id: int
+    solicitud_codigo: str
+    titulo: str
+    otra_parte: ParticipanteOut
+    puede_escribir: bool           # solo con la postulación Aceptada y el tratamiento en curso
+    no_leidos: int
+    ultimo_mensaje: Optional[str] = None
+    ultima_fecha: Optional[datetime] = None
+    se_borra_el: Optional[datetime] = None  # solo si la conversación está cerrada
+
+
+class HiloOut(BaseModel):
+    conversacion: ConversacionOut
+    mensajes: List[MensajeOut]

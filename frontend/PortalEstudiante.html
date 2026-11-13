@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/static/css/portal-estudiante.css" />
   <link rel="stylesheet" href="/static/css/portal-listas.css" />
   <link rel="stylesheet" href="/static/css/perfil-modal.css" />
+  <link rel="stylesheet" href="/static/css/chat.css" />
   <link rel="stylesheet" href="/static/css/verificacion.css" />
 
   <script src="/static/js/session.js"></script>
@@ -26,16 +27,16 @@
   <!-- ============ 1. CABECERA ============ -->
   <header class="portal-header">
     <a href="/estudiante" class="portal-brand">
-      <img src="/static/img/logo-dentmatch.jpg" alt="DentMatch" />
-      <span class="portal-brand__text"><strong>DentMatch</strong><small>Portal del Estudiante</small></span>
+      <img src="/static/img/logo-dentmatch.png" alt="DentMatch" />
+      <span class="portal-brand__text"><small>Portal del Estudiante</small></span>
     </a>
 
     <nav class="portal-nav" aria-label="Navegación principal">
       <a href="/estudiante" class="portal-nav__link portal-nav__link--active">Inicio</a>
-      <a href="#mis-requerimientos" class="portal-nav__link">Mis Requerimientos</a>
       <a href="#casos" class="portal-nav__link">Explorar Pacientes</a>
+      <a href="#mis-requerimientos" class="portal-nav__link">Mis Requerimientos</a>
       <a href="#mis-postulaciones" class="portal-nav__link">Postulaciones</a>
-      <a href="#clinicas" class="portal-nav__link">Clínicas &amp; Boxes</a>
+      <a href="#mensajes" class="portal-nav__link">Mensajes <span class="chat-contador" id="chat-contador" hidden>0</span></a>
     </nav>
 
     <div class="portal-actions">
@@ -46,12 +47,7 @@
         <span class="material-symbols-rounded">notifications</span>
         <span class="badge badge--red" id="badge-notificaciones" hidden>0</span>
       </a>
-      <div class="portal-user">
-        <span class="avatar" data-usuario="iniciales">MR</span>
-        <button type="button" class="btn btn--outline btn--pill btn--sm" data-accion="cerrar-sesion">
-          <span class="material-symbols-rounded">logout</span> Cerrar sesión
-        </button>
-      </div>
+      <button type="button" class="avatar avatar--boton" data-accion="editar-perfil" aria-label="Mi perfil" title="Mi perfil" data-usuario="iniciales">MR</button>
     </div>
   </header>
 
@@ -95,7 +91,6 @@
               <strong class="big"><span id="stat-abiertos">0</span> <span class="unit">abiertos</span></strong>
               <span class="sub"><span id="stat-completados">0</span> completados</span>
             </div>
-            <span class="profile-stat__icon"><span class="material-symbols-rounded">campaign</span></span>
           </div>
         </article>
 
@@ -126,9 +121,7 @@
         <div class="cases__head">
           <div>
             <h2 class="portal-section-title"><span class="material-symbols-rounded">hub</span> Casos Clínicos Disponibles para Asignación</h2>
-            <p class="portal-section-sub">Posibles pacientes para tus procedimientos clínicos</p>
           </div>
-          <span class="chip-tag">Urgentes primero</span>
         </div>
 
         <div class="tabs" id="tabs">
@@ -147,9 +140,8 @@
         <header>
           <div>
             <h3><span class="material-symbols-rounded">calendar_month</span> Mis Clínicas por Ramo</h3>
-            <p class="portal-section-sub">Horarios prácticos asignados e ingresados por ti</p>
           </div>
-          <button type="button" class="btn btn--soft btn--sm" data-accion="nuevo-ramo"><span class="material-symbols-rounded">add</span> Agregar Ramo / Turno</button>
+          <button type="button" class="btn btn--soft btn--sm" data-accion="nuevo-ramo"><span class="material-symbols-rounded">add</span> Agregar Ramo</button>
         </header>
         <!-- La llena portal-estudiante.js -->
         <div id="lista-clinicas"></div>
@@ -183,13 +175,19 @@
       </div>
       <div class="panel__lista" id="lista-citas"></div>
     </section>
+    <!-- ============ MENSAJES (la llena chat.js) ============ -->
+    <section id="mensajes">
+      <h2 class="portal-section-title">Mensajes</h2>
+      <p class="portal-section-sub">Coordina fecha, hora y detalles de la atención con la otra persona.</p>
+      <div id="chat-app"></div>
+    </section>
   </main>
 
   <!-- ============ 4. PIE DE PÁGINA ============ -->
   <footer class="site-footer">
     <div class="site-footer__grid">
       <div class="site-footer__brand">
-        <img src="/static/img/logo-dentmatch.jpg" alt="DentMatch" />
+        <img src="/static/img/logo-dentmatch.png" alt="DentMatch" />
         <p>Proyecto Capstone: plataforma web que conecta pacientes con estudiantes de odontología para acceder a tratamientos dentales más accesibles.</p>
       </div>
       <nav>
@@ -222,5 +220,7 @@
   <script src="/static/js/perfil-modal.js"></script>
   <script src="/static/js/verificacion.js"></script>
   <script src="/static/js/portal-estudiante.js"></script>
+  <script src="/static/js/chat.js"></script>
+  <script src="/static/js/portal-nav.js"></script>
 </body>
 </html>

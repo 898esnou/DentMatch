@@ -6,12 +6,13 @@ Requerimientos clínicos del estudiante (cada uno con su tutor):
 - PATCH  /api/requerimientos/{id}         editar datos
 - POST   /api/requerimientos/{id}/avance  sumar procedimientos realizados (manual)
 - DELETE /api/requerimientos/{id}         cancelar (no se borra: queda 'Cancelado')
+- DELETE /api/requerimientos/{id}/definitivo  eliminar uno ya cancelado (deja de aparecer)
 Solo estudiantes, y cada uno ve únicamente los suyos. Para publicar, editar o
 sumar avance hay que estar verificado; ver y cancelar no lo exige.
 """
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -172,3 +173,21 @@ def cancelar_requerimiento(
     db.commit()
     db.refresh(r)
     return requerimiento_out(r)
+
+
+@router.delete("/{requerimiento_id}/definitivo", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_requerimiento_cancelado(
+    requerimiento_id: int,
+    usuario: models.Usuario = Depends(require_rol("estudiante")),
+    db: Session = Depends(get_db),
+):
+    """Borra de verdad un requerimiento cancelado. Las postulaciones que lo usaban se conservan, sin vínculo."""
+    r = _propio(db, requerimiento_id, usuario)
+    if r.estado != "Cancelado":
+        raise HTTPException(status_code=409, detail="Solo se pueden eliminar requerimientos cancelados")
+    db.query(models.Postulacion).filter(models.Postulacion.requerimiento_id == r.id).update(
+        {models.Postulacion.requerimiento_id: None}, synchronize_session=False
+    )
+    db.delete(r)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -4,11 +4,12 @@ Citas de una postulación aceptada:
 - GET   /api/citas          las mías (?estado=, ?proximas=true)
 - PATCH /api/citas/{id}     el estudiante cambia fecha/lugar/notas o marca Realizada/Cancelada;
                             el paciente solo puede cancelar
+- DELETE /api/citas/{id}/definitivo  el paciente elimina una cita Cancelada o Realizada
 """
 from datetime import timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy.orm import Session, joinedload
 
 from app import models
@@ -144,3 +145,20 @@ def actualizar_cita(
         setattr(c, campo, valor)
     db.commit()
     return cita_out(_base(db).filter(models.Cita.id == cita_id).one())
+
+
+@router.delete("/{cita_id}/definitivo", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_cita_terminada(
+    cita_id: int,
+    usuario: models.Usuario = Depends(require_rol("paciente")),
+    db: Session = Depends(get_db),
+):
+    """Borra de verdad una cita que ya no está agendada (cancelada o realizada)."""
+    c = _filtrar_por_usuario(_base(db), usuario).filter(models.Cita.id == cita_id).first()
+    if c is None:
+        raise HTTPException(status_code=404, detail="Cita no encontrada")
+    if c.estado not in ("Cancelada", "Realizada"):
+        raise HTTPException(status_code=409, detail="Solo se pueden eliminar citas canceladas o realizadas")
+    db.delete(c)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

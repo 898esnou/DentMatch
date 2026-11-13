@@ -29,7 +29,6 @@ body.tema-paciente {
 
 /* ---------- 2. BUSCADOR ---------- */
 .finder { margin-top: 22px; padding: 28px 34px 30px; border-radius: 22px; background: linear-gradient(135deg, #fff 60%, #eafaf6); }
-.finder__top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .finder__title { font-size: 36px; line-height: 1.1; font-weight: 800; letter-spacing: -1px; max-width: 680px; margin: 20px 0 12px; }
 .finder__lead { max-width: 700px; font-size: 14px; color: var(--text-muted); }
 

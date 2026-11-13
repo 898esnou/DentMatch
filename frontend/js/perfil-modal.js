@@ -2,7 +2,8 @@
  * perfil-modal.js
  * ---------------------------------------------------------------------
  * Formulario "Editar mi perfil" para estudiante y paciente.
- * - Cualquier elemento con data-accion="editar-perfil" lo abre.
+ * - Cualquier elemento con data-accion="editar-perfil" lo abre (también el avatar de la cabecera).
+ * - Incluye el botón «Cerrar sesión» (lo atiende session.js).
  * - Al guardar dispara el evento "perfil-actualizado" en document, para
  *   que cada dashboard vuelva a dibujar sus datos.
  * Requiere session.js y api.js cargados antes.
@@ -34,6 +35,7 @@ function crearModalPerfil() {
       <p class="pm__error" role="alert" hidden></p>
       <div class="pm__campos"></div>
       <div class="pm__actions">
+        <button type="button" class="btn btn--danger-soft pm__salir" data-accion="cerrar-sesion">Cerrar sesión</button>
         <button type="button" class="btn btn--ghost" data-pm="cancelar">Cancelar</button>
         <button type="submit" class="btn btn--primary" data-pm="guardar">Guardar cambios</button>
       </div>

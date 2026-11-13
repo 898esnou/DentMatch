@@ -64,6 +64,65 @@ async function cargarPerfil() {
   document.getElementById("estado-verificacion").className = claseEstado(estado);
 }
 
+/* "Mostrar más / menos": muestra solo los primeros `limite` elementos y un botón para el resto. */
+const LIMITE_TAGS_RAMOS = 4;
+const LIMITE_CLINICAS = 3;
+const LIMITE_LISTA = 3;    // casos, requerimientos, postulaciones y citas
+const expandido = {};      // clave de lista -> true si está expandida
+let nombresRamos = [];
+
+// HTML de los primeros `limite` elementos + el botón "Mostrar más / menos" si sobran.
+function conVerMas(clave, items, limite, fila) {
+  const visibles = expandido[clave] ? items : items.slice(0, limite);
+  const boton = items.length <= limite ? "" :
+    `<button type="button" class="ver-mas" data-accion="ver-mas" data-lista="${clave}">
+      ${expandido[clave] ? "Mostrar menos" : `Mostrar más (${items.length - limite})`}</button>`;
+  return visibles.map(fila).join("") + boton;
+}
+
+const tagRamo = (n) => `<span class="chip-tag chip-tag--soft"><span class="dot"></span> ${esc(n)}</span>`;
+const vacio = (texto) => `<p class="vacio">${texto}</p>`;
+
+function pintarTagsRamos() {
+  document.getElementById("tags-ramos").innerHTML = conVerMas("ramos", nombresRamos, LIMITE_TAGS_RAMOS, tagRamo);
+}
+
+function pintarClinicas() {
+  document.getElementById("lista-clinicas").innerHTML = ramos.length
+    ? conVerMas("clinicas", ramos, LIMITE_CLINICAS, tarjetaClinica)
+    : `<p class="empty">Aún no agregas ramos. Usa "Agregar Ramo".</p>`;
+}
+
+function pintarCasos() {
+  document.getElementById("lista-casos").innerHTML = casos.length
+    ? conVerMas("casos", casos, LIMITE_LISTA, filaCaso)
+    : `<p class="empty">No hay casos disponibles con ese filtro.</p>`;
+}
+
+function pintarRequerimientos() {
+  document.getElementById("lista-requerimientos").innerHTML = requerimientos.length
+    ? conVerMas("requerimientos", requerimientos, LIMITE_LISTA, filaRequerimiento)
+    : vacio('Aún no declaras requerimientos. Usa "Declarar requerimiento" e indica tu profesor.');
+}
+
+function pintarPostulaciones() {
+  document.getElementById("lista-postulaciones").innerHTML = postulaciones.length
+    ? conVerMas("postulaciones", postulaciones, LIMITE_LISTA, filaPostulacion)
+    : vacio("Aún no tienes postulaciones. Postula a un caso o espera solicitudes de pacientes.");
+}
+
+function pintarCitas() {
+  document.getElementById("lista-citas").innerHTML = citas.length
+    ? conVerMas("citas", citas, LIMITE_LISTA, filaCita)
+    : vacio("No tienes citas agendadas. Agenda una desde una postulación aceptada.");
+}
+
+// Cada clave de "Mostrar más" sabe cómo volver a dibujar su lista.
+const REPINTAR = {
+  ramos: pintarTagsRamos, clinicas: pintarClinicas, casos: pintarCasos,
+  requerimientos: pintarRequerimientos, postulaciones: pintarPostulaciones, citas: pintarCitas,
+};
+
 async function cargarResumen() {
   const r = await cargar("/api/resumen");
   poner("stat-abiertos", r.requerimientos_abiertos);
@@ -71,9 +130,8 @@ async function cargarResumen() {
   poner("stat-recibidas", r.postulaciones_recibidas);
   poner("stat-citas", r.citas_proximas);
   poner("stat-ramos", r.ramos.length);
-  document.getElementById("tags-ramos").innerHTML = r.ramos
-    .map((n) => `<span class="chip-tag chip-tag--soft"><span class="dot"></span> ${esc(n)}</span>`)
-    .join("");
+  nombresRamos = r.ramos;
+  pintarTagsRamos();
   const badge = document.getElementById("badge-notificaciones");
   badge.textContent = r.notificaciones;
   badge.hidden = !r.notificaciones;
@@ -112,9 +170,7 @@ function filaCaso(c) {
 
 async function cargarCasos() {
   casos = await cargar(`/api/casos${FILTROS[filtroActual]}`);
-  document.getElementById("lista-casos").innerHTML = casos.length
-    ? casos.map(filaCaso).join("")
-    : `<p class="empty">No hay casos disponibles con ese filtro.</p>`;
+  pintarCasos();
 }
 
 async function postular(solicitudId) {
@@ -137,45 +193,70 @@ function tarjetaClinica(c) {
     <div class="clinic">
       <div class="clinic__head">
         <span><span class="clinic__day">${esc(c.dia_semana || "Sin día")}</span> ${esc(c.ramo)}</span>
-        <button class="icon-btn" aria-label="Quitar ramo" title="Quitar ramo" data-accion="borrar-ramo" data-id="${c.id}">
-          <span class="material-symbols-rounded">delete</span>
-        </button>
+        <span class="clinic__acciones">
+          <button class="icon-btn" aria-label="Editar ramo" title="Editar ramo" data-accion="editar-ramo" data-id="${c.id}">
+            <span class="material-symbols-rounded">edit</span>
+          </button>
+          <button class="icon-btn" aria-label="Quitar ramo" title="Quitar ramo" data-accion="borrar-ramo" data-id="${c.id}">
+            <span class="material-symbols-rounded">delete</span>
+          </button>
+        </span>
       </div>
       <p class="hours"><span class="material-symbols-rounded">schedule</span>${esc(horario)}</p>
       <p><span class="material-symbols-rounded">${ICONO_AREA[c.area] || "bookmark"}</span>${esc(c.clinica || nombreArea(c.area))}</p>
-      ${c.tutor ? `<p><span class="material-symbols-rounded">verified_user</span>Tutor: ${esc(c.tutor)}</p>` : ""}
+      ${c.tutor ? `<p><span class="material-symbols-rounded">verified_user</span>Profesor: ${esc(c.tutor)}</p>` : ""}
       ${c.lugar ? `<p><span class="material-symbols-rounded">location_on</span>${esc(c.lugar)}</p>` : ""}
     </div>`;
 }
 
 async function cargarRamos() {
   ramos = await cargar("/api/ramos");
-  document.getElementById("lista-clinicas").innerHTML = ramos.length
-    ? ramos.map(tarjetaClinica).join("")
-    : `<p class="empty">Aún no agregas ramos. Usa "Agregar Ramo / Turno".</p>`;
+  pintarClinicas();
+}
+
+function camposRamo(r = {}) {
+  return [
+    { nombre: "ramo", etiqueta: "Ramo", requerido: true, valor: r.ramo, placeholder: "Endodoncia I" },
+    { nombre: "area", etiqueta: "Área clínica", tipo: "select", opciones: opcionesAreas(), valor: r.area || "otra" },
+    { nombre: "tutor", etiqueta: "Profesor", valor: r.tutor, placeholder: "Prof. Ricardo" },
+    { nombre: "dia_semana", etiqueta: "Día", tipo: "select", valor: r.dia_semana || "",
+      opciones: [{ valor: "", texto: "Sin definir" }, ...DIAS.map((d) => ({ valor: d, texto: d }))] },
+    { nombre: "hora_inicio", etiqueta: "Hora de inicio", tipo: "time", valor: r.hora_inicio },
+    { nombre: "hora_fin", etiqueta: "Hora de término", tipo: "time", valor: r.hora_fin },
+    { nombre: "clinica", etiqueta: "Clínica", valor: r.clinica, placeholder: "Clínica Endodoncia I" },
+    { nombre: "lugar", etiqueta: "Lugar / box", valor: r.lugar, placeholder: "Pabellón Central · Box 08-B" },
+  ];
 }
 
 function abrirNuevoRamo() {
   abrirFormulario({
-    titulo: "Agregar ramo / turno",
-    descripcion: "Registra tu clínica semanal y el tutor a cargo.",
+    titulo: "Agregar ramo",
+    descripcion: "Registra tu clínica semanal y el profesor a cargo.",
     textoBoton: "Agregar ramo",
-    campos: [
-      { nombre: "ramo", etiqueta: "Ramo", requerido: true, placeholder: "Endodoncia I" },
-      { nombre: "area", etiqueta: "Área clínica", tipo: "select", opciones: opcionesAreas(), valor: "otra" },
-      { nombre: "tutor", etiqueta: "Tutor / profesor", placeholder: "Prof. Ricardo" },
-      { nombre: "dia_semana", etiqueta: "Día", tipo: "select",
-        opciones: [{ valor: "", texto: "Sin definir" }, ...DIAS.map((d) => ({ valor: d, texto: d }))] },
-      { nombre: "hora_inicio", etiqueta: "Hora de inicio", tipo: "time" },
-      { nombre: "hora_fin", etiqueta: "Hora de término", tipo: "time" },
-      { nombre: "clinica", etiqueta: "Clínica", placeholder: "Clínica Endodoncia I" },
-      { nombre: "lugar", etiqueta: "Lugar / box", placeholder: "Pabellón Central · Box 08-B" },
-    ],
+    campos: camposRamo(),
     onEnviar: async (valores) => {
       const r = await apiJson("/api/ramos", "POST", valores);
       if (!r.ok) return { ok: false, error: textoDeError(r) };
       mostrarAviso("Ramo agregado.");
       await Promise.all([cargarRamos(), cargarResumen()]);
+      return { ok: true };
+    },
+  });
+}
+
+function abrirEditarRamo(id) {
+  const ramo = ramos.find((r) => r.id === id);
+  if (!ramo) return;
+  abrirFormulario({
+    titulo: "Editar ramo",
+    descripcion: "Cambia el horario, la clínica o el profesor.",
+    textoBoton: "Guardar cambios",
+    campos: camposRamo(ramo),
+    onEnviar: async (valores) => {
+      const r = await apiJson(`/api/ramos/${id}`, "PUT", valores);
+      if (!r.ok) return { ok: false, error: textoDeError(r) };
+      mostrarAviso("Ramo actualizado.");
+      await cargarRamos();
       return { ok: true };
     },
   });
@@ -193,7 +274,7 @@ function filaRequerimiento(r) {
           <span class="${claseEstado(r.estado)}">${esc(r.estado)}</span>
           <div class="fila__meta">
             <span>${esc(r.area_nombre)}</span><span>•</span>
-            <span>Tutor: <strong>${esc(r.tutor)}</strong></span>
+            <span>Profesor: <strong>${esc(r.tutor)}</strong></span>
             ${r.catedra ? `<span>•</span><span>${esc(r.catedra)}</span>` : ""}
             ${r.plazo ? `<span>•</span><span>Plazo: ${esc(soloFecha(r.plazo))}</span>` : ""}
             ${r.postulaciones_pendientes ? `<span>•</span><span><strong>${r.postulaciones_pendientes}</strong> postulación(es) pendiente(s)</span>` : ""}
@@ -205,6 +286,12 @@ function filaRequerimiento(r) {
           ${r.cantidad_completada} / ${r.cantidad_requerida}
         </div>
       </div>
+      ${r.estado === "Cancelado" ? `
+      <div class="fila__acciones" style="margin-top:12px">
+        <button class="icon-btn" aria-label="Eliminar requerimiento" title="Eliminar requerimiento" data-accion="eliminar-requerimiento" data-id="${r.id}">
+          <span class="material-symbols-rounded">delete</span>
+        </button>
+      </div>` : ""}
       ${abierto ? `
       <div class="fila__acciones" style="margin-top:12px">
         <button class="btn btn--soft btn--sm" data-accion="avance" data-id="${r.id}">+1 realizado</button>
@@ -216,27 +303,25 @@ function filaRequerimiento(r) {
 
 async function cargarRequerimientos() {
   requerimientos = await cargar("/api/requerimientos");
-  document.getElementById("lista-requerimientos").innerHTML = requerimientos.length
-    ? requerimientos.map(filaRequerimiento).join("")
-    : `<p class="vacio">Aún no declaras requerimientos. Usa "Declarar requerimiento" e indica tu tutor.</p>`;
+  pintarRequerimientos();
 }
 
 function camposRequerimiento(r = {}) {
   return [
     { nombre: "tratamiento", etiqueta: "Tratamiento / procedimiento", requerido: true, valor: r.tratamiento, placeholder: "Endodoncia unirradicular" },
     { nombre: "area", etiqueta: "Área clínica", tipo: "select", opciones: opcionesAreas(), valor: r.area || "otra" },
-    { nombre: "tutor", etiqueta: "Tutor / profesor", requerido: true, valor: r.tutor, placeholder: "Prof. Ricardo" },
+    { nombre: "tutor", etiqueta: "Profesor", requerido: true, valor: r.tutor, placeholder: "Prof. Ricardo" },
     { nombre: "catedra", etiqueta: "Cátedra / asignatura", valor: r.catedra, placeholder: "Odontología Restauradora" },
     { nombre: "cantidad_requerida", etiqueta: "Cantidad requerida", tipo: "number", min: 1, max: 50, valor: r.cantidad_requerida || 1, requerido: true },
     { nombre: "plazo", etiqueta: "Plazo", tipo: "date", valor: r.plazo },
-    { nombre: "detalle", etiqueta: "Detalle clínico", tipo: "textarea", valor: r.detalle, placeholder: "Piezas dentales, tipo de caso, indicaciones del tutor…" },
+    { nombre: "detalle", etiqueta: "Detalle clínico", tipo: "textarea", valor: r.detalle, placeholder: "Piezas dentales, tipo de caso, indicaciones del profesor…" },
   ];
 }
 
 function abrirNuevoRequerimiento() {
   abrirFormulario({
     titulo: "Declarar requerimiento clínico",
-    descripcion: "Indica qué procedimiento debes completar y con qué tutor.",
+    descripcion: "Indica qué procedimiento debes completar y con qué profesor.",
     textoBoton: "Declarar requerimiento",
     campos: camposRequerimiento(),
     onEnviar: async (valores) => {
@@ -275,6 +360,7 @@ function botonesPostulacion(p) {
   } else if (p.estado === "Pendiente") {
     b.push(`<button class="btn btn--outline btn--sm" data-accion="cancelar-postulacion" data-id="${p.id}">Cancelar postulación</button>`);
   } else if (p.estado === "Aceptada") {
+    b.push(`<button class="btn btn--outline btn--sm" data-accion="chatear" data-id="${p.id}"><span class="material-symbols-rounded">chat</span> Chatear</button>`);
     b.push(`<button class="btn btn--primary btn--sm" data-accion="agendar" data-id="${p.id}">Agendar cita</button>`);
     if (p.solicitud.estado !== "Completada") {
       b.push(`<button class="btn btn--soft btn--sm" data-accion="completar" data-id="${p.id}">Tratamiento realizado</button>`);
@@ -296,7 +382,7 @@ function filaPostulacion(p) {
             <span><strong>${esc(p.solicitud.codigo)}</strong></span><span>•</span>
             <span>Paciente: ${esc(p.paciente.nombre)}</span><span>•</span>
             <span>${esc(origen)}</span>
-            ${p.requerimiento ? `<span>•</span><span>Requerimiento: ${esc(p.requerimiento.tratamiento)} (tutor ${esc(p.requerimiento.tutor)})</span>` : ""}
+            ${p.requerimiento ? `<span>•</span><span>Requerimiento: ${esc(p.requerimiento.tratamiento)} (profesor ${esc(p.requerimiento.tutor)})</span>` : ""}
           </div>
           ${p.mensaje ? `<p class="fila__texto">"${esc(p.mensaje)}"</p>` : ""}
         </div>
@@ -307,9 +393,7 @@ function filaPostulacion(p) {
 
 async function cargarPostulaciones() {
   postulaciones = await cargar("/api/postulaciones");
-  document.getElementById("lista-postulaciones").innerHTML = postulaciones.length
-    ? postulaciones.map(filaPostulacion).join("")
-    : `<p class="vacio">Aún no tienes postulaciones. Postula a un caso o espera solicitudes de pacientes.</p>`;
+  pintarPostulaciones();
 }
 
 async function responder(id, accion) {
@@ -348,9 +432,7 @@ function filaCita(c) {
 
 async function cargarCitas() {
   citas = await cargar("/api/citas");
-  document.getElementById("lista-citas").innerHTML = citas.length
-    ? citas.map(filaCita).join("")
-    : `<p class="vacio">No tienes citas agendadas. Agenda una desde una postulación aceptada.</p>`;
+  pintarCitas();
 }
 
 function abrirAgendar(postulacionId) {
@@ -420,7 +502,16 @@ document.addEventListener("click", (evento) => {
     case "cancelar-requerimiento":
       if (confirm("¿Cancelar este requerimiento?")) accion(`/api/requerimientos/${id}`, "DELETE", undefined, "Requerimiento cancelado.", () => Promise.all([cargarRequerimientos(), cargarResumen()]));
       return;
+    case "eliminar-requerimiento":
+      if (confirm("¿Eliminar este requerimiento cancelado? Dejará de aparecer en tu lista.")) accion(`/api/requerimientos/${id}/definitivo`, "DELETE", undefined, "Requerimiento eliminado.", () => Promise.all([cargarRequerimientos(), cargarResumen()]));
+      return;
+    case "ver-mas": {
+      const lista = el.dataset.lista;
+      expandido[lista] = !expandido[lista];
+      return REPINTAR[lista]();
+    }
     case "nuevo-ramo": return abrirNuevoRamo();
+    case "editar-ramo": return abrirEditarRamo(id);
     case "borrar-ramo":
       if (confirm("¿Quitar este ramo?")) accion(`/api/ramos/${id}`, "DELETE", undefined, "Ramo eliminado.", () => Promise.all([cargarRamos(), cargarResumen()]));
       return;

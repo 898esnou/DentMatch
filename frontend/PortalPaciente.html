@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="/static/css/portal-paciente.css" />
   <link rel="stylesheet" href="/static/css/portal-listas.css" />
   <link rel="stylesheet" href="/static/css/perfil-modal.css" />
+  <link rel="stylesheet" href="/static/css/chat.css" />
 
   <script src="/static/js/session.js"></script>
   <script>protegerPagina("paciente");</script>
@@ -25,15 +26,16 @@
   <!-- ============ 1. CABECERA ============ -->
   <header class="portal-header">
     <a href="/paciente" class="portal-brand">
-      <img src="/static/img/logo-dentmatch.jpg" alt="DentMatch" />
+      <img src="/static/img/logo-dentmatch.png" alt="DentMatch" />
       <span class="portal-brand__text"><strong>DentMatch</strong><small>Portal del Paciente</small></span>
     </a>
 
     <nav class="portal-nav" aria-label="Navegación principal">
       <a href="/paciente" class="portal-nav__link portal-nav__link--active">Inicio</a>
+      <a href="#resultados" class="portal-nav__link">Buscar Atención</a>
       <a href="#solicitudes" class="portal-nav__link">Mis Solicitudes</a>
-      <a href="#resultados" class="portal-nav__link">Buscar Atención / Clínicas</a>
       <a href="#mis-citas" class="portal-nav__link">Mis Citas</a>
+      <a href="#mensajes" class="portal-nav__link">Mensajes <span class="chat-contador" id="chat-contador" hidden>0</span></a>
     </nav>
 
     <div class="portal-actions">
@@ -44,12 +46,7 @@
         <span class="material-symbols-rounded">notifications</span>
         <span class="badge" id="badge-notificaciones" hidden>0</span>
       </a>
-      <div class="portal-user">
-        <span class="avatar" data-usuario="iniciales">CS</span>
-        <button type="button" class="btn btn--outline btn--pill btn--sm" data-accion="cerrar-sesion">
-          <span class="material-symbols-rounded">logout</span> Cerrar sesión
-        </button>
-      </div>
+      <button type="button" class="avatar avatar--boton" data-accion="editar-perfil" aria-label="Mi perfil" title="Mi perfil" data-usuario="iniciales">CS</button>
     </div>
   </header>
 
@@ -93,10 +90,6 @@
 
     <!-- ============ 3. BUSCADOR (un solo recuadro, dos modos: consultar / publicar) ============ -->
     <section class="card finder" id="buscador">
-      <div class="finder__top">
-        <span class="chip-tag chip-tag--green"><span class="material-symbols-rounded">auto_awesome</span> Matching Clínico Docente Inteligente</span>
-        <span class="chip-tag chip-tag--soft"><span class="material-symbols-rounded">my_location</span> TU ZONA ACTIVA: <strong id="zona-activa">define tu comuna en "Editar perfil"</strong></span>
-      </div>
       <h2 class="finder__title">¡Hola, <span data-usuario="primer-nombre">Camila</span>! ¿Qué molestia o necesidad dental tienes hoy?</h2>
       <!-- Interruptor de modo: lo controla cambiarModo() en portal-paciente.js -->
       <div class="fila__acciones" id="modo-buscador" role="group" aria-label="¿Qué quieres hacer?" style="margin:12px 0">
@@ -191,7 +184,6 @@
       <h2 class="portal-section-title">Estudiantes Disponibles para tu Caso
         <span class="chip-tag chip-tag--green" id="contador">0 Cupos docentes abiertos</span>
       </h2>
-      <p class="portal-section-sub">Estudiantes de odontología supervisados por sus tutores. Elige para qué solicitud quieres pedir atención.</p>
 
       <div class="fila__acciones" style="margin:12px 0">
         <label class="select-wrap">
@@ -228,13 +220,19 @@
       </div>
       <div class="panel__lista" id="lista-citas"></div>
     </section>
+    <!-- ============ MENSAJES (la llena chat.js) ============ -->
+    <section id="mensajes">
+      <h2 class="portal-section-title">Mensajes</h2>
+      <p class="portal-section-sub">Coordina fecha, hora y detalles de la atención con la otra persona.</p>
+      <div id="chat-app"></div>
+    </section>
   </main>
 
   <!-- ============ 6. PIE DE PÁGINA ============ -->
   <footer class="site-footer">
     <div class="site-footer__grid">
       <div class="site-footer__brand">
-        <img src="/static/img/logo-dentmatch.jpg" alt="DentMatch" />
+        <img src="/static/img/logo-dentmatch.png" alt="DentMatch" />
         <p>Proyecto Capstone: plataforma web que conecta pacientes con estudiantes de odontología para acceder a tratamientos dentales más accesibles.</p>
       </div>
       <nav>
@@ -266,5 +264,7 @@
   <script src="/static/js/formulario-modal.js"></script>
   <script src="/static/js/perfil-modal.js"></script>
   <script src="/static/js/portal-paciente.js"></script>
+  <script src="/static/js/chat.js"></script>
+  <script src="/static/js/portal-nav.js"></script>
 </body>
 </html>

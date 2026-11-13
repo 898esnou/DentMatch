@@ -46,3 +46,8 @@
 .pm__check { flex-direction: row; align-items: center; gap: 10px; }
 .pm__check label { font-size: 13px; font-weight: 600; }
 .pm__hint { font-size: 12px; color: var(--text-muted); }
+
+/* Botón "Mostrar más / menos" de las listas de ambos portales */
+.ver-mas { background: none; border: 0; padding: 4px 8px; font: inherit; font-size: 12px; font-weight: 700; color: var(--primary); cursor: pointer; border-radius: var(--radius-pill); }
+.ver-mas:hover, .ver-mas:focus-visible { background: var(--primary-soft); }
+.clinics .ver-mas, #lista-casos .ver-mas, #lista-estudiantes .ver-mas, .panel__lista .ver-mas { display: block; align-self: center; margin: 4px auto 0; font-size: 13px; }

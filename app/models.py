@@ -4,7 +4,7 @@ Modelos SQLAlchemy que reflejan las tablas de Supabase.
 Tablas del equipo (no se modifican): usuarios, perfil_estudiante, solicitudes,
 catalogo_tratamientos.
 Tablas de este backend: perfil_paciente, ramos_estudiante, requerimientos,
-solicitud_detalle, postulaciones, citas. Se crean solas al arrancar (create_all);
+solicitud_detalle, postulaciones, citas, mensajes. Se crean solas al arrancar (create_all);
 create_all nunca altera una tabla que ya existe.
 """
 from sqlalchemy import (
@@ -314,6 +314,7 @@ class Postulacion(Base):
     estudiante = relationship("Usuario")
     requerimiento = relationship("Requerimiento")
     citas = relationship("Cita", back_populates="postulacion", cascade="all, delete-orphan")
+    mensajes = relationship("Mensaje", back_populates="postulacion", cascade="all, delete-orphan")
 
 
 class Cita(Base):
@@ -335,6 +336,26 @@ class Cita(Base):
     )
 
     postulacion = relationship("Postulacion", back_populates="citas")
+
+
+class Mensaje(Base):
+    """
+    Mensaje del chat de una postulación (la conversación es la postulación).
+    Solo lo ven el paciente y el estudiante de esa postulación. Cuando la conversación
+    se cierra (cancelada o tratamiento terminado) el historial se borra a los 30 días.
+    """
+    __tablename__ = "mensajes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    postulacion_id = Column(
+        Integer, ForeignKey("postulaciones.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    autor_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
+    contenido = Column(Text, nullable=False)
+    fecha_creacion = Column(TIMESTAMP, nullable=False)  # la pone la app (misma hora que el resto)
+    leido_en = Column(TIMESTAMP)  # NULL = la otra persona todavía no lo ve
+
+    postulacion = relationship("Postulacion", back_populates="mensajes")
 
 
 class RetroalimentacionBusqueda(Base):

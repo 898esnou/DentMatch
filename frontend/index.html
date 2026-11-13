@@ -19,7 +19,7 @@
   <!-- ============ 1. CABECERA ============ -->
   <header class="site-header">
     <a href="/" class="site-header__brand">
-      <img src="/static/img/logo-dentmatch.jpg" alt="DentMatch" />
+      <img src="/static/img/logo-dentmatch.png" alt="DentMatch" />
       <span>DentMatch Proyecto Capstone</span>
     </a>
 
@@ -32,8 +32,8 @@
     </nav>
 
     <div class="site-header__actions">
-      <a href="/static/login.html" class="site-header__login">Iniciar Sesión</a>
-      <a href="/registro" class="btn btn--primary btn--pill">Registrar <span class="dot"></span></a>
+      <a href="/static/login.html" class="btn btn--pill site-header__login">Iniciar Sesión</a>
+      <a href="/registro" class="btn btn--primary btn--pill">Registrar</a>
     </div>
   </header>
 
@@ -41,12 +41,9 @@
 
     <div class="container">
     <section class="hero" id="inicio">
-      <span class="pill pill--ai pill--small"><span class="dot"></span> Conectando tus necesidades</span>
       <div class="hero__row">
         <div class="hero__text">
           <h1>Conectamos Pacientes con Futuros Odontólogos</h1>
-          <p class="hero__lead"><strong>Pacientes:</strong> Encuentra costos más accesibles para tus dientes.</p>
-          <p class="hero__lead"><strong>Estudiantes:</strong> Aprueba tus procedimientos clínicos.</p>
         </div>
         <div class="hero__actions">
           <a href="/registro?rol=paciente" class="btn btn--primary btn--lg">
@@ -67,7 +64,7 @@
         <p>Cuéntanos qué necesitas y te conectamos con estudiantes de odontología que realizan procedimientos dentales supervisados, a un costo más accesible para ti.</p>
         <footer>
           <a href="/registro?rol=paciente" class="role__link">Pedir hora de evaluación <span class="material-symbols-rounded">chevron_right</span></a>
-          <a href="#solicitudes" class="role__aside"><span class="dot dot--muted"></span> Cómo funciona</a>
+          <a href="#solicitudes" class="role__aside"><span class="dot"></span> Cómo funciona</a>
         </footer>
       </article>
 
@@ -77,7 +74,7 @@
         <p>Encuentra pacientes que necesitan justo los procedimientos que debes completar, y avanza en tu formación clínica de forma simple y ordenada.</p>
         <footer>
           <a href="/registro?rol=estudiante" class="role__link">Explorar casos disponibles <span class="material-symbols-rounded">chevron_right</span></a>
-          <a href="#estudiantes" class="role__aside"><span class="dot dot--muted"></span> Requisitos para postular</a>
+          <a href="#estudiantes" class="role__aside"><span class="dot dot--primary"></span> Requisitos para postular</a>
         </footer>
       </article>
     </section>
@@ -125,8 +122,8 @@
         <aside class="note card">
           <span class="material-symbols-rounded">auto_awesome</span>
           <div>
-            <strong>Coincidencias con inteligencia artificial <span class="pill pill--small pill--soft">En desarrollo</span></strong>
-            <p>Estamos construyendo un motor que entiende la descripción del paciente, la asocia a un procedimiento y sugiere al estudiante más compatible según procedimiento, comuna y disponibilidad.</p>
+            <strong>Coincidencias con inteligencia artificial</strong>
+            <p>El paciente cuenta qué necesita con sus propias palabras y la IA lo asocia al procedimiento correcto, detecta si es urgente y sugiere a los estudiantes más compatibles según procedimiento, comuna y disponibilidad.</p>
           </div>
         </aside>
       </div>
@@ -181,14 +178,13 @@
       <div class="container">
         <div class="soon-chat card">
           <div>
-            <span class="pill pill--ai pill--small"><span class="dot"></span> Próximamente</span>
-            <h2>Chat de coordinación con moderación</h2>
-            <p>Una vez vinculados, paciente y estudiante podrán conversar dentro de DentMatch para acordar la fecha, la hora y el lugar de la atención, sin salir de la plataforma.</p>
+            <h2>Chat de coordinación</h2>
+            <p>Una vez que el estudiante acepta tu solicitud (o tú aceptas su postulación), ambos pueden conversar dentro de DentMatch para acordar la fecha, la hora y el lugar de la atención, sin salir de la plataforma.</p>
           </div>
           <ul class="checks">
             <li><span class="material-symbols-rounded">check_circle</span> Conversación directa, sin compartir redes sociales personales</li>
-            <li><span class="material-symbols-rounded">check_circle</span> Moderación asistida por IA que detecta spam y contenido inapropiado</li>
-            <li><span class="material-symbols-rounded">check_circle</span> Un entorno pensado para mantener el trato profesional</li>
+            <li><span class="material-symbols-rounded">check_circle</span> Solo conversan las dos personas vinculadas por la postulación</li>
+            <li><span class="material-symbols-rounded">check_circle</span> Por tu privacidad, el historial se elimina 30 días después de cerrada la conversación</li>
           </ul>
         </div>
       </div>
@@ -203,21 +199,11 @@
           <p>DentMatch es una plataforma web que conecta a estudiantes de Odontología que necesitan pacientes para sus procedimientos clínicos, con personas que buscan atención dental más accesible. Es el proyecto de título (Capstone) de Ingeniería Informática de Duoc UC.</p>
         </header>
 
-        <div class="duo">
+        <div class="duo duo--uno">
           <article class="card panel">
             <h3>Cómo surgió la idea</h3>
             <p>El problema lo vivió alguien del propio equipo: una estudiante de Odontología que tuvo que buscar por redes sociales los pacientes que necesitaba para cumplir sus requisitos clínicos. Esas búsquedas son lentas, sin garantía de que el procedimiento calce, y con contactos que cancelan o no se presentan.</p>
             <p>Al mismo tiempo, muchas personas no se atienden por el costo y no saben dónde encontrar atención dental accesible. DentMatch une las dos necesidades en un solo lugar.</p>
-          </article>
-          <article class="card panel">
-            <h3>Por qué se llama así</h3>
-            <p><strong>Dent</strong> viene de dental y <strong>Match</strong> de coincidencia: la idea central es que cada paciente encuentre al estudiante cuyo procedimiento, comuna y disponibilidad coincidan con lo que necesita, y viceversa.</p>
-            <h3 class="panel__sub">Lo que buscamos</h3>
-            <ul class="checks">
-              <li><span class="material-symbols-rounded">check_circle</span> Facilitar que los estudiantes completen su práctica clínica</li>
-              <li><span class="material-symbols-rounded">check_circle</span> Acercar la atención dental a quienes no pueden costearla</li>
-              <li><span class="material-symbols-rounded">check_circle</span> Hacerlo de forma segura, ordenada y confiable</li>
-            </ul>
           </article>
         </div>
 
@@ -253,7 +239,6 @@
             <li>Inteligencia artificial</li>
             <li>Análisis de datos</li>
             <li>Gestión de proyectos ágil</li>
-            <li>Especificación de requisitos (IEEE 830)</li>
           </ul>
           <p class="skills__stack">Construido con Python, FastAPI y Supabase (PostgreSQL), con desarrollo iterativo por épicas, en equipo de tres integrantes.</p>
         </div>
@@ -266,14 +251,14 @@
   <footer class="site-footer">
     <div class="site-footer__grid">
       <div class="site-footer__brand">
-        <img src="/static/img/logo-dentmatch.jpg" alt="DentMatch" />
+        <img src="/static/img/logo-dentmatch.png" alt="DentMatch" />
         <p>Proyecto Capstone: plataforma web que conecta pacientes con estudiantes de odontología para acceder a tratamientos dentales más accesibles.</p>
       </div>
       <nav>
         <h4>PLATAFORMA</h4>
         <a href="#solicitudes">Solicitudes de Pacientes</a>
         <a href="#estudiantes">Estudiantes verificados</a>
-        <a href="#chat">Chat con moderación</a>
+        <a href="#chat">Chat de coordinación</a>
         <a href="#nosotros">Sobre DentMatch</a>
       </nav>
       <nav>

@@ -112,6 +112,16 @@ def test_requerimiento_ajeno_se_rechaza(paciente, estudiante, estudiante2):
     assert r.status_code == 404
 
 
+def test_eliminar_requerimiento_solo_si_esta_cancelado(estudiante, estudiante2):
+    req = estudiante.post("/api/requerimientos", json=REQUERIMIENTO).json()
+    assert estudiante.delete(f"/api/requerimientos/{req['id']}/definitivo").status_code == 409  # abierto
+    estudiante.delete(f"/api/requerimientos/{req['id']}")  # cancelar
+    assert estudiante2.delete(f"/api/requerimientos/{req['id']}/definitivo").status_code == 404  # ajeno
+    assert estudiante.delete(f"/api/requerimientos/{req['id']}/definitivo").status_code == 204
+    assert estudiante.get(f"/api/requerimientos/{req['id']}").status_code == 404
+    assert req["id"] not in [r["id"] for r in estudiante.get("/api/requerimientos").json()]
+
+
 def test_aceptar_rechaza_a_los_demas_y_rechazar_reabre(paciente, estudiante, estudiante2):
     sol = paciente.post("/api/solicitudes", json=SOLICITUD).json()
     p1 = estudiante.post("/api/postulaciones", json={"solicitud_id": sol["id"]}).json()
@@ -204,6 +214,28 @@ def test_paciente_puede_cancelar_su_cita(paciente, estudiante):
     cid = estudiante.post("/api/citas", json={"postulacion_id": p["id"], "fecha_hora": FUTURO}).json()["id"]
     assert paciente.patch(f"/api/citas/{cid}", json={"estado": "Cancelada"}).json()["estado"] == "Cancelada"
     assert estudiante.patch(f"/api/citas/{cid}", json={"lugar": "x"}).status_code == 409
+
+
+def test_paciente_elimina_cita_cancelada_pero_no_agendada(paciente, paciente2, estudiante):
+    sol = paciente.post("/api/solicitudes", json=SOLICITUD).json()
+    p = paciente.post("/api/postulaciones", json={"solicitud_id": sol["id"], "estudiante_id": estudiante.id}).json()
+    estudiante.post(f"/api/postulaciones/{p['id']}/responder", json={"accion": "aceptar"})
+    cid = estudiante.post("/api/citas", json={"postulacion_id": p["id"], "fecha_hora": FUTURO}).json()["id"]
+    assert paciente.delete(f"/api/citas/{cid}/definitivo").status_code == 409  # sigue agendada
+    paciente.patch(f"/api/citas/{cid}", json={"estado": "Cancelada"})
+    assert estudiante.delete(f"/api/citas/{cid}/definitivo").status_code == 403  # solo el paciente
+    assert paciente2.delete(f"/api/citas/{cid}/definitivo").status_code == 404  # ajena
+    assert paciente.delete(f"/api/citas/{cid}/definitivo").status_code == 204
+    assert paciente.get("/api/citas").json() == []
+
+
+def test_paciente_elimina_solicitud_solo_si_esta_cancelada(paciente, paciente2):
+    sol = paciente.post("/api/solicitudes", json=SOLICITUD).json()
+    assert paciente.delete(f"/api/solicitudes/{sol['id']}/definitivo").status_code == 409  # activa
+    paciente.post(f"/api/solicitudes/{sol['id']}/cancelar")
+    assert paciente2.delete(f"/api/solicitudes/{sol['id']}/definitivo").status_code == 404  # ajena
+    assert paciente.delete(f"/api/solicitudes/{sol['id']}/definitivo").status_code == 204
+    assert paciente.get("/api/solicitudes").json() == []
 
 
 def test_resumen_del_estudiante(estudiante, paciente):
