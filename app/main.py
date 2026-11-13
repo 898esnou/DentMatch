@@ -1,8 +1,8 @@
 """
-Aplicación de DentMatch (prototipo personal de Benjamín).
+Aplicación de DentMatch (Proyecto Capstone, Grupo Ockham).
 
-Se conecta a la MISMA base de datos de Supabase que el backend del equipo,
-pero corre en su propio servidor local (puerto 8001).
+Backend FastAPI que se conecta a la base de datos PostgreSQL del equipo en Supabase
+y sirve también el frontend. En desarrollo local corre en el puerto 8001.
 
 Estructura:
 - app/routers/auth.py     -> registro, login, /api/me
@@ -41,7 +41,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="DentMatch (prototipo Benjamín)", lifespan=lifespan)
+app = FastAPI(title="DentMatch", lifespan=lifespan)
 
 # El frontend se sirve desde el mismo origen; solo permitimos orígenes locales.
 app.add_middleware(
