@@ -27,3 +27,33 @@ def test_admin_verifica_estudiantes(client, estudiante_nuevo, paciente):
     estudiante = estudiante_nuevo
     assert admin.patch(f"/api/admin/estudiantes/{estudiante.id}/verificacion", json={"estado": "Otro"}).status_code == 422
     assert admin.patch(f"/api/admin/estudiantes/{paciente.id}/verificacion", json={"estado": "Activo"}).status_code == 404
+
+
+def test_el_admin_ve_datos_y_certificado_de_la_solicitud(client, estudiante_nuevo):
+    """Para revisar una solicitud, la lista trae los datos del estudiante y el estado de su último certificado."""
+    from tests.test_verificacion import PDF_VALIDO
+
+    admin = _crear_admin(client)
+    # Sin certificado todavía.
+    fila = admin.get("/api/admin/estudiantes").json()[0]
+    assert fila["certificado_documento"] is None and fila["certificado_revision"] is None
+    assert fila["fecha_registro"] is not None and fila["universidad"] and fila["rut"]
+
+    r = client.post(
+        "/api/verificacion/certificado",
+        headers=estudiante_nuevo.headers,
+        files={"archivo": ("certificado.pdf", PDF_VALIDO, "application/pdf")},
+    )
+    assert r.status_code == 201
+
+    fila = admin.get("/api/admin/estudiantes?estado=En Verificación").json()[0]
+    assert fila["certificado_documento"] and fila["certificado_tipo"] == "application/pdf"
+    assert fila["certificado_revision"] == "Pendiente" and fila["certificado_fecha"] is not None
+    # El administrador puede abrir el archivo y decidir.
+    assert admin.get(f"/api/admin/estudiantes/{estudiante_nuevo.id}/certificado").status_code == 200
+    r = admin.patch(
+        f"/api/admin/estudiantes/{estudiante_nuevo.id}/verificacion",
+        json={"estado": "Rechazado", "motivo": "No corresponde a Odontología"},
+    )
+    assert r.json()["certificado_revision"] == "Rechazada" and r.json()["certificado_resuelto_por"] == "admin"
+    assert r.json()["certificado_motivo"] == "No corresponde a Odontología"

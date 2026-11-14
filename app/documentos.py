@@ -42,18 +42,23 @@ RUT_MINIMO_EMPRESA = 50_000_000
 
 def normalizar_rut(texto: str) -> str:
     """
-    '12.345.678-5' / '12345678-5' / '123456785' -> '12345678-5'
+    '12.345.678-5' / '12345678-5' / '123456785' -> '12.345.678-5' (formato en que se guarda)
     Lanza ValueError si el formato es inválido o el dígito verificador no coincide.
     """
     limpio = re.sub(r"[.\s-]", "", (texto or "")).upper()
     if not re.fullmatch(r"\d{7,8}[0-9K]", limpio):
-        raise ValueError("El RUT no tiene un formato válido (ejemplo: 12345678-5)")
+        raise ValueError("El RUT no tiene un formato válido (ejemplo: 12.345.678-5)")
     cuerpo, dv = limpio[:-1], limpio[-1]
     if _calcular_dv(cuerpo) != dv:
         raise ValueError("El RUT no es válido: el dígito verificador no coincide")
     if int(cuerpo) >= RUT_MINIMO_EMPRESA:
         raise ValueError("Ese RUT corresponde a una empresa: ingresa el RUT personal de una persona natural")
-    return f"{cuerpo}-{dv}"
+    return formatear_rut(cuerpo, dv)
+
+
+def formatear_rut(cuerpo: str, dv: str) -> str:
+    """'12345678', '5' -> '12.345.678-5'."""
+    return f"{int(cuerpo):,}".replace(",", ".") + f"-{dv}"
 
 
 def normalizar_documento_extranjero(texto: str) -> str:
@@ -79,11 +84,11 @@ def normalizar_documento(tipo: str, texto: str) -> str:
 
 def variantes_guardadas(documento: str) -> List[str]:
     """
-    Formas en que ese mismo documento pudo haberse guardado antes (los registros
-    antiguos pueden tener puntos: '12.345.678-5'). Sirve para detectar duplicados.
+    Formas en que ese mismo documento pudo haberse guardado antes de estandarizar el formato
+    (los registros antiguos pueden venir sin puntos o sin guion). Sirve para detectar duplicados.
     """
     if documento.startswith(PREFIJO_EXTRANJERO):
         return [documento]
-    cuerpo, dv = documento.split("-")
-    con_puntos = f"{int(cuerpo):,}".replace(",", ".") + f"-{dv}"
-    return [documento, con_puntos]
+    limpio = re.sub(r"[.\s-]", "", documento).upper()
+    cuerpo, dv = limpio[:-1], limpio[-1]
+    return [formatear_rut(cuerpo, dv), f"{cuerpo}-{dv}", limpio]

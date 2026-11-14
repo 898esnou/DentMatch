@@ -15,6 +15,9 @@ os.environ["SECRET_KEY"] = "clave-solo-para-tests"
 os.environ["UPLOADS_DIR"] = tempfile.mkdtemp(prefix="dentmatch-tests-")
 os.environ.pop("SUPABASE_URL", None)
 os.environ.pop("SUPABASE_SERVICE_ROLE_KEY", None)
+# La moderación con IA nunca llama a Gemini en los tests (solo reglas y una IA simulada).
+os.environ["MODERACION_IA"] = "0"
+os.environ.pop("GEMINI_API_KEY_MODERACION", None)
 
 import dotenv  # noqa: E402
 

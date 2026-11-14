@@ -9,12 +9,14 @@ Con ?solicitud_id=X, mi_postulacion_estado indica si ya lo solicité para esa so
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app import models
 from app.auth import require_rol
 from app.catalogos import AREAS
 from app.database import get_db
+from app.sanciones import cuenta_activa
 from app.schemas_dominio import EstudianteOut, RequerimientoResumen
 from app.utils import nombre_corto
 
@@ -96,9 +98,12 @@ def listar_estudiantes(
     consulta = (
         db.query(models.Usuario)
         .join(models.PerfilEstudiante, models.PerfilEstudiante.usuario_id == models.Usuario.id)
+        .outerjoin(models.EstadoCuenta, models.EstadoCuenta.usuario_id == models.Usuario.id)
         .filter(
             models.Usuario.rol == "estudiante",
             models.PerfilEstudiante.estado_verificacion == "Activo",
+            # Los baneados o en time-out no aparecen para los pacientes.
+            or_(models.EstadoCuenta.estado.is_(None), models.EstadoCuenta.estado == "activo"),
         )
     )
     # Los pacientes solo ven estudiantes verificados (estado 'Activo').
@@ -132,6 +137,7 @@ def ver_estudiante(
     if (
         e is None or e.rol != "estudiante" or e.perfil_estudiante is None
         or e.perfil_estudiante.estado_verificacion != "Activo"
+        or not cuenta_activa(db, e.id)
     ):
         raise HTTPException(status_code=404, detail="Estudiante no encontrado")
     estados = _estados_para_solicitud(db, usuario, solicitud_id)

@@ -4,7 +4,8 @@ Puntaje de coincidencia entre un paciente y un estudiante (Historia 003 del back
 Combina tres variables, cada una entre 0 y 1:
   - procedimiento: qué tan parecida es la consulta al procedimiento que el estudiante
     necesita realizar (viene de la búsqueda semántica),
-  - ubicación: si el estudiante atiende en la comuna del paciente,
+  - ubicación: 1 si el estudiante atiende en la comuna del paciente y menos mientras más
+    comunas los separan (0,6 / 0,4 / mínimo 0,3; ver app/comunas.py),
   - disponibilidad: si coinciden los días y turnos que ambos declaran.
 
 Cuando falta un dato (comuna "Por definir", disponibilidad vacía) no se premia ni se
@@ -17,10 +18,17 @@ import re
 import unicodedata
 from typing import List, Optional, Set, Tuple
 
+from app.comunas import saltos_entre
+
 PESO_PROCEDIMIENTO = 0.5
 PESO_UBICACION = 0.3
 PESO_DISPONIBILIDAD = 0.2
 NEUTRO = 0.5
+# Puntaje de ubicación según cuántas comunas separan al paciente del estudiante.
+# Nunca baja de PUNTAJE_MINIMO_UBICACION cuando ambas comunas están informadas.
+PUNTAJE_POR_SALTOS = {0: 1.0, 1: 0.6, 2: 0.4}
+PUNTAJE_MINIMO_UBICACION = 0.3
+PUNTAJE_CERCANA = 0.4   # desde este puntaje se considera una comuna cercana
 POR_PAGINA = 10
 
 DIAS = ("lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo")
@@ -40,11 +48,14 @@ def normalizar(texto: Optional[str]) -> str:
 
 # ------------------------------------------------------------------ ubicación
 def puntaje_ubicacion(comuna_paciente: Optional[str], comuna_estudiante: Optional[str]) -> Optional[float]:
-    """1.0 si es la misma comuna, 0.0 si son distintas, None si falta alguno de los datos."""
+    """1.0 misma comuna, 0.6 vecina, 0.4 a dos comunas, 0.3 más lejos; None si falta algún dato."""
     a, b = normalizar(comuna_paciente), normalizar(comuna_estudiante)
     if a in _COMUNA_SIN_DATO or b in _COMUNA_SIN_DATO:
         return None
-    return 1.0 if a == b else 0.0
+    saltos = saltos_entre(a, b)
+    if saltos is None:          # muy lejos o comuna que no está en la tabla
+        return PUNTAJE_MINIMO_UBICACION
+    return PUNTAJE_POR_SALTOS.get(saltos, PUNTAJE_MINIMO_UBICACION)
 
 
 # ------------------------------------------------------------------ disponibilidad
@@ -125,6 +136,8 @@ def motivos_de_coincidencia(
         motivos.append(f"Necesita pacientes de {nombre_area}")
     if ubicacion == 1.0:
         motivos.append("Atiende en tu comuna")
+    elif ubicacion is not None and ubicacion >= PUNTAJE_CERCANA:
+        motivos.append("Atiende en una comuna cercana")
     if disponibilidad is not None and disponibilidad >= 0.5:
         motivos.append("Su disponibilidad coincide con la tuya")
     return motivos

@@ -79,7 +79,7 @@ class RequerimientoOut(BaseModel):
 # ---------- SOLICITUDES (paciente) ----------
 class SolicitudIn(BaseModel):
     titulo: str = Field(..., min_length=3, max_length=200)
-    descripcion: str = Field(..., min_length=10)
+    descripcion: str = Field(..., min_length=10, max_length=500)
     area: Area = "diagnostico"
     urgente: bool = False
     comuna: Optional[str] = Field(None, max_length=100)
@@ -90,7 +90,7 @@ class SolicitudIn(BaseModel):
 
 class SolicitudUpdate(BaseModel):
     titulo: Optional[str] = Field(None, min_length=3, max_length=200)
-    descripcion: Optional[str] = Field(None, min_length=10)
+    descripcion: Optional[str] = Field(None, min_length=10, max_length=500)
     area: Optional[Area] = None
     urgente: Optional[bool] = None
     comuna: Optional[str] = Field(None, max_length=100)
@@ -256,6 +256,13 @@ class EstudianteAdminOut(BaseModel):
     ano_carrera: int
     estado_verificacion: Optional[str] = None
     certificado_documento: Optional[str] = None
+    # Para revisar la solicitud con todo a la vista (datos + último certificado).
+    fecha_registro: Optional[datetime] = None
+    certificado_fecha: Optional[datetime] = None
+    certificado_tipo: Optional[str] = None
+    certificado_revision: Optional[str] = None   # 'Pendiente' | 'Aprobada' | 'Rechazada'
+    certificado_resuelto_por: Optional[str] = None  # 'sistema' | 'admin'
+    certificado_motivo: Optional[str] = None
 
 
 class VerificacionIn(BaseModel):
@@ -300,8 +307,112 @@ class ConversacionOut(BaseModel):
     ultimo_mensaje: Optional[str] = None
     ultima_fecha: Optional[datetime] = None
     se_borra_el: Optional[datetime] = None  # solo si la conversación está cerrada
+    cerrada_por_moderacion: bool = False
+    mensaje_cierre: Optional[str] = None    # explicación para quien no fue sancionado
+    archivada: bool = False                 # una de las dos personas la archivó (solo lectura, se puede reabrir)
+    archivada_por_mi: bool = False          # la archivé yo: solo yo puedo reabrirla
 
 
 class HiloOut(BaseModel):
     conversacion: ConversacionOut
     mensajes: List[MensajeOut]
+    puede_reportar: bool = False                 # ya hay suficientes mensajes y no reporté aún
+    aviso_moderacion: Optional[str] = None       # recordatorio de "Reportar" tras un mensaje bloqueado
+
+
+class ReporteIn(BaseModel):
+    motivo: str = Field(..., min_length=5, max_length=500)
+
+
+class ReporteCreadoOut(BaseModel):
+    id: int
+    mensaje: str
+
+
+# ---------- AVISOS ----------
+class AvisoOut(BaseModel):
+    id: int
+    texto: str
+    fecha: datetime
+
+
+# ---------- ADMIN: MODERACIÓN ----------
+DecisionReporte = Literal["baneo", "suspension", "descartar"]
+
+
+class DecisionIn(BaseModel):
+    decision: DecisionReporte
+    dias: Optional[int] = Field(None, ge=1, le=90)        # solo para "suspension"
+    mensaje: Optional[str] = Field(None, max_length=300)  # lo verá la persona sancionada
+    nota: Optional[str] = Field(None, max_length=500)     # nota interna, solo la ven los admin
+
+
+class PersonaAdminOut(BaseModel):
+    id: int
+    nombre: str
+    rol: str
+    estado_cuenta: str                       # activo | suspendido | baneado
+    advertencias: int                        # advertencias vigentes (últimos 30 días)
+
+
+class ReporteListaOut(BaseModel):
+    id: int
+    origen: str                              # usuario | automatico
+    estado: str                              # Pendiente | Resuelto
+    decision: Optional[str] = None
+    motivo: str
+    fecha_creacion: datetime
+    reportado: PersonaAdminOut
+    reportante: Optional[str] = None         # nombre de quien reportó (None si es automático)
+
+
+class MensajeEvidenciaOut(BaseModel):
+    de_reportado: bool
+    autor: str
+    contenido: str
+    fecha: datetime
+
+
+class BloqueadoEvidenciaOut(BaseModel):
+    contenido: str
+    categoria: str
+    fuente: str                              # reglas | ia
+    fecha: datetime
+
+
+class ResolucionOut(BaseModel):
+    decision: str
+    nota: Optional[str] = None
+    dias: Optional[int] = None
+    resuelto_por: Optional[str] = None
+    fecha: Optional[datetime] = None
+
+
+class ReporteDetalleOut(ReporteListaOut):
+    otra_persona: Optional[str] = None       # la contraparte en la conversación
+    conversacion: Optional[str] = None       # título de la solicitud
+    reportes_previos: int = 0                # otros reportes contra la misma persona
+    mensajes: List[MensajeEvidenciaOut] = []
+    bloqueados: List[BloqueadoEvidenciaOut] = []
+    resolucion: Optional[ResolucionOut] = None
+
+
+class CuentaAdminOut(BaseModel):
+    id: int
+    nombre_completo: str
+    correo: str
+    rol: str
+    estado_cuenta: str
+    suspendido_hasta: Optional[datetime] = None
+    motivo: Optional[str] = None
+    advertencias: int
+    reportes_recibidos: int
+
+
+class ResumenAdminOut(BaseModel):
+    reportes_pendientes: int
+    reportes_automaticos_pendientes: int
+    reportes_resueltos_30d: int
+    cuentas_baneadas: int
+    cuentas_suspendidas: int
+    verificaciones_pendientes: int

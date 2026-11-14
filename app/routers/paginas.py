@@ -1,6 +1,6 @@
 """
 Rutas que sirven las páginas HTML. El index (/) es para visitantes; cada rol
-tiene su portal (/paciente, /estudiante). La protección real (token + rol)
+tiene su portal (/paciente, /estudiante) y los administradores el panel /admin. La protección real (token + rol)
 la hace la API.
 """
 from fastapi import APIRouter
@@ -37,3 +37,8 @@ def portal_paciente():
 @router.get("/estudiante")
 def portal_estudiante():
     return _pagina("frontend/PortalEstudiante.html")
+
+
+@router.get("/admin")
+def panel_admin():
+    return _pagina("frontend/Admin.html")

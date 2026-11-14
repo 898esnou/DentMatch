@@ -21,6 +21,7 @@ from app import models
 from app.auth import exigir_estudiante_verificado, require_estudiante_verificado, require_rol
 from app.catalogos import ESTADOS_POSTULACION
 from app.database import get_db
+from app.sanciones import cuenta_activa
 from app.routers.requerimientos import marcar_completado_si_corresponde
 from app.schemas_dominio import (
     ParticipanteOut, PostulacionIn, PostulacionOut, RequerimientoResumen, RespuestaIn,
@@ -102,6 +103,9 @@ def iniciar_postulacion(
             raise HTTPException(status_code=404, detail="Estudiante no encontrado")
         if estudiante.perfil_estudiante.estado_verificacion != "Activo":
             raise HTTPException(status_code=409, detail="Este estudiante todavía no está verificado")
+
+    if not cuenta_activa(db, estudiante.id) or not cuenta_activa(db, solicitud.paciente_id):
+        raise HTTPException(status_code=409, detail="Esta persona ya no está disponible en la plataforma")
 
     if not solicitud.abierta:
         raise HTTPException(status_code=409, detail=f"La solicitud está {solicitud.estado_api.lower()}")

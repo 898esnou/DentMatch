@@ -32,6 +32,9 @@
         <div class="rol-texto" data-para="paciente">
           <h2>Atención dental supervisada, cerca de ti.</h2>
         </div>
+        <div class="rol-texto" data-para="admin">
+          <h2>Panel de administración.</h2>
+        </div>
 
         <ul class="side__points">
           <li class="rol-texto" data-para="estudiante"><span class="material-symbols-rounded">task_alt</span> Avance de requerimientos clínicos</li>
@@ -40,6 +43,9 @@
           <li class="rol-texto" data-para="paciente"><span class="material-symbols-rounded">search</span> Describe tu necesidad con tus palabras</li>
           <li class="rol-texto" data-para="paciente"><span class="material-symbols-rounded">verified</span> Estudiantes verificados y supervisados</li>
           <li class="rol-texto" data-para="paciente"><span class="material-symbols-rounded">forum</span> Chatear y coordinar desde un solo lugar</li>
+          <li class="rol-texto" data-para="admin"><span class="material-symbols-rounded">flag</span> Revisa reportes y decide con la evidencia</li>
+          <li class="rol-texto" data-para="admin"><span class="material-symbols-rounded">school</span> Verifica certificados de estudiantes</li>
+          <li class="rol-texto" data-para="admin"><span class="material-symbols-rounded">shield_person</span> Cuida la convivencia en la plataforma</li>
         </ul>
       </div>
     </aside>
@@ -86,8 +92,11 @@
             <button type="submit" class="btn btn--accent" id="boton-enviar">Iniciar sesión</button>
           </form>
 
-          <p class="alt-link">
+          <p class="alt-link" id="texto-registro">
             ¿Aún no tienes cuenta? <a href="/registro" id="enlace-registro">Crea una aquí</a>
+          </p>
+          <p class="alt-link alt-link--admin">
+            <a href="/login?rol=admin" id="enlace-admin"><span class="material-symbols-rounded">admin_panel_settings</span> Acceso administración</a>
           </p>
         </div>
       </div>

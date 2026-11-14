@@ -105,6 +105,7 @@ function abrirFormulario(config) {
     }
     control.id = `f-${c.nombre}`;
     control.name = c.nombre;
+    if (c.maxlength && ["text", "textarea", undefined].includes(c.tipo)) control.maxLength = c.maxlength;
     if (c.placeholder) control.placeholder = c.placeholder;
     if (c.tipo === "checkbox") control.checked = Boolean(c.valor);
     else if (c.valor !== undefined && c.valor !== null) control.value = c.valor;

@@ -115,9 +115,9 @@
                   <label for="rut" id="etiqueta-documento">RUT</label>
                   <div class="input-icon">
                     <span class="material-symbols-rounded">badge</span>
-                    <input type="text" id="rut" name="rut" placeholder="12345678-5" autocomplete="off" required />
+                    <input type="text" id="rut" name="rut" placeholder="12.345.678-5" maxlength="12" autocomplete="off" required />
                   </div>
-                  <span class="texto-ayuda" id="ayuda-documento">Con dígito verificador, con o sin puntos.</span>
+                  <span class="texto-ayuda" id="ayuda-documento">Escribe solo números y el dígito verificador; los puntos y el guion se agregan solos.</span>
                 </div>
 
                 <div class="campo">
@@ -160,6 +160,11 @@
                     <input type="number" id="ano_carrera" name="ano_carrera" min="4" max="7" placeholder="Mínimo 4" />
                     <span class="texto-ayuda">Solo estudiantes de 4to año en adelante</span>
                   </div>
+                </div>
+                <div class="campo" style="margin-top:14px">
+                  <label for="certificado">Certificado de alumno regular</label>
+                  <input type="file" id="certificado" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/png,image/jpeg" />
+                  <span class="texto-ayuda">PDF, JPG o PNG, máximo 5 MB. Un administrador lo revisa antes de activar tu perfil.</span>
                 </div>
               </div>
 

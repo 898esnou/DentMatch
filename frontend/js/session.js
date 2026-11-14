@@ -17,6 +17,7 @@
 const DESTINO_TRAS_LOGIN = {
   estudiante: "/estudiante",
   paciente: "/paciente",
+  admin: "/admin",
 };
 
 function guardarSesion(data) {
@@ -51,6 +52,31 @@ function protegerPagina(rolRequerido) {
     return false;
   }
   return true;
+}
+
+/**
+ * Cuadro de diálogo para una cuenta suspendida o baneada por la moderación.
+ * texto: lo que explica el servidor. alCerrar: qué hacer al pulsar "Entendido"
+ * (en un portal, cerrar la sesión; en el login, solo cerrar el cuadro).
+ */
+function mostrarCuentaSuspendida(texto, alCerrar) {
+  if (document.getElementById("cuenta-suspendida")) return;   // ya está a la vista
+  const dialogo = document.createElement("dialog");
+  dialogo.id = "cuenta-suspendida";
+  dialogo.className = "suspension";
+  dialogo.innerHTML = `
+    <div class="suspension__icono"><span class="material-symbols-rounded">shield_person</span></div>
+    <h2 class="suspension__titulo">Cuenta suspendida</h2>
+    <p class="suspension__texto"></p>
+    <p class="suspension__nota">Cuidar el trato respetuoso entre estudiantes y pacientes es parte
+      fundamental de DentMatch. Si crees que se trata de un error, un administrador podrá revisarlo.</p>
+    <button type="button" class="btn btn--primary suspension__boton">Entendido</button>`;
+  dialogo.querySelector(".suspension__texto").textContent = texto;
+  const cerrar = () => { dialogo.close(); dialogo.remove(); if (alCerrar) alCerrar(); };
+  dialogo.querySelector(".suspension__boton").addEventListener("click", cerrar);
+  dialogo.addEventListener("cancel", (e) => { e.preventDefault(); cerrar(); });  // tecla Esc
+  document.body.appendChild(dialogo);
+  dialogo.showModal();
 }
 
 // 'monserrat canales oportus' -> 'Monserrat Canales Oportus' (de/del/la/y quedan en minúscula).

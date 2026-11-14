@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DentMatch · Administración</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/static/css/tokens.css" />
+  <link rel="stylesheet" href="/static/css/components.css" />
+  <link rel="stylesheet" href="/static/css/portal.css" />
+  <link rel="stylesheet" href="/static/css/portal-listas.css" />
+  <link rel="stylesheet" href="/static/css/perfil-modal.css" />
+  <link rel="stylesheet" href="/static/css/admin.css" />
+
+  <script src="/static/js/session.js"></script>
+  <script>protegerPagina("admin");</script>
+</head>
+<body>
+
+  <header class="portal-header">
+    <a href="/admin" class="portal-brand">
+      <img src="/static/img/logo-dentmatch.png" alt="DentMatch" />
+      <span class="portal-brand__text"><small>Administración</small></span>
+    </a>
+    <div class="portal-actions" style="margin-left: auto;">
+      <span class="admin-usuario">
+        <span class="avatar" data-usuario="iniciales">AD</span>
+        <span data-usuario="nombre">Administrador</span>
+      </span>
+      <button type="button" class="btn btn--ghost btn--sm" data-accion="cerrar-sesion">
+        <span class="material-symbols-rounded">logout</span> Cerrar sesión
+      </button>
+    </div>
+  </header>
+
+  <div class="admin">
+    <nav class="admin__menu" aria-label="Secciones del panel">
+      <button type="button" class="admin__link" data-seccion="reportes">
+        <span class="material-symbols-rounded">flag</span> Reportes
+        <span class="admin__contador admin__contador--rojo" id="cnt-reportes" hidden>0</span>
+      </button>
+      <button type="button" class="admin__link" data-seccion="verificaciones">
+        <span class="material-symbols-rounded">school</span> Verificaciones
+        <span class="admin__contador admin__contador--ambar" id="cnt-verificaciones" hidden>0</span>
+      </button>
+      <button type="button" class="admin__link" data-seccion="cuentas">
+        <span class="material-symbols-rounded">group</span> Cuentas
+      </button>
+      <button type="button" class="admin__link" data-seccion="resumen">
+        <span class="material-symbols-rounded">bar_chart</span> Resumen
+      </button>
+    </nav>
+
+    <main class="admin__contenido" id="admin-contenido" aria-live="polite"></main>
+  </div>
+
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/utils.js"></script>
+  <script src="/static/js/formulario-modal.js"></script>
+  <script src="/static/js/admin.js"></script>
+</body>
+</html>

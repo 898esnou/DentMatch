@@ -26,7 +26,9 @@ if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
         poolclass=StaticPool,
     )
 else:
-    engine = create_engine(SQLALCHEMY_DATABASE_URL)
+    # pool_pre_ping: el pooler de Supabase cierra las conexiones inactivas; así la app las comprueba
+    # antes de usarlas y no falla la primera petición tras un rato sin tráfico (típico en Vercel).
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 

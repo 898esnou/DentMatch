@@ -23,6 +23,15 @@ async function apiFetch(ruta, opciones = {}) {
     headers: { ...(opciones.headers || {}), Authorization: `Bearer ${obtenerToken()}` },
   });
   if (respuesta.status === 401) cerrarSesion();
+  if (respuesta.status === 403) {
+    // Cuenta suspendida o baneada por la moderación: se explica y se cierra la sesión.
+    try {
+      const { detail } = await respuesta.clone().json();
+      if (typeof detail === "string" && /suspendida/i.test(detail)) {
+        mostrarCuentaSuspendida(detail, cerrarSesion);
+      }
+    } catch (e) { /* respuesta sin JSON */ }
+  }
   return respuesta;
 }
 

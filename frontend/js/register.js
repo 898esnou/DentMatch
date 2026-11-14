@@ -17,6 +17,8 @@ const inputRolElegido = document.getElementById("rol-elegido");
 const seccionEstudiante = document.getElementById("seccion-estudiante");
 const campoUniversidad = document.getElementById("universidad");
 const campoAnoCarrera = document.getElementById("ano_carrera");
+const campoCertificado = document.getElementById("certificado"); // sin "name": se sube aparte, tras crear la cuenta
+const TAMANO_MAXIMO_CERTIFICADO = 5 * 1024 * 1024;
 
 const selectTipoDocumento = document.getElementById("tipo_documento");
 const campoDocumento = document.getElementById("rut");
@@ -52,6 +54,7 @@ function elegirRol(rol) {
   // Si NO es estudiante, esos campos no deben ser obligatorios ni enviarse
   campoUniversidad.required = esEstudiante;
   campoAnoCarrera.required = esEstudiante;
+  campoCertificado.required = esEstudiante;
 }
 
 botonRolEstudiante.addEventListener("click", () => elegirRol("estudiante"));
@@ -106,6 +109,14 @@ function validarFormulario() {
     return "Los estudiantes deben estar cursando 4to año o superior.";
   }
 
+  if (rol === "estudiante") {
+    const archivo = campoCertificado.files[0];
+    if (!archivo) return "Adjunta tu certificado de alumno regular (PDF, JPG o PNG).";
+    if (!/\.(pdf|jpe?g|png)$/i.test(archivo.name)) return "Formato no permitido: sube un PDF, JPG o PNG.";
+    if (archivo.size > TAMANO_MAXIMO_CERTIFICADO) return "El certificado supera los 5 MB.";
+    if (archivo.size === 0) return "El archivo del certificado está vacío.";
+  }
+
   return null; // null significa "sin errores"
 }
 
@@ -118,15 +129,45 @@ function ocultarError() {
   cajaMensajeError.classList.add("oculto");
 }
 
+// El RUT se va escribiendo con formato (12.345.678-5); el documento extranjero se deja tal cual.
+activarFormatoRut(campoDocumento, () => selectTipoDocumento.value === "rut");
+
 // Cambia las etiquetas según el tipo de documento elegido.
 selectTipoDocumento.addEventListener("change", () => {
   const esExtranjero = selectTipoDocumento.value === "extranjero";
   document.getElementById("etiqueta-documento").textContent = esExtranjero ? "Número de documento" : "RUT";
   document.getElementById("ayuda-documento").textContent = esExtranjero
     ? "Pasaporte u otro documento: letras y números, entre 5 y 16 caracteres."
-    : "Con dígito verificador, con o sin puntos.";
-  campoDocumento.placeholder = esExtranjero ? "AB123456" : "12345678-5";
+    : "Escribe solo números y el dígito verificador; los puntos y el guion se agregan solos.";
+  campoDocumento.maxLength = esExtranjero ? 20 : 12;
+  campoDocumento.placeholder = esExtranjero ? "AB123456" : "12.345.678-5";
+  campoDocumento.value = esExtranjero ? campoDocumento.value : formatearRutAlEscribir(campoDocumento.value);
 });
+
+/**
+ * Sube el certificado recién adjuntado: entra con la cuenta nueva, lo envía y no deja la sesión abierta.
+ * Si algo falla la cuenta igual queda creada y el certificado se sube después desde el portal.
+ * @returns {Promise<string>} Texto para agregar al aviso final.
+ */
+async function enviarCertificadoDelRegistro(correo, contrasena) {
+  const pendiente = " Sube tu certificado desde tu portal para que un administrador verifique tu perfil.";
+  try {
+    const sesion = await iniciarSesion(correo, contrasena);
+    if (!sesion.ok) return pendiente;
+    const datos = new FormData();
+    datos.append("archivo", campoCertificado.files[0]);
+    const respuesta = await fetch(`${BASE_URL}/api/verificacion/certificado`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${sesion.data.access_token}` },
+      body: datos,
+    });
+    return respuesta.ok
+      ? " Tu certificado quedó enviado y un administrador lo revisará."
+      : " No pudimos enviar tu certificado." + pendiente;
+  } catch (e) {
+    return " No pudimos enviar tu certificado." + pendiente;
+  }
+}
 
 /* =========================================================================
     3. ENVÍO DEL FORMULARIO
@@ -156,7 +197,12 @@ formulario.addEventListener("submit", async (evento) => {
     const resultado = await registrarUsuario(datosFormulario);
 
     if (resultado.ok) {
-      alert("¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.");
+      let aviso = "¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.";
+      if (inputRolElegido.value === "estudiante") {
+        botonEnviar.textContent = "Enviando certificado...";
+        aviso += await enviarCertificadoDelRegistro(datosFormulario.get("correo"), datosFormulario.get("contrasena"));
+      }
+      alert(aviso);
       window.location.href = `/login?rol=${inputRolElegido.value}`;
     } else {
       // El backend devuelve el error en la propiedad "detail"

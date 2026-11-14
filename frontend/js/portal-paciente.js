@@ -89,9 +89,17 @@ function llenarAreas() {
     .join("");
 }
 
+// Contador de la descripción (máximo 500 caracteres, igual que en la API).
+function actualizarContador() {
+  document.getElementById("contador-consulta").textContent = `${document.getElementById("consulta").value.length} / 500`;
+}
+document.getElementById("consulta").addEventListener("input", actualizarContador);
+document.getElementById("search-form").addEventListener("reset", () => setTimeout(actualizarContador));
+
 document.querySelectorAll(".chip").forEach((chip) => {
   chip.addEventListener("click", () => {
     document.getElementById("consulta").value = chip.dataset.consulta;
+    actualizarContador();
     if (chip.dataset.area) document.getElementById("area").value = chip.dataset.area;
     document.getElementById("urgente").checked = chip.dataset.urgente === "1";
   });
@@ -472,6 +480,7 @@ document.getElementById("consulta-resultados").addEventListener("click", (evento
   if (!evento.target.closest('[data-accion="usar-consulta"]')) return;
   cambiarModo("publicar"); // el formulario de publicar está oculto en el modo consulta
   document.getElementById("consulta").value = document.getElementById("consulta-semantica").value.trim();
+  actualizarContador();
   if (consultaActual && consultaActual.area_sugerida) {
     document.getElementById("area").value = consultaActual.area_sugerida;
   }
@@ -534,6 +543,7 @@ function filaSolicitud(s) {
           <button class="btn btn--outline btn--sm" data-accion="candidatos" data-id="${s.id}">
             Candidatos (${candidatos.length}) <span class="material-symbols-rounded">${desplegada ? "expand_less" : "expand_more"}</span>
           </button>
+          ${["Abierta", "En Revisión"].includes(s.estado) ? `<button class="btn btn--outline btn--sm" data-accion="editar-solicitud" data-id="${s.id}"><span class="material-symbols-rounded">edit</span> Editar</button>` : ""}
           ${activa ? `<button class="btn btn--danger-soft btn--sm" data-accion="cancelar-solicitud" data-id="${s.id}">Cancelar</button>` : ""}
           ${s.estado === "Cancelada" ? botonEliminar("eliminar-solicitud", s.id, "Eliminar solicitud") : ""}
         </div>
@@ -595,6 +605,34 @@ async function recargarTodo(seleccionarSolicitudId) {
   await cargarEstudiantes();
 }
 
+/** Editar una solicitud abierta: permite corregir la descripción y la clasificación (tipo de tratamiento). */
+function editarSolicitud(id) {
+  const s = solicitudes.find((x) => x.id === id);
+  if (!s) return;
+  abrirFormulario({
+    titulo: `Editar solicitud ${s.codigo}`,
+    descripcion: "Puedes corregir la descripción y el tipo de tratamiento mientras la solicitud siga abierta.",
+    textoBoton: "Guardar cambios",
+    campos: [
+      { nombre: "titulo", etiqueta: "Título", tipo: "text", requerido: true, valor: s.titulo, maxlength: 200 },
+      { nombre: "descripcion", etiqueta: "Descripción (máx. 500 caracteres)", tipo: "textarea", requerido: true, valor: s.descripcion, maxlength: 500 },
+      { nombre: "area", etiqueta: "Tipo de tratamiento (clasificación)", tipo: "select", requerido: true, valor: s.area,
+        opciones: AREAS.map((a) => ({ valor: a.clave, texto: a.nombre })) },
+      { nombre: "urgente", etiqueta: "Tengo dolor / es urgente", tipo: "checkbox", valor: s.urgente },
+      { nombre: "comuna", etiqueta: "Comuna (opcional)", tipo: "text", valor: s.comuna || "", maxlength: 100 },
+    ],
+    onEnviar: async (v) => {
+      const r = await apiJson(`/api/solicitudes/${id}`, "PATCH", {
+        titulo: v.titulo, descripcion: v.descripcion, area: v.area, urgente: Boolean(v.urgente), comuna: v.comuna || null,
+      });
+      if (!r.ok) return { ok: false, error: textoDeError(r) };
+      mostrarAviso("Solicitud actualizada.");
+      await recargarTodo();
+      return { ok: true };
+    },
+  });
+}
+
 async function accion(ruta, metodo, cuerpo, mensaje) {
   const r = await apiJson(ruta, metodo, cuerpo);
   if (!r.ok) return mostrarAviso(textoDeError(r), true);
@@ -618,6 +656,7 @@ document.addEventListener("click", (evento) => {
     case "cancelar-postulacion":
       if (confirm("¿Cancelar esta postulación?")) accion(`/api/postulaciones/${id}/cancelar`, "POST", undefined, "Postulación cancelada.");
       return;
+    case "editar-solicitud": return editarSolicitud(id);
     case "cancelar-solicitud":
       if (confirm("¿Cancelar esta solicitud? También se cancelarán sus postulaciones y citas.")) accion(`/api/solicitudes/${id}/cancelar`, "POST", undefined, "Solicitud cancelada.");
       return;

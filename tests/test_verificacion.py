@@ -13,12 +13,12 @@ from tests.test_admin import _crear_admin
 # ---------- documento: funciones puras ----------
 @pytest.mark.parametrize("texto", ["12.345.678-5", "12345678-5", "123456785", " 12345678-5 "])
 def test_rut_valido_se_normaliza(texto):
-    assert normalizar_rut(texto) == "12345678-5"
+    assert normalizar_rut(texto) == "12.345.678-5"
 
 
 def test_rut_con_k_y_digito_cero():
-    assert normalizar_rut("1.000.005-k") == "1000005-K"   # dígito verificador K
-    assert normalizar_rut("1.000.013-0") == "1000013-0"   # dígito verificador 0
+    assert normalizar_rut("1.000.005-k") == "1.000.005-K"   # dígito verificador K
+    assert normalizar_rut("1.000.013-0") == "1.000.013-0"   # dígito verificador 0
 
 
 @pytest.mark.parametrize("texto", ["12345678-9", "12345678-K", "1234-5", "abcdefgh-1", "", "12.345.678-55"])
@@ -37,7 +37,7 @@ def test_documento_extranjero():
 
 
 def test_variantes_para_detectar_duplicados():
-    assert variantes_guardadas("12345678-5") == ["12345678-5", "12.345.678-5"]
+    assert variantes_guardadas("12.345.678-5") == ["12.345.678-5", "12345678-5", "123456785"]
     assert variantes_guardadas("EXT-AB123456") == ["EXT-AB123456"]
 
 
@@ -218,4 +218,4 @@ def test_rut_de_empresa_se_rechaza(cuerpo):
 
 def test_rut_de_persona_justo_bajo_el_limite_es_valido():
     from app.documentos import _calcular_dv
-    assert normalizar_rut(f"49999999-{_calcular_dv('49999999')}").startswith("49999999")
+    assert normalizar_rut(f"49999999-{_calcular_dv('49999999')}").startswith("49.999.999")

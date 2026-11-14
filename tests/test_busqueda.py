@@ -181,10 +181,29 @@ def test_no_marca_urgencia_en_consultas_comunes(texto):
 # ------------------------------------------------------------------ puntaje de coincidencia
 def test_puntaje_de_ubicacion():
     assert puntaje_ubicacion("Recoleta", " recoleta ") == 1.0
-    assert puntaje_ubicacion("Recoleta", "Ñuñoa") == 0.0
+    assert puntaje_ubicacion("Recoleta", "Ñuñoa") == 0.4  # a dos comunas (por Providencia o Santiago)
     assert puntaje_ubicacion("Recoleta", "Por definir") is None  # el estudiante aún no la completó
     assert puntaje_ubicacion(None, "Recoleta") is None
     assert puntaje_ubicacion("Ñuñoa", "nunoa") == 1.0  # ignora tildes y mayúsculas
+
+
+def test_la_ubicacion_baja_con_la_distancia_pero_nunca_de_0_3():
+    assert puntaje_ubicacion("Estación Central", "Estación Central") == 1.0
+    assert puntaje_ubicacion("Estación Central", "Santiago") == 0.6      # vecinas
+    assert puntaje_ubicacion("santiago", "estacion central") == 0.6      # en ambos sentidos
+    assert puntaje_ubicacion("Estación Central", "Providencia") == 0.4   # a dos comunas
+    assert puntaje_ubicacion("Estación Central", "Puente Alto") == 0.3   # lejos: mínimo
+    assert puntaje_ubicacion("Estación Central", "Til Til") == 0.3       # periferia lejana
+    assert puntaje_ubicacion("Estación Central", "Lampa") == 0.4         # periferia a dos comunas (por Pudahuel)
+    assert puntaje_ubicacion("Pudahuel", "Curacaví") == 0.6              # periferia vecina
+    assert puntaje_ubicacion("Estación Central", "Comuna Inventada") == 0.3  # desconocida: mínimo
+    assert puntaje_ubicacion("Estación Central", "Por definir") is None  # sin dato: neutro
+    # Misma comuna > vecina > lejana, y se nota en el puntaje final.
+    assert calcular_puntaje(0.6, 1.0, None) > calcular_puntaje(0.6, 0.6, None) > calcular_puntaje(0.6, 0.3, None)
+    assert motivos_de_coincidencia("Endodoncia", 0.6, None) == [
+        "Necesita pacientes de Endodoncia", "Atiende en una comuna cercana",
+    ]
+    assert motivos_de_coincidencia("Endodoncia", 0.3, None) == ["Necesita pacientes de Endodoncia"]
 
 
 def test_interpretar_disponibilidad():
@@ -295,7 +314,7 @@ def test_los_estudiantes_se_ordenan_por_puntaje(paciente, falsa_busqueda):
     sin_datos = crear_estudiante(3, comuna="Por definir", disponibilidad=None)
     r = paciente.post("/api/busqueda", json={"texto": "quiero limpiarme los dientes"}).json()
     assert [e["id"] for e in r["estudiantes"]] == [ideal, sin_datos, lejos]
-    assert [e["puntaje"] for e in r["estudiantes"]] == [80, 55, 30]
+    assert [e["puntaje"] for e in r["estudiantes"]] == [80, 55, 42]
     assert "Atiende en tu comuna" in r["estudiantes"][0]["motivos"]
 
 

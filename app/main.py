@@ -27,7 +27,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine
 from app.routers import (
-    admin, auth, busqueda, casos, catalogos, chat, citas, estudiantes, paginas, perfil, postulaciones,
+    admin, admin_moderacion, auth, avisos, busqueda, casos, catalogos, chat, citas, estudiantes, paginas, perfil, postulaciones,
     ramos, requerimientos, resumen, solicitudes, verificacion,
 )
 
@@ -69,6 +69,6 @@ app.include_router(auth.router)
 app.include_router(perfil.router)
 for modulo in (
     catalogos, ramos, requerimientos, solicitudes, casos, estudiantes,
-    postulaciones, citas, chat, resumen, admin, verificacion, busqueda,
+    postulaciones, citas, chat, resumen, admin, admin_moderacion, verificacion, busqueda, avisos,
 ):
     app.include_router(modulo.router)

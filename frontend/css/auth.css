@@ -59,9 +59,11 @@ body[data-rol="paciente"] {
 /* El título y los puntos del panel cambian según el rol */
 .side .rol-texto, .side__points li.rol-texto { display: none; }
 body[data-rol="estudiante"] .side .rol-texto[data-para="estudiante"],
-body[data-rol="paciente"] .side .rol-texto[data-para="paciente"] { display: block; }
+body[data-rol="paciente"] .side .rol-texto[data-para="paciente"],
+body[data-rol="admin"] .side .rol-texto[data-para="admin"] { display: block; }
 body[data-rol="estudiante"] .side__points li.rol-texto[data-para="estudiante"],
-body[data-rol="paciente"] .side__points li.rol-texto[data-para="paciente"] { display: flex; }
+body[data-rol="paciente"] .side__points li.rol-texto[data-para="paciente"],
+body[data-rol="admin"] .side__points li.rol-texto[data-para="admin"] { display: flex; }
 
 /* ---------- 3. SELECTOR DE ROL ---------- */
 .main { display: grid; place-items: center; padding: 40px 28px; }
@@ -181,3 +183,10 @@ body[data-rol="paciente"] .side__points li.rol-texto[data-para="paciente"] { dis
   .grupo-campos { grid-template-columns: 1fr; }
   .switch__opt { font-size: 12px; }
 }
+
+/* ---------- acceso de administración ---------- */
+.alt-link--admin { margin-top: 6px; font-size: 12px; }
+.alt-link--admin a { display: inline-flex; align-items: center; gap: 4px; color: var(--text-muted); font-weight: 600; }
+.alt-link--admin a:hover { color: var(--primary); }
+.alt-link--admin .material-symbols-rounded { font-size: 15px; }
+body[data-rol="admin"] .switch { display: none; }

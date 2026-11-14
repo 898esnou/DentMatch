@@ -8,8 +8,9 @@ Flujo:
   Rechazado --vuelve a subir--> En Verificación
   Activo --renueva--> sigue Activo mientras se revisa el nuevo certificado
 
-La verificación automática por QR aún no existe (ver app/verificacion_certificado.py):
-por ahora todo certificado queda "En Verificación" para revisión manual del admin.
+Al subir el certificado se intenta verificarlo solo leyendo su QR (ver app/verificacion_certificado.py).
+Si el sistema no puede decidir (sin QR legible, página oficial caída...), queda "En Verificación"
+para que lo revise un administrador.
 """
 import uuid
 from datetime import timedelta

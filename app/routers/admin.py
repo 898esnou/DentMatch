@@ -21,7 +21,7 @@ from app.servicios import ahora
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
-def _out(u: models.Usuario) -> EstudianteAdminOut:
+def _out(u: models.Usuario, ultima: Optional[models.VerificacionEstudiante] = None) -> EstudianteAdminOut:
     p = u.perfil_estudiante
     return EstudianteAdminOut(
         id=u.id,
@@ -32,7 +32,24 @@ def _out(u: models.Usuario) -> EstudianteAdminOut:
         ano_carrera=p.ano_carrera,
         estado_verificacion=p.estado_verificacion,
         certificado_documento=p.certificado_documento,
+        fecha_registro=u.fecha_registro,
+        certificado_fecha=ultima.fecha_subida if ultima else None,
+        certificado_tipo=ultima.tipo_contenido if ultima else None,
+        certificado_revision=ultima.estado if ultima else None,
+        certificado_resuelto_por=ultima.resuelta_por if ultima else None,
+        certificado_motivo=ultima.motivo if ultima else None,
     )
+
+
+def _ultimas_verificaciones(db: Session, ids: List[int]) -> dict:
+    """Último certificado subido por cada estudiante (una sola consulta)."""
+    if not ids:
+        return {}
+    V = models.VerificacionEstudiante
+    ultimas: dict = {}
+    for v in db.query(V).filter(V.estudiante_id.in_(ids)).order_by(V.id).all():
+        ultimas[v.estudiante_id] = v   # el último por id queda al final
+    return ultimas
 
 
 @router.get("/estudiantes", response_model=List[EstudianteAdminOut])
@@ -50,7 +67,9 @@ def listar_estudiantes(
     )
     if estado:
         consulta = consulta.filter(models.PerfilEstudiante.estado_verificacion == estado)
-    return [_out(u) for u in consulta.order_by(models.Usuario.id).all()]
+    usuarios = consulta.order_by(models.Usuario.id).all()
+    ultimas = _ultimas_verificaciones(db, [u.id for u in usuarios])
+    return [_out(u, ultimas.get(u.id)) for u in usuarios]
 
 
 @router.patch("/estudiantes/{estudiante_id}/verificacion", response_model=EstudianteAdminOut)
@@ -78,7 +97,7 @@ def cambiar_verificacion(
         ultima.fecha_resolucion = ahora()
     db.commit()
     db.refresh(u)
-    return _out(u)
+    return _out(u, ultima)
 
 
 @router.get("/estudiantes/{estudiante_id}/certificado")

@@ -139,9 +139,10 @@
         <form class="searchbox" id="search-form">
           <div class="searchbox__input">
             <span class="material-symbols-rounded">psychology</span>
-            <textarea id="consulta" rows="2" aria-label="Describe tu necesidad"
+            <textarea id="consulta" rows="2" maxlength="500" aria-label="Describe tu necesidad"
               placeholder="Siento molestia en una muela al comer cosas dulces y noto un punto oscuro cerca de la encía"></textarea>
           </div>
+          <small class="contador-caracteres" id="contador-consulta" aria-live="polite">0 / 500</small>
           <div class="searchbox__bottom">
             <div class="searchbox__filters">
               <label class="select-wrap">
@@ -265,6 +266,7 @@
   <script src="/static/js/perfil-modal.js"></script>
   <script src="/static/js/portal-paciente.js"></script>
   <script src="/static/js/chat.js"></script>
+  <script src="/static/js/avisos.js"></script>
   <script src="/static/js/portal-nav.js"></script>
 </body>
 </html>

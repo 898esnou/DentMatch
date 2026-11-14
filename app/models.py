@@ -15,8 +15,9 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.catalogos import (
-    ESTADOS_CERTIFICADO, ESTADOS_CITA, ESTADOS_POSTULACION, ESTADOS_REQUERIMIENTO,
-    ESTADOS_VERIFICACION, sql_in,
+    CATEGORIAS_MODERACION, DECISIONES_REPORTE, ESTADOS_CERTIFICADO, ESTADOS_CITA,
+    ESTADOS_CUENTA, ESTADOS_POSTULACION, ESTADOS_REPORTE, ESTADOS_REQUERIMIENTO,
+    ESTADOS_VERIFICACION, ORIGENES_REPORTE, sql_in,
 )
 from app.database import Base
 
@@ -315,6 +316,12 @@ class Postulacion(Base):
     requerimiento = relationship("Requerimiento")
     citas = relationship("Cita", back_populates="postulacion", cascade="all, delete-orphan")
     mensajes = relationship("Mensaje", back_populates="postulacion", cascade="all, delete-orphan")
+    cierre_moderacion = relationship(
+        "CierreModeracion", uselist=False, cascade="all, delete-orphan", passive_deletes=True
+    )
+    archivo_chat = relationship(
+        "ConversacionArchivada", uselist=False, cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class Cita(Base):
@@ -373,3 +380,119 @@ class RetroalimentacionBusqueda(Base):
     coincidencia = Column(String(10))                  # 'alta' | 'media' | 'baja'
     util = Column(Boolean, nullable=False)
     fecha = Column(TIMESTAMP, server_default=func.now())
+
+
+# ---------------------------------------------------------------------------
+# Moderación del chat (Épica 5). Tablas propias: no se altera `usuarios` del equipo.
+# ---------------------------------------------------------------------------
+class EstadoCuenta(Base):
+    """
+    Sanción vigente de un usuario. Si no tiene fila, la cuenta está activa.
+    'suspendido' tiene fecha de término (time-out); 'baneado' no.
+    """
+    __tablename__ = "estado_cuenta"
+
+    usuario_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True)
+    estado = Column(String(20), nullable=False, default="activo")
+    suspendido_hasta = Column(TIMESTAMP)
+    motivo = Column(Text)  # se le muestra a la persona al intentar entrar
+    actualizado_en = Column(TIMESTAMP)
+
+    __table_args__ = (
+        CheckConstraint(f"estado IN ({sql_in(ESTADOS_CUENTA)})", name="chk_estado_cuenta"),
+    )
+
+
+class Advertencia(Base):
+    """
+    Mensaje que la moderación bloqueó (no llegó a la otra persona). Sirve de evidencia.
+    `cuenta` = suma para las 3 advertencias (los mensajes fuera de tema solo avisan).
+    """
+    __tablename__ = "advertencias"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(
+        Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    postulacion_id = Column(Integer, ForeignKey("postulaciones.id", ondelete="CASCADE"), index=True)
+    categoria = Column(String(20), nullable=False)
+    fuente = Column(String(10), nullable=False)       # 'reglas' | 'ia'
+    contenido = Column(Text, nullable=False)          # el mensaje bloqueado
+    cuenta = Column(Boolean, nullable=False, default=True)
+    receptor_avisado = Column(Boolean, nullable=False, default=False)
+    fecha = Column(TIMESTAMP, nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(f"categoria IN ({sql_in(CATEGORIAS_MODERACION)})", name="chk_categoria_advertencia"),
+    )
+
+
+class Reporte(Base):
+    """
+    Reporte de conducta: lo crea una persona desde el chat ('usuario') o el sistema al
+    llegar a 3 advertencias ('automatico'). Guarda una copia de los últimos mensajes,
+    porque el chat se borra a los 30 días de cerrado. El admin lo resuelve (decision).
+    """
+    __tablename__ = "reportes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    postulacion_id = Column(Integer, ForeignKey("postulaciones.id", ondelete="SET NULL"))
+    reportante_id = Column(Integer, ForeignKey("usuarios.id", ondelete="SET NULL"))  # NULL si es automático
+    reportado_id = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False, index=True)
+    origen = Column(String(15), nullable=False)
+    motivo = Column(Text, nullable=False)
+    evidencia = Column(Text)                           # JSON con los últimos mensajes
+    estado = Column(String(15), nullable=False, default="Pendiente")
+    decision = Column(String(15))
+    nota_admin = Column(Text)
+    suspension_dias = Column(Integer)
+    resuelto_por = Column(Integer, ForeignKey("usuarios.id", ondelete="SET NULL"))
+    fecha_creacion = Column(TIMESTAMP, nullable=False)
+    fecha_resolucion = Column(TIMESTAMP)
+
+    __table_args__ = (
+        CheckConstraint(f"estado IN ({sql_in(ESTADOS_REPORTE)})", name="chk_estado_reporte"),
+        CheckConstraint(f"origen IN ({sql_in(ORIGENES_REPORTE)})", name="chk_origen_reporte"),
+        CheckConstraint(
+            f"decision IS NULL OR decision IN ({sql_in(DECISIONES_REPORTE)})", name="chk_decision_reporte"
+        ),
+    )
+
+    reportado = relationship("Usuario", foreign_keys=[reportado_id])
+    reportante = relationship("Usuario", foreign_keys=[reportante_id])
+
+
+class AvisoUsuario(Base):
+    """Aviso corto para una persona (ej. "tu postulación se canceló"). Se muestra una vez."""
+    __tablename__ = "avisos_usuario"
+
+    id = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(
+        Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    texto = Column(Text, nullable=False)
+    fecha = Column(TIMESTAMP, nullable=False)
+    leido_en = Column(TIMESTAMP)
+
+
+class CierreModeracion(Base):
+    """
+    Marca una conversación detenida por la moderación (porque una de las dos cuentas fue
+    baneada). La contraparte ve en el chat un mensaje explicándolo.
+    """
+    __tablename__ = "cierres_moderacion"
+
+    postulacion_id = Column(Integer, ForeignKey("postulaciones.id", ondelete="CASCADE"), primary_key=True)
+    fecha = Column(TIMESTAMP, nullable=False)
+
+
+class ConversacionArchivada(Base):
+    """
+    Una de las dos personas archivó el chat de una postulación: queda de solo lectura para
+    ambas y solo quien lo archivó puede reabrirlo. No toca la postulación ni las citas.
+    """
+    __tablename__ = "conversaciones_archivadas"
+
+    postulacion_id = Column(Integer, ForeignKey("postulaciones.id", ondelete="CASCADE"), primary_key=True)
+    archivada_por = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
+    fecha = Column(TIMESTAMP, nullable=False)

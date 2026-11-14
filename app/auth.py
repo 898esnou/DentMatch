@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models
+from app.sanciones import verificar_cuenta
 from app.vigencia import vencer_caducadas
 
 load_dotenv()
@@ -65,6 +66,7 @@ def get_current_user(
     usuario = db.query(models.Usuario).filter(models.Usuario.id == int(usuario_id)).first()
     if usuario is None:
         raise credentials_exception
+    verificar_cuenta(db, usuario)  # baneados y en time-out no pueden usar la API
     # Vence a los estudiantes cuyo certificado semestral caducó (ver app/vigencia.py).
     if vencer_caducadas(db):
         db.refresh(usuario)

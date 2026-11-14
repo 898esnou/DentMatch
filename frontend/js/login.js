@@ -28,6 +28,8 @@ const TEXTOS = {
 // DESTINO_TRAS_LOGIN (rol -> página) vive en session.js
 let rolElegido = "estudiante";
 
+const modoAdmin = new URLSearchParams(location.search).get("rol") === "admin";
+
 function elegirRolVisual(rol) {
   rolElegido = rol;
   document.body.dataset.rol = rol;
@@ -36,6 +38,17 @@ function elegirRolVisual(rol) {
   document.getElementById("subtitulo-login").textContent = TEXTOS[rol];
   document.getElementById("enlace-registro").href = `/registro?rol=${rol}`;
   ocultarError();
+}
+
+/* Acceso de administración (/login?rol=admin): sin selector de rol ni registro. */
+function activarModoAdmin() {
+  rolElegido = "admin";
+  document.body.dataset.rol = "admin";
+  document.title = "Administración · DentMatch";
+  document.getElementById("titulo-login").textContent = "Acceso administración";
+  document.getElementById("subtitulo-login").textContent = "Solo para el equipo de DentMatch.";
+  document.getElementById("texto-registro").innerHTML = '<a href="/login">← Volver al acceso de estudiantes y pacientes</a>';
+  document.getElementById("enlace-admin").parentElement.hidden = true;
 }
 
 botonRolEstudiante.addEventListener("click", () => elegirRolVisual("estudiante"));
@@ -66,7 +79,12 @@ formulario.addEventListener("submit", async (evento) => {
   try {
     const resultado = await iniciarSesion(correo, contrasena);
 
-    if (resultado.ok && resultado.data.rol !== rolElegido && DESTINO_TRAS_LOGIN[resultado.data.rol]) {
+    if (resultado.ok && modoAdmin && resultado.data.rol !== "admin") {
+      mostrarError("Esta cuenta no es de administración. Usa el acceso de estudiantes y pacientes.");
+    } else if (resultado.ok && !modoAdmin && resultado.data.rol === "admin") {
+      guardarSesion(resultado.data);   // un admin que entra por el acceso normal igual llega a su panel
+      window.location.href = DESTINO_TRAS_LOGIN.admin;
+    } else if (resultado.ok && resultado.data.rol !== rolElegido && DESTINO_TRAS_LOGIN[resultado.data.rol]) {
       const real = resultado.data.rol === "estudiante" ? "estudiante" : "paciente";
       mostrarError(`Esta cuenta está registrada como ${real}. Cambia la opción de arriba e inténtalo de nuevo.`);
     } else if (resultado.ok) {
@@ -75,6 +93,8 @@ formulario.addEventListener("submit", async (evento) => {
       const destino = DESTINO_TRAS_LOGIN[resultado.data.rol];
       if (destino) window.location.href = destino;
       else mostrarError("Este tipo de cuenta aún no tiene acceso disponible.");
+    } else if (typeof resultado.data.detail === "string" && /suspendida/i.test(resultado.data.detail)) {
+      mostrarCuentaSuspendida(resultado.data.detail);   // cuenta sancionada por la moderación
     } else {
       mostrarError(resultado.data.detail || "No se pudo iniciar sesión.");
     }
@@ -94,3 +114,4 @@ if (obtenerToken() && DESTINO_TRAS_LOGIN[obtenerRol()]) {
 /* Rol inicial: ?rol=paciente en la URL o el último usado */
 const rolInicial = new URLSearchParams(location.search).get("rol") || localStorage.getItem("dentmatch_rol");
 elegirRolVisual(rolInicial === "paciente" ? "paciente" : "estudiante");
+if (modoAdmin) activarModoAdmin();

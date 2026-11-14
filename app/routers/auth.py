@@ -13,6 +13,7 @@ from app import models, schemas
 from app.auth import create_access_token, get_current_user, hash_password, verify_password
 from app.database import get_db
 from app.documentos import normalizar_documento, variantes_guardadas
+from app.sanciones import verificar_cuenta
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
@@ -94,6 +95,7 @@ def login(datos: schemas.LoginRequest, db: Session = Depends(get_db)):
     )
     if not usuario or not verify_password(datos.contrasena, usuario.contrasena_hash):
         raise credenciales_invalidas
+    verificar_cuenta(db, usuario)  # si está baneado o en time-out, se le explica
 
     token = create_access_token(data={"sub": str(usuario.id), "rol": usuario.rol})
     return schemas.TokenResponse(

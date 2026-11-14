@@ -24,6 +24,12 @@ ESTADOS_CITA = ("Agendada", "Realizada", "Cancelada")
 # 'No verificado': aún no subió su certificado. 'En Verificación': lo subió y se está revisando.
 ESTADOS_VERIFICACION = ("No verificado", "En Verificación", "Activo", "Rechazado")
 ESTADOS_CERTIFICADO = ("Pendiente", "Aprobada", "Rechazada")
+# Moderación del chat (Épica 5)
+ESTADOS_CUENTA = ("activo", "suspendido", "baneado")
+CATEGORIAS_MODERACION = ("insulto", "acoso", "fuera_de_tema")
+ESTADOS_REPORTE = ("Pendiente", "Resuelto")
+ORIGENES_REPORTE = ("usuario", "automatico")
+DECISIONES_REPORTE = ("baneo", "suspension", "descartar")
 
 
 def sql_in(valores) -> str:
