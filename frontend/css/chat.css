@@ -83,6 +83,7 @@
 .chat__acciones { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .chat__reportar { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 6px 12px; }
 .chat__reportar .material-symbols-rounded { font-size: 16px; }
+.chat__reportar:disabled { opacity: .5; cursor: not-allowed; }
 .chat__alerta {
   margin: 0; padding: 10px 16px; font-size: 13px; font-weight: 600; line-height: 1.4;
   background: var(--danger-soft); color: var(--danger); border-top: 1px solid var(--border);
@@ -100,6 +101,20 @@
 .chat__sistema .material-symbols-rounded { font-size: 16px; flex-shrink: 0; }
 .chat__cerrada .btn { margin-left: 8px; }
 .chat__sistema--detenido { background: var(--warning-soft); color: #8a5a00; }
+
+/* ---------- mensajes inapropiados bloqueados (el receptor decide si los lee) ---------- */
+.chat__inap {
+  align-self: center; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  width: min(100%, 460px); padding: 12px 14px; border-radius: var(--radius-md);
+  background: var(--surface); border: 1px dashed var(--border);
+}
+.chat__inap-titulo { display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--text-muted); text-align: left; }
+.chat__inap-aviso {
+  display: flex; align-items: center; gap: 6px; width: 100%; padding: 8px 12px; border-radius: var(--radius-sm);
+  background: var(--danger-soft); color: var(--danger); font-size: 12px; font-weight: 700;
+}
+.chat__inap .chat__msg { align-self: flex-start; max-width: 100%; }
+.chat__burbuja--inap { background: var(--danger-soft); border-color: #f3c7c3; color: var(--text); }
 
 /* ---------- avisos persistentes (ej. "tu postulación se canceló") ---------- */
 .avisos-persistentes {

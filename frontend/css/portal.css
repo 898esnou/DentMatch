@@ -5,6 +5,20 @@
    Base y componentes: components.css. Colores: tokens.css.
    ========================================================================= */
 
+/* ---------- 0. FONDO ----------
+   Un fondo con vida: tinte azul claro, manchas de color de la marca (turquesa, azul y verde)
+   y una trama de puntos muy sutil. Va fijo detrás de todo, así las tarjetas blancas resaltan. */
+body { background: #e6eef9; }
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(860px 520px at 6% -4%, rgba(45, 212, 191, .34), transparent 62%),
+    radial-gradient(820px 520px at 102% 2%, rgba(10, 58, 117, .20), transparent 62%),
+    radial-gradient(900px 620px at 92% 108%, rgba(64, 192, 144, .28), transparent 62%),
+    radial-gradient(760px 520px at -4% 104%, rgba(10, 58, 117, .16), transparent 62%),
+    radial-gradient(rgba(10, 58, 117, .11) 1px, transparent 1.5px) 0 0 / 22px 22px;
+}
+
 /* ---------- 1. CABECERA ---------- */
 .portal-header {
   display: flex; align-items: center; gap: 22px; padding: 12px 36px;

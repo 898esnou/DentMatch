@@ -94,7 +94,7 @@ _INSULTOS = re.compile(
     r")\b"
 )
 _AMENAZAS = re.compile(
-    r"te voy a (?:matar|pegar|golpear|romper|reventar|buscar|encontrar)|"
+    r"te voy a (?:matar|pegar|golpear|romper|reventar)|"
     r"te (?:mato|reviento|rompo|voy a hacer pagar)|"
     r"se donde vives|voy a ir a tu casa"
 )

@@ -34,7 +34,6 @@
       <a href="/paciente" class="portal-nav__link portal-nav__link--active">Inicio</a>
       <a href="#resultados" class="portal-nav__link">Buscar Atención</a>
       <a href="#solicitudes" class="portal-nav__link">Mis Solicitudes</a>
-      <a href="#mis-citas" class="portal-nav__link">Mis Citas</a>
       <a href="#mensajes" class="portal-nav__link">Mensajes <span class="chat-contador" id="chat-contador" hidden>0</span></a>
     </nav>
 
@@ -83,7 +82,7 @@
         </article>
         <article class="profile-stat">
           <span class="profile-stat__icon profile-stat__icon--green"><span class="material-symbols-rounded">task_alt</span></span>
-          <div><small>Tratamientos completados</small><strong><span id="stat-completados">0</span> Procedimientos</strong><span class="sub"><span id="stat-citas">0</span> citas próximas</span></div>
+          <div><small>Tratamientos completados</small><strong><span id="stat-completados">0</span> Procedimientos</strong><span class="sub">Atenciones terminadas con éxito</span></div>
         </article>
       </div>
     </section>
@@ -214,13 +213,6 @@
       <div id="lista-solicitudes" class="panel__lista"></div>
     </section>
 
-    <!-- ============ 5b. MIS CITAS ============ -->
-    <section class="card panel" id="mis-citas">
-      <div class="panel__head">
-        <h2><span class="material-symbols-rounded">event</span> Mis Citas</h2>
-      </div>
-      <div class="panel__lista" id="lista-citas"></div>
-    </section>
     <!-- ============ MENSAJES (la llena chat.js) ============ -->
     <section id="mensajes">
       <h2 class="portal-section-title">Mensajes</h2>

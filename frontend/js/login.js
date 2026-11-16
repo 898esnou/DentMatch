@@ -23,7 +23,7 @@ const cajaMensajeError = document.getElementById("mensaje-error");
 ========================================================================= */
 const TEXTOS = {
   estudiante: "Entra a tu portal para gestionar tus requerimientos y pacientes.",
-  paciente: "Entra para encontrar y agendar atención dental supervisada.",
+  paciente: "Entra para encontrar atención dental supervisada.",
 };
 // DESTINO_TRAS_LOGIN (rol -> página) vive en session.js
 let rolElegido = "estudiante";

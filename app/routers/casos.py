@@ -36,6 +36,9 @@ def _caso_out(s: models.Solicitud, mi_postulacion: Optional[models.Postulacion])
         fecha_creacion=s.fecha_creacion,
         mi_postulacion_id=mi_postulacion.id if mi_postulacion else None,
         mi_postulacion_estado=mi_postulacion.estado if mi_postulacion else None,
+        mi_postulacion_puede_responder=bool(
+            mi_postulacion and mi_postulacion.estado == "Pendiente" and mi_postulacion.iniciada_por != "estudiante"
+        ),
     )
 
 

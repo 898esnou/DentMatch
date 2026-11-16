@@ -15,6 +15,8 @@ Endpoints:
 - POST /api/chat/{postulacion_id}/reportar  reportar a la otra persona (tras unos mensajes)
 - POST /api/chat/{postulacion_id}/archivar  archivar la conversación (solo lectura para las dos)
 - POST /api/chat/{postulacion_id}/reabrir   reabrirla (solo quien la archivó)
+- POST /api/chat/{postulacion_id}/bloquear     bloquear a la otra persona (solo lectura para las dos)
+- POST /api/chat/{postulacion_id}/desbloquear  desbloquear (solo quien bloqueó)
 
 Moderación (Épica 5): un mensaje con insultos, insinuaciones o fuera de tema NO se envía
 (app/moderacion.py). Insultos e insinuaciones suman advertencias; a la 3ª la cuenta se
@@ -33,7 +35,8 @@ from app import models, moderacion, sanciones
 from app.auth import exigir_estudiante_verificado, require_rol
 from app.database import get_db
 from app.schemas_dominio import (
-    ConversacionOut, HiloOut, MensajeIn, MensajeOut, ParticipanteOut, ReporteCreadoOut, ReporteIn,
+    ConversacionOut, HiloOut, MensajeInapropiadoOut, MensajeIn, MensajeOut, ParticipanteOut,
+    ReporteCreadoOut, ReporteIn,
 )
 from app.servicios import ahora
 from app.utils import nombre_corto
@@ -57,9 +60,14 @@ def _archivada(p: models.Postulacion) -> bool:
     return p.archivo_chat is not None and _en_curso(p)
 
 
+def _bloqueada(p: models.Postulacion) -> bool:
+    """Alguien bloqueó al otro (solo cuenta mientras la conversación seguiría abierta)."""
+    return p.bloqueo_chat is not None and _en_curso(p)
+
+
 def _puede_escribir(p: models.Postulacion) -> bool:
-    """Abierta = en curso y sin archivar."""
-    return _en_curso(p) and p.archivo_chat is None
+    """Abierta = en curso, sin archivar y sin bloqueo."""
+    return _en_curso(p) and p.archivo_chat is None and p.bloqueo_chat is None
 
 
 def _fecha_cierre(p: models.Postulacion) -> Optional[datetime]:
@@ -68,6 +76,8 @@ def _fecha_cierre(p: models.Postulacion) -> Optional[datetime]:
         return p.fecha_respuesta or p.fecha_creacion
     if p.solicitud.estado_api == "Completada":
         return p.solicitud.detalle.completada_en
+    if _bloqueada(p):
+        return p.bloqueo_chat.fecha
     if _archivada(p):
         return p.archivo_chat.fecha
     return None
@@ -97,6 +107,7 @@ def _base(db: Session):
             joinedload(models.Postulacion.estudiante),
             joinedload(models.Postulacion.cierre_moderacion),
             joinedload(models.Postulacion.archivo_chat),
+            joinedload(models.Postulacion.bloqueo_chat),
         )
     )
 
@@ -119,9 +130,12 @@ def _conversacion_out(p, usuario, no_leidos=0, ultimo=None) -> ConversacionOut:
     otra = p.solicitud.paciente if usuario.rol == "estudiante" else p.estudiante
     detenida = p.cierre_moderacion is not None
     archivada = _archivada(p)
+    bloqueada = _bloqueada(p)
     return ConversacionOut(
         archivada=archivada,
         archivada_por_mi=archivada and p.archivo_chat.archivada_por == usuario.id,
+        bloqueada=bloqueada,
+        bloqueada_por_mi=bloqueada and p.bloqueo_chat.bloqueado_por == usuario.id,
         cerrada_por_moderacion=detenida,
         mensaje_cierre=sanciones.mensaje_de_cierre(usuario.rol) if detenida else None,
         postulacion_id=p.id,
@@ -144,6 +158,23 @@ def _mensaje_out(m: models.Mensaje, usuario: models.Usuario) -> MensajeOut:
         fecha_creacion=m.fecha_creacion,
         leido=m.leido_en is not None,
     )
+
+
+def _mensajes_inapropiados(db: Session, p: models.Postulacion, usuario: models.Usuario) -> List[MensajeInapropiadoOut]:
+    """
+    Si la moderación detuvo este chat porque la otra persona fue sancionada, quien no fue
+    sancionado puede leer (si quiere) los mensajes bloqueados que nunca le llegaron.
+    """
+    if p.cierre_moderacion is None:
+        return []
+    A = models.Advertencia
+    filas = (
+        db.query(A)
+        .filter(A.postulacion_id == p.id, A.usuario_id != usuario.id, A.cuenta.is_(True))
+        .order_by(A.fecha, A.id)
+        .all()
+    )
+    return [MensajeInapropiadoOut(id=a.id, contenido=a.contenido, categoria=a.categoria, fecha=a.fecha) for a in filas]
 
 
 # ---------- endpoints ----------
@@ -195,7 +226,9 @@ def listar_conversaciones(
         # Una conversación cerrada y sin historial ya no tiene nada que mostrar.
         detenida_vigente = p.cierre_moderacion is not None and (_se_borra_el(p) or ahora()) > ahora()
         archivada_vigente = _archivada(p) and (_se_borra_el(p) or ahora()) > ahora()
-        if not _puede_escribir(p) and p.id not in ultimos and not detenida_vigente and not archivada_vigente:
+        bloqueada_vigente = _bloqueada(p) and (_se_borra_el(p) or ahora()) > ahora()
+        if (not _puede_escribir(p) and p.id not in ultimos and not detenida_vigente
+                and not archivada_vigente and not bloqueada_vigente):
             continue
         salida.append(_conversacion_out(p, usuario, no_leidos.get(p.id, 0), ultimos.get(p.id)))
     # Primero las de mensajes más recientes.
@@ -233,6 +266,7 @@ def ver_hilo(
     return HiloOut(
         conversacion=_conversacion_out(p, usuario, 0, recientes[-1] if recientes else None),
         mensajes=[_mensaje_out(m, usuario) for m in recientes],
+        mensajes_inapropiados=_mensajes_inapropiados(db, p, usuario),
         puede_reportar=(
             total >= sanciones.MIN_MENSAJES_REPORTAR
             and not sanciones.tiene_reporte_pendiente(db, p.id, usuario.id)
@@ -251,7 +285,7 @@ def enviar_mensaje(
     exigir_estudiante_verificado(usuario)  # un estudiante sin verificar no interactúa con pacientes
     p = _visible(db, postulacion_id, usuario)
     if not _puede_escribir(p):
-        motivo = "archivada" if _archivada(p) else "cerrada"
+        motivo = "bloqueada" if _bloqueada(p) else "archivada" if _archivada(p) else "cerrada"
         raise HTTPException(status_code=409, detail=f"Esta conversación está {motivo}: ya no admite mensajes")
     texto = datos.contenido.strip()
     if not texto:
@@ -349,6 +383,49 @@ def reabrir(
     p.archivo_chat = None
     otra = p.solicitud.paciente if usuario.rol == "estudiante" else p.estudiante
     sanciones.avisar(db, otra.id, f"«{p.solicitud.titulo}»: la otra persona reabrió la conversación. Ya puedes escribir de nuevo.")
+    db.commit()
+    db.refresh(p)
+    return _conversacion_out(p, usuario)
+
+
+@router.post("/{postulacion_id}/bloquear", response_model=ConversacionOut)
+def bloquear(
+    postulacion_id: int,
+    usuario: models.Usuario = Depends(ambos_roles),
+    db: Session = Depends(get_db),
+):
+    """Bloquea a la otra persona en este chat: nadie puede escribir y solo quien bloqueó puede deshacerlo."""
+    p = _visible(db, postulacion_id, usuario)
+    if _bloqueada(p):
+        raise HTTPException(status_code=409, detail="Esta conversación ya está bloqueada")
+    if not _en_curso(p):
+        raise HTTPException(status_code=409, detail="Esta conversación ya está cerrada")
+    p.bloqueo_chat = models.BloqueoChat(bloqueado_por=usuario.id, fecha=ahora())
+    otra = p.solicitud.paciente if usuario.rol == "estudiante" else p.estudiante
+    sanciones.avisar(db, otra.id, (
+        f"«{p.solicitud.titulo}»: la otra persona bloqueó la conversación, así que ya no se pueden "
+        "enviar mensajes."
+    ))
+    db.commit()
+    db.refresh(p)
+    return _conversacion_out(p, usuario)
+
+
+@router.post("/{postulacion_id}/desbloquear", response_model=ConversacionOut)
+def desbloquear(
+    postulacion_id: int,
+    usuario: models.Usuario = Depends(ambos_roles),
+    db: Session = Depends(get_db),
+):
+    """Quita el bloqueo. Solo puede hacerlo quien bloqueó."""
+    p = _visible(db, postulacion_id, usuario)
+    if not _bloqueada(p):
+        raise HTTPException(status_code=409, detail="Esta conversación no está bloqueada")
+    if p.bloqueo_chat.bloqueado_por != usuario.id:
+        raise HTTPException(status_code=403, detail="Solo quien bloqueó la conversación puede desbloquearla")
+    p.bloqueo_chat = None
+    otra = p.solicitud.paciente if usuario.rol == "estudiante" else p.estudiante
+    sanciones.avisar(db, otra.id, f"«{p.solicitud.titulo}»: la otra persona desbloqueó la conversación. Ya puedes escribir de nuevo.")
     db.commit()
     db.refresh(p)
     return _conversacion_out(p, usuario)

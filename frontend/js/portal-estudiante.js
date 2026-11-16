@@ -5,7 +5,7 @@
    3. Casos clínicos (solicitudes de pacientes) y postulación
    4. Clínicas por ramo
    5. Requerimientos clínicos (con su tutor)
-   6. Postulaciones y citas
+   6. Postulaciones
    7. Acciones (un solo oyente para todos los botones)
    Requiere session.js, api.js, utils.js y formulario-modal.js cargados antes.
    ========================================================================= */
@@ -16,7 +16,6 @@ let DIAS = [];
 let requerimientos = [];   // los míos (se usan para vincular al postular)
 let casos = [];
 let postulaciones = [];
-let citas = [];
 let ramos = [];
 let filtroActual = "todos";
 
@@ -67,7 +66,7 @@ async function cargarPerfil() {
 /* "Mostrar más / menos": muestra solo los primeros `limite` elementos y un botón para el resto. */
 const LIMITE_TAGS_RAMOS = 4;
 const LIMITE_CLINICAS = 3;
-const LIMITE_LISTA = 3;    // casos, requerimientos, postulaciones y citas
+const LIMITE_LISTA = 3;    // casos, requerimientos y postulaciones
 const expandido = {};      // clave de lista -> true si está expandida
 let nombresRamos = [];
 
@@ -111,16 +110,10 @@ function pintarPostulaciones() {
     : vacio("Aún no tienes postulaciones. Postula a un caso o espera solicitudes de pacientes.");
 }
 
-function pintarCitas() {
-  document.getElementById("lista-citas").innerHTML = citas.length
-    ? conVerMas("citas", citas, LIMITE_LISTA, filaCita)
-    : vacio("No tienes citas agendadas. Agenda una desde una postulación aceptada.");
-}
-
 // Cada clave de "Mostrar más" sabe cómo volver a dibujar su lista.
 const REPINTAR = {
   ramos: pintarTagsRamos, clinicas: pintarClinicas, casos: pintarCasos,
-  requerimientos: pintarRequerimientos, postulaciones: pintarPostulaciones, citas: pintarCitas,
+  requerimientos: pintarRequerimientos, postulaciones: pintarPostulaciones,
 };
 
 async function cargarResumen() {
@@ -128,7 +121,6 @@ async function cargarResumen() {
   poner("stat-abiertos", r.requerimientos_abiertos);
   poner("stat-completados", r.requerimientos_completados);
   poner("stat-recibidas", r.postulaciones_recibidas);
-  poner("stat-citas", r.citas_proximas);
   poner("stat-ramos", r.ramos.length);
   nombresRamos = r.ramos;
   pintarTagsRamos();
@@ -138,17 +130,38 @@ async function cargarResumen() {
 }
 
 /* ---------- 3. CASOS CLÍNICOS ---------- */
-function filaCaso(c) {
-  const yaPostule = c.mi_postulacion_estado !== null && c.mi_postulacion_estado !== undefined;
-  const boton = yaPostule
-    ? `<button class="btn btn--soft" disabled>Postulación ${esc(c.mi_postulacion_estado.toLowerCase())}</button>`
-    : !estaVerificado()
-    ? `<button class="btn btn--soft" data-accion="verificar-perfil">
+// El título es el comienzo de lo que escribió el paciente (cortado con «…»): se muestra el texto completo una sola vez.
+function textoCaso(c) {
+  const inicio = (c.titulo || "").replace(/(\.{3}|…)\s*$/, "").trim();
+  return c.descripcion && c.descripcion.startsWith(inicio) ? c.descripcion : c.titulo;
+}
+
+function botonesCaso(c) {
+  const estado = c.mi_postulacion_estado;
+  if (estado === null || estado === undefined) {
+    if (!estaVerificado()) {
+      return `<button class="btn btn--soft" data-accion="verificar-perfil">
          <span class="material-symbols-rounded" style="color:inherit">lock</span> Verifica tu perfil para postular
-       </button>`
-    : `<button class="btn ${c.urgente ? "btn--primary" : "btn--soft"}" data-accion="postular" data-id="${c.id}">
+       </button>`;
+    }
+    return `<button class="btn ${c.urgente ? "btn--primary" : "btn--soft"}" data-accion="postular" data-id="${c.id}">
          Postular a Caso <span class="material-symbols-rounded" style="color:inherit">arrow_forward</span>
        </button>`;
+  }
+  if (estado !== "Pendiente") {
+    return `<button class="btn btn--soft" disabled>Postulación ${esc(estado.toLowerCase())}</button>`;
+  }
+  // Pendiente: si la envió el paciente decides tú; si la enviaste tú, puedes retirarla.
+  if (c.mi_postulacion_puede_responder) {
+    return `<span class="case-row__estado">El paciente te solicitó atención</span>
+      <button class="btn btn--primary" data-accion="responder" data-respuesta="aceptar" data-id="${c.mi_postulacion_id}">Aceptar</button>
+      <button class="btn btn--danger-soft" data-accion="responder" data-respuesta="rechazar" data-id="${c.mi_postulacion_id}">Rechazar</button>`;
+  }
+  return `<span class="case-row__estado">Postulación pendiente</span>
+    <button class="btn btn--danger-soft" data-accion="cancelar-postulacion" data-id="${c.mi_postulacion_id}">Cancelar postulación</button>`;
+}
+
+function filaCaso(c) {
   return `
     <article class="card case-row${c.urgente ? " case-row--top" : ""}" data-id="${c.id}">
       <div class="case-row__main">
@@ -156,15 +169,14 @@ function filaCaso(c) {
           <span class="case-row__badge${c.urgente ? " case-row__badge--top" : ""}">${c.urgente ? `<span class="material-symbols-rounded">bolt</span>Urgente` : esc(c.area_nombre)}</span>
           <span class="case-row__note case-row__note--muted">${esc(c.codigo)}</span>
         </div>
-        <h3>${esc(c.titulo)}</h3>
-        ${c.descripcion && c.descripcion !== c.titulo ? `<p class="case-row__desc">${esc(c.descripcion)}</p>` : ""}
+        <h3>${esc(textoCaso(c))}</h3>
         <div class="case-row__meta">
           <span><span class="material-symbols-rounded">person</span>${esc(c.paciente)}</span>
           <span><span class="material-symbols-rounded">location_on</span>${esc(c.comuna || "Comuna sin especificar")}${c.disponibilidad ? ` (${esc(c.disponibilidad)})` : ""}</span>
           <span class="area"><span class="material-symbols-rounded">bookmark</span>${esc(c.area_nombre)}</span>
         </div>
       </div>
-      <div class="case-row__side">${boton}</div>
+      <div class="case-row__side">${botonesCaso(c)}</div>
     </article>`;
 }
 
@@ -351,7 +363,7 @@ function abrirEditarRequerimiento(id) {
   });
 }
 
-/* ---------- 6. POSTULACIONES Y CITAS ---------- */
+/* ---------- 6. POSTULACIONES ---------- */
 function botonesPostulacion(p) {
   const b = [];
   if (p.puede_responder) {
@@ -361,7 +373,6 @@ function botonesPostulacion(p) {
     b.push(`<button class="btn btn--outline btn--sm" data-accion="cancelar-postulacion" data-id="${p.id}">Cancelar postulación</button>`);
   } else if (p.estado === "Aceptada") {
     b.push(`<button class="btn btn--outline btn--sm" data-accion="chatear" data-id="${p.id}"><span class="material-symbols-rounded">chat</span> Chatear</button>`);
-    b.push(`<button class="btn btn--primary btn--sm" data-accion="agendar" data-id="${p.id}">Agendar cita</button>`);
     if (p.solicitud.estado !== "Completada") {
       b.push(`<button class="btn btn--soft btn--sm" data-accion="completar" data-id="${p.id}">Tratamiento realizado</button>`);
       b.push(`<button class="btn btn--danger-soft btn--sm" data-accion="cancelar-postulacion" data-id="${p.id}">Cancelar</button>`);
@@ -404,75 +415,7 @@ async function responder(id, accion) {
 }
 
 async function recargarFlujo() {
-  await Promise.all([cargarCasos(), cargarPostulaciones(), cargarCitas(), cargarRequerimientos(), cargarResumen()]);
-}
-
-function filaCita(c) {
-  const abierta = c.estado === "Agendada";
-  return `
-    <div class="fila">
-      <div class="fila__top">
-        <div>
-          <span class="fila__titulo">${esc(fechaHora(c.fecha_hora))}</span>
-          <span class="${claseEstado(c.estado)}">${esc(c.estado)}</span>
-          <div class="fila__meta">
-            <span><strong>${esc(c.solicitud_codigo)}</strong> ${esc(c.titulo)}</span><span>•</span>
-            <span>Paciente: ${esc(c.paciente.nombre)}</span>
-            ${c.lugar ? `<span>•</span><span>${esc(c.lugar)}</span>` : ""}
-          </div>
-          ${c.notas ? `<p class="fila__texto">${esc(c.notas)}</p>` : ""}
-        </div>
-        ${abierta ? `<div class="fila__acciones">
-          <button class="btn btn--outline btn--sm" data-accion="cita-editar" data-id="${c.id}">Reprogramar</button>
-          <button class="btn btn--danger-soft btn--sm" data-accion="cita-cancelar" data-id="${c.id}">Cancelar</button>
-        </div>` : ""}
-      </div>
-    </div>`;
-}
-
-async function cargarCitas() {
-  citas = await cargar("/api/citas");
-  pintarCitas();
-}
-
-function abrirAgendar(postulacionId) {
-  abrirFormulario({
-    titulo: "Agendar cita",
-    textoBoton: "Agendar",
-    campos: [
-      { nombre: "fecha_hora", etiqueta: "Fecha y hora", tipo: "datetime-local", requerido: true },
-      { nombre: "lugar", etiqueta: "Lugar / box", placeholder: "Clínica Norte · Box 8-B" },
-      { nombre: "notas", etiqueta: "Notas para el paciente", tipo: "textarea", placeholder: "Traer radiografías, venir en ayunas…" },
-    ],
-    onEnviar: async (valores) => {
-      const r = await apiJson("/api/citas", "POST", { postulacion_id: postulacionId, ...valores });
-      if (!r.ok) return { ok: false, error: textoDeError(r) };
-      mostrarAviso("Cita agendada.");
-      await Promise.all([cargarCitas(), cargarResumen()]);
-      return { ok: true };
-    },
-  });
-}
-
-function abrirReprogramar(citaId) {
-  const cita = citas.find((c) => c.id === citaId);
-  if (!cita) return;
-  abrirFormulario({
-    titulo: "Reprogramar cita",
-    textoBoton: "Guardar",
-    campos: [
-      { nombre: "fecha_hora", etiqueta: "Fecha y hora", tipo: "datetime-local", valor: cita.fecha_hora.slice(0, 16), requerido: true },
-      { nombre: "lugar", etiqueta: "Lugar / box", valor: cita.lugar },
-      { nombre: "notas", etiqueta: "Notas", tipo: "textarea", valor: cita.notas },
-    ],
-    onEnviar: async (valores) => {
-      const r = await apiJson(`/api/citas/${citaId}`, "PATCH", valores);
-      if (!r.ok) return { ok: false, error: textoDeError(r) };
-      mostrarAviso("Cita actualizada.");
-      await cargarCitas();
-      return { ok: true };
-    },
-  });
+  await Promise.all([cargarCasos(), cargarPostulaciones(), cargarRequerimientos(), cargarResumen()]);
 }
 
 /* ---------- 7. ACCIONES ---------- */
@@ -487,7 +430,7 @@ async function accion(ruta, metodo, cuerpo, mensaje, recarga = recargarFlujo) {
 // Acciones que exigen perfil verificado (el backend también lo exige: esto solo lo explica).
 const ACCIONES_PROTEGIDAS = [
   "nuevo-requerimiento", "editar-requerimiento", "avance", "postular",
-  "responder", "agendar", "completar", "cita-editar",
+  "responder", "completar",
 ];
 
 document.addEventListener("click", (evento) => {
@@ -520,13 +463,8 @@ document.addEventListener("click", (evento) => {
     case "cancelar-postulacion":
       if (confirm("¿Cancelar esta postulación?")) accion(`/api/postulaciones/${id}/cancelar`, "POST", undefined, "Postulación cancelada.");
       return;
-    case "agendar": return abrirAgendar(id);
     case "completar":
       if (confirm("¿Confirmas que el tratamiento ya se realizó? Se sumará a tu requerimiento.")) accion(`/api/postulaciones/${id}/completar`, "POST", undefined, "Tratamiento registrado como realizado.");
-      return;
-    case "cita-editar": return abrirReprogramar(id);
-    case "cita-cancelar":
-      if (confirm("¿Cancelar esta cita?")) accion(`/api/citas/${id}`, "PATCH", { estado: "Cancelada" }, "Cita cancelada.", () => Promise.all([cargarCitas(), cargarResumen()]));
       return;
   }
 });
@@ -557,7 +495,7 @@ async function iniciar() {
   await cargarVerificacion(false).catch(() => mostrarAviso("No se pudo cargar tu estado de verificación.", true));
   // requerimientos después: se usan al postular a un caso
   await cargarRequerimientos();
-  const tareas = [cargarPerfil, cargarResumen, cargarRamos, cargarCasos, cargarPostulaciones, cargarCitas];
+  const tareas = [cargarPerfil, cargarResumen, cargarRamos, cargarCasos, cargarPostulaciones];
   const resultados = await Promise.allSettled(tareas.map((t) => t()));
   if (resultados.some((r) => r.status === "rejected")) {
     mostrarAviso("Algunos datos no se pudieron cargar. Recarga la página.", true);

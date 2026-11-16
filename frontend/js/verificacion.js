@@ -7,7 +7,7 @@
  * - estaVerificado(): lo usa portal-estudiante.js para bloquear acciones
  *
  * Mientras no esté verificado el estudiante puede ver los casos, pero no postular,
- * agendar ni publicar requerimientos (el backend lo exige; esto solo lo explica).
+ * publicar requerimientos (el backend lo exige; esto solo lo explica).
  * Dispara "verificacion-actualizada" en document cada vez que cambia el estado.
  * Requiere session.js, api.js, utils.js (esc) y formulario-modal.js cargados antes.
  * ---------------------------------------------------------------------
@@ -42,7 +42,7 @@ function textosVerificacion(v) {
       return {
         clase: "verif--pendiente", icono: "verified_user", boton: "Verificar tu perfil",
         titulo: "Verifica tu perfil para empezar",
-        texto: "Sube tu certificado de alumno regular. Mientras no lo hagas puedes ver los casos de pacientes, pero no postular, agendar citas ni publicar requerimientos.",
+        texto: "Sube tu certificado de alumno regular. Mientras no lo hagas puedes ver los casos de pacientes, pero no postular ni publicar requerimientos.",
       };
   }
 }

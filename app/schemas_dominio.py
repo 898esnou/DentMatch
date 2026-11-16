@@ -133,6 +133,8 @@ class CasoOut(BaseModel):
     fecha_creacion: Optional[datetime] = None
     mi_postulacion_id: Optional[int] = None
     mi_postulacion_estado: Optional[str] = None
+    # Pendiente y la inició el paciente: el estudiante decide (aceptar o rechazar).
+    mi_postulacion_puede_responder: bool = False
 
 
 # ---------- ESTUDIANTES (lo que ve el paciente) ----------
@@ -311,11 +313,23 @@ class ConversacionOut(BaseModel):
     mensaje_cierre: Optional[str] = None    # explicación para quien no fue sancionado
     archivada: bool = False                 # una de las dos personas la archivó (solo lectura, se puede reabrir)
     archivada_por_mi: bool = False          # la archivé yo: solo yo puedo reabrirla
+    bloqueada: bool = False                 # una de las dos personas bloqueó al otro (solo lectura)
+    bloqueada_por_mi: bool = False          # bloqueé yo: solo yo puedo desbloquear
+
+
+class MensajeInapropiadoOut(BaseModel):
+    """Mensaje que la moderación bloqueó y no llegó: se muestra solo si quien lo lee decide verlo."""
+    id: int
+    contenido: str
+    categoria: str
+    fecha: datetime
 
 
 class HiloOut(BaseModel):
     conversacion: ConversacionOut
     mensajes: List[MensajeOut]
+    # Lo que escribió la otra persona y se bloqueó; solo cuando su cuenta fue sancionada (chat detenido).
+    mensajes_inapropiados: List[MensajeInapropiadoOut] = []
     puede_reportar: bool = False                 # ya hay suficientes mensajes y no reporté aún
     aviso_moderacion: Optional[str] = None       # recordatorio de "Reportar" tras un mensaje bloqueado
 

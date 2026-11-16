@@ -18,6 +18,8 @@ from tests.test_chat import _enviar, _vinculo
     "Estoy infeliz con el resultado, ¿se puede corregir?",
     "Estas citas son los lunes, ¿verdad?",
     "Llevo 15.30 en mi reloj, llego en 10 minutos",
+    "Hola, te voy a buscar a la entrada de la clínica",
+    "Te voy a encontrar en el box 3",
 ])
 def test_reglas_dejan_pasar_mensajes_normales(texto):
     assert moderacion.evaluar_con_reglas(texto).permitido

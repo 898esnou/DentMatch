@@ -17,12 +17,14 @@
 (function () {
   const REFRESCO_MS = 5000;   // cada cuánto se consulta la API
   const DIAS_HISTORIAL = 30;  // debe coincidir con DIAS_HISTORIAL del backend (app/routers/chat.py)
+  const MIN_MENSAJES_REPORTAR = 3;  // debe coincidir con MIN_MENSAJES_REPORTAR de app/sanciones.py
 
   /* ---------- estado ---------- */
   let conversaciones = [];
   let activa = null;          // id de la postulación abierta (o null)
   let hilo = null;            // última respuesta del hilo abierto
   let errorHilo = "";         // por qué no se pudo cargar el hilo abierto (se reintenta solo)
+  let verInapropiados = false; // el usuario decidió leer los mensajes bloqueados de la otra persona
 
   const app = document.getElementById("chat-app");
   if (!app) return;
@@ -44,6 +46,8 @@
   function hora(iso) {
     return new Date(iso).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
   }
+
+  const ETIQUETA_CATEGORIA = { insulto: "Insulto", acoso: "Acoso" };
 
   function diasHasta(iso) {
     return Math.max(Math.ceil((new Date(iso) - new Date()) / 86400000), 0);
@@ -104,6 +108,39 @@
       </button>`).join("");
   }
 
+  // Por qué el botón «Reportar» está desactivado (se mantiene visible para que se sepa que existe).
+  function motivoSinReporte() {
+    if (hilo.puede_reportar) return "Reportar a la otra persona";
+    return hilo.mensajes.length < MIN_MENSAJES_REPORTAR
+      ? `Podrás reportar cuando la conversación tenga al menos ${MIN_MENSAJES_REPORTAR} mensajes`
+      : "Ya reportaste esta conversación: un administrador la está revisando";
+  }
+
+  // Mensajes bloqueados de la otra persona (cuenta sancionada): ocultos hasta que quien los recibe decida leerlos.
+  function bloqueInapropiados() {
+    const lista = hilo.mensajes_inapropiados || [];
+    if (!lista.length) return "";
+    const resumen = `<p class="chat__inap-titulo"><span class="material-symbols-rounded">visibility_off</span>
+      La otra persona escribió ${lista.length === 1 ? "1 mensaje" : `${lista.length} mensajes`} con lenguaje inapropiado.
+      La moderación los bloqueó y no te llegaron.</p>`;
+    if (!verInapropiados) {
+      return `<div class="chat__inap">${resumen}
+        <button type="button" class="btn btn--outline btn--sm" data-accion="mostrar-inapropiados">
+          <span class="material-symbols-rounded">visibility</span> Leer mensajes inapropiados</button></div>`;
+    }
+    const burbujas = lista.map((m) => `
+      <div class="chat__msg">
+        <div class="chat__burbuja chat__burbuja--inap">${esc(m.contenido)}</div>
+        <small>${esc(ETIQUETA_CATEGORIA[m.categoria] || "Inapropiado")} · ${esc(hora(m.fecha))}</small>
+      </div>`).join("");
+    return `<div class="chat__inap chat__inap--abierto">${resumen}
+      <p class="chat__inap-aviso"><span class="material-symbols-rounded">warning</span>
+        Este es lenguaje inapropiado. Lo lees bajo tu responsabilidad.</p>
+      ${burbujas}
+      <button type="button" class="btn btn--outline btn--sm" data-accion="ocultar-inapropiados">
+        <span class="material-symbols-rounded">visibility_off</span> Ocultar mensajes</button></div>`;
+  }
+
   function pintarHilo() {
     if (activa == null || !hilo) {
       elCabecera.innerHTML = "";
@@ -123,8 +160,13 @@
       <div class="chat__acciones">
         ${c.puede_escribir ? `<button type="button" class="btn btn--ghost chat__reportar" data-accion="archivar">
           <span class="material-symbols-rounded">inventory_2</span> Archivar</button>` : ""}
-        ${hilo.puede_reportar ? `<button type="button" class="btn btn--ghost chat__reportar" data-accion="reportar">
-          <span class="material-symbols-rounded">flag</span> Reportar</button>` : ""}
+        ${c.puede_escribir ? `<button type="button" class="btn btn--ghost chat__reportar" data-accion="bloquear">
+          <span class="material-symbols-rounded">block</span> Bloquear</button>` : ""}
+        ${c.bloqueada_por_mi ? `<button type="button" class="btn btn--ghost chat__reportar" data-accion="desbloquear">
+          <span class="material-symbols-rounded">lock_open</span> Desbloquear</button>` : ""}
+        <button type="button" class="btn btn--ghost chat__reportar" data-accion="reportar"
+                ${hilo.puede_reportar ? "" : "disabled"} title="${esc(motivoSinReporte())}">
+          <span class="material-symbols-rounded">flag</span> Reportar</button>
       </div>`;
 
     // Solo bajamos al final si ya estaba abajo (para no molestar a quien lee mensajes antiguos).
@@ -139,6 +181,12 @@
     const cerrada = c.puede_escribir ? "" : (c.cerrada_por_moderacion ? `
       <p class="chat__sistema chat__sistema--detenido">
         <span class="material-symbols-rounded">block</span>${esc(c.mensaje_cierre)}
+      </p>` : c.bloqueada ? `
+      <p class="chat__cerrada">
+        <span class="material-symbols-rounded">block</span>
+        ${c.bloqueada_por_mi ? "Bloqueaste esta conversación" : "La otra persona bloqueó esta conversación"}: nadie puede enviar mensajes.
+        El historial se eliminará ${c.se_borra_el ? `en ${diasHasta(c.se_borra_el)} día(s)` : `a los ${DIAS_HISTORIAL} días`}.
+        ${c.bloqueada_por_mi ? `<button type="button" class="btn btn--outline btn--sm" data-accion="desbloquear">Desbloquear</button>` : ""}
       </p>` : c.archivada ? `
       <p class="chat__cerrada">
         <span class="material-symbols-rounded">inventory_2</span>
@@ -155,7 +203,7 @@
       <p class="chat__sistema">
         <span class="material-symbols-rounded">shield</span>${esc(hilo.aviso_moderacion)}
       </p>` : "";
-    elMensajes.innerHTML = vacio + mensajes + moderacion + cerrada;
+    elMensajes.innerHTML = vacio + mensajes + bloqueInapropiados() + moderacion + cerrada;
     elForm.hidden = !c.puede_escribir;
     elNota.hidden = !c.puede_escribir;
     if (estabaAbajo) elMensajes.scrollTop = elMensajes.scrollHeight;
@@ -228,7 +276,7 @@
     const id = activa;
     abrirFormulario({
       titulo: "Archivar conversación",
-      descripcion: "Nadie podrá enviar mensajes aquí, pero el historial se conserva 30 días y solo tú podrás reabrir la conversación. La postulación y las citas no cambian.",
+      descripcion: "Nadie podrá enviar mensajes aquí, pero el historial se conserva 30 días y solo tú podrás reabrir la conversación. La postulación no cambia.",
       textoBoton: "Archivar",
       campos: [],
       onEnviar: async () => {
@@ -247,6 +295,34 @@
     const r = await apiJson(`/api/chat/${activa}/reabrir`, "POST");
     if (!r.ok) return mostrarAviso(textoDeError(r), true);
     mostrarAviso("Conversación reabierta.");
+    await cargarHilo();
+    await cargarLista();
+  }
+
+  function bloquear() {
+    if (activa == null) return;
+    const id = activa;
+    abrirFormulario({
+      titulo: "Bloquear conversación",
+      descripcion: "Nadie podrá enviar mensajes en este chat y solo tú podrás desbloquearlo. Si la persona se portó mal, también puedes reportarla.",
+      textoBoton: "Bloquear",
+      campos: [],
+      onEnviar: async () => {
+        const r = await apiJson(`/api/chat/${id}/bloquear`, "POST");
+        if (!r.ok) return { ok: false, error: textoDeError(r) };
+        mostrarAviso("Conversación bloqueada.");
+        await cargarHilo();
+        await cargarLista();
+        return { ok: true };
+      },
+    });
+  }
+
+  async function desbloquear() {
+    if (activa == null) return;
+    const r = await apiJson(`/api/chat/${activa}/desbloquear`, "POST");
+    if (!r.ok) return mostrarAviso(textoDeError(r), true);
+    mostrarAviso("Conversación desbloqueada.");
     await cargarHilo();
     await cargarLista();
   }
@@ -273,6 +349,7 @@
     activa = id;
     hilo = null;
     errorHilo = "";
+    verInapropiados = false;
     mostrarAlerta("");
     pintarLista();
     pintarHilo();
@@ -316,9 +393,14 @@
   elCabecera.addEventListener("click", (e) => {
     if (e.target.closest('[data-accion="reportar"]')) reportar();
     if (e.target.closest('[data-accion="archivar"]')) archivar();
+    if (e.target.closest('[data-accion="bloquear"]')) bloquear();
+    if (e.target.closest('[data-accion="desbloquear"]')) desbloquear();
   });
   elMensajes.addEventListener("click", (e) => {
     if (e.target.closest('[data-accion="reabrir"]')) reabrir();
+    if (e.target.closest('[data-accion="desbloquear"]')) desbloquear();
+    if (e.target.closest('[data-accion="mostrar-inapropiados"]')) { verInapropiados = true; pintarHilo(); }
+    if (e.target.closest('[data-accion="ocultar-inapropiados"]')) { verInapropiados = false; pintarHilo(); }
   });
 
   // Botones "Chatear" de las postulaciones: llevan a la sección y abren la conversación.

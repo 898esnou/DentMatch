@@ -322,6 +322,9 @@ class Postulacion(Base):
     archivo_chat = relationship(
         "ConversacionArchivada", uselist=False, cascade="all, delete-orphan", passive_deletes=True
     )
+    bloqueo_chat = relationship(
+        "BloqueoChat", uselist=False, cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class Cita(Base):
@@ -495,4 +498,16 @@ class ConversacionArchivada(Base):
 
     postulacion_id = Column(Integer, ForeignKey("postulaciones.id", ondelete="CASCADE"), primary_key=True)
     archivada_por = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
+    fecha = Column(TIMESTAMP, nullable=False)
+
+
+class BloqueoChat(Base):
+    """
+    Una de las dos personas bloqueó al otro en el chat de una postulación: queda de solo
+    lectura para ambas y solo quien bloqueó puede desbloquear.
+    """
+    __tablename__ = "bloqueos_chat"
+
+    postulacion_id = Column(Integer, ForeignKey("postulaciones.id", ondelete="CASCADE"), primary_key=True)
+    bloqueado_por = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
     fecha = Column(TIMESTAMP, nullable=False)

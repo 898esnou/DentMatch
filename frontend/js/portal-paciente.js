@@ -6,8 +6,7 @@
    4b. Haz tu consulta (búsqueda semántica)
    4. Estudiantes disponibles y "Solicitar atención"
    5. Mis solicitudes con sus candidatos (postulaciones)
-   6. Mis citas
-   7. Acciones (un solo oyente para todos los botones)
+   6. Acciones (un solo oyente para todos los botones)
    Requiere session.js, api.js, utils.js y formulario-modal.js cargados antes.
    ========================================================================= */
 
@@ -18,12 +17,10 @@ let postulaciones = [];
 let estudiantes = [];
 let filtroActual = "todos";
 const abiertas = new Set(); // ids de solicitudes con sus candidatos desplegados
-let citas = [];
 
 // "Mostrar más / menos": cuántos elementos se ven al inicio en cada lista.
 const LIMITE_ESTUDIANTES = 3;
 const LIMITE_SOLICITUDES = 5;
-const LIMITE_CITAS = 3;
 const expandido = {};
 
 function conVerMas(clave, items, limite, fila) {
@@ -41,7 +38,6 @@ const botonEliminar = (accion, id, etiqueta) =>
 
 const nombreArea = (clave) => (AREAS.find((a) => a.clave === clave) || {}).nombre || clave;
 const poner = (id, texto) => { document.getElementById(id).textContent = texto; };
-const fechaHora = (iso) => new Date(iso).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
 
 function hace(iso) {
   const dias = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
@@ -76,7 +72,6 @@ async function cargarResumen() {
   poner("stat-activas", r.solicitudes_activas);
   poner("stat-completados", r.tratamientos_completados);
   poner("stat-por-responder", r.notificaciones);
-  poner("stat-citas", r.citas_proximas);
   const badge = document.getElementById("badge-notificaciones");
   badge.textContent = r.notificaciones;
   badge.hidden = !r.notificaciones;
@@ -566,41 +561,9 @@ function pintarSolicitudes() {
     : `<p class="vacio">Aún no has publicado solicitudes. Cuéntanos qué necesitas en el recuadro de arriba.</p>`;
 }
 
-/* ---------- 6. MIS CITAS ---------- */
-function filaCita(c) {
-  return `
-    <div class="fila">
-      <div class="fila__top">
-        <div>
-          <span class="fila__titulo">${esc(fechaHora(c.fecha_hora))}</span>
-          <span class="${claseEstado(c.estado)}">${esc(c.estado)}</span>
-          <div class="fila__meta">
-            <span><strong>${esc(c.solicitud_codigo)}</strong> ${esc(c.titulo)}</span><span>•</span>
-            <span>Estudiante: ${esc(c.estudiante.nombre)}</span>
-            ${c.lugar ? `<span>•</span><span>${esc(c.lugar)}</span>` : ""}
-          </div>
-          ${c.notas ? `<p class="fila__texto">${esc(c.notas)}</p>` : ""}
-        </div>
-        ${c.estado === "Agendada" ? `<button class="btn btn--danger-soft btn--sm" data-accion="cita-cancelar" data-id="${c.id}">Cancelar cita</button>` : ""}
-        ${["Cancelada", "Realizada"].includes(c.estado) ? botonEliminar("eliminar-cita", c.id, "Eliminar cita") : ""}
-      </div>
-    </div>`;
-}
-
-async function cargarCitas() {
-  citas = await cargar("/api/citas");
-  pintarCitas();
-}
-
-function pintarCitas() {
-  document.getElementById("lista-citas").innerHTML = citas.length
-    ? conVerMas("citas", citas, LIMITE_CITAS, filaCita)
-    : `<p class="vacio">Aún no tienes citas. Cuando un estudiante acepte tu solicitud, agendará la cita aquí.</p>`;
-}
-
-/* ---------- 7. ACCIONES ---------- */
+/* ---------- 6. ACCIONES ---------- */
 async function recargarTodo(seleccionarSolicitudId) {
-  await Promise.all([cargarSolicitudes(), cargarResumen(), cargarCitas()]);
+  await Promise.all([cargarSolicitudes(), cargarResumen()]);
   llenarSelectorSolicitud(seleccionarSolicitudId);
   await cargarEstudiantes();
 }
@@ -652,27 +615,21 @@ document.addEventListener("click", (evento) => {
       return;
     case "responder":
       return accion(`/api/postulaciones/${id}/responder`, "POST", { accion: el.dataset.respuesta },
-        el.dataset.respuesta === "aceptar" ? "Candidato aceptado. El estudiante agendará la cita." : "Candidato rechazado.");
+        el.dataset.respuesta === "aceptar" ? "Candidato aceptado. Ya pueden coordinar por el chat." : "Candidato rechazado.");
     case "cancelar-postulacion":
       if (confirm("¿Cancelar esta postulación?")) accion(`/api/postulaciones/${id}/cancelar`, "POST", undefined, "Postulación cancelada.");
       return;
     case "editar-solicitud": return editarSolicitud(id);
     case "cancelar-solicitud":
-      if (confirm("¿Cancelar esta solicitud? También se cancelarán sus postulaciones y citas.")) accion(`/api/solicitudes/${id}/cancelar`, "POST", undefined, "Solicitud cancelada.");
+      if (confirm("¿Cancelar esta solicitud? También se cancelarán sus postulaciones.")) accion(`/api/solicitudes/${id}/cancelar`, "POST", undefined, "Solicitud cancelada.");
       return;
     case "ver-mas": {
       const lista = el.dataset.lista;
       expandido[lista] = !expandido[lista];
-      return { estudiantes: pintarEstudiantes, solicitudes: pintarSolicitudes, citas: pintarCitas }[lista]();
+      return { estudiantes: pintarEstudiantes, solicitudes: pintarSolicitudes }[lista]();
     }
     case "eliminar-solicitud":
       if (confirm("¿Eliminar esta solicitud cancelada? Dejará de aparecer en tu lista.")) accion(`/api/solicitudes/${id}/definitivo`, "DELETE", undefined, "Solicitud eliminada.");
-      return;
-    case "eliminar-cita":
-      if (confirm("¿Eliminar esta cita? Dejará de aparecer en tu lista.")) accion(`/api/citas/${id}/definitivo`, "DELETE", undefined, "Cita eliminada.");
-      return;
-    case "cita-cancelar":
-      if (confirm("¿Cancelar esta cita?")) accion(`/api/citas/${id}`, "PATCH", { estado: "Cancelada" }, "Cita cancelada.");
       return;
   }
 });

@@ -15,6 +15,7 @@ from datetime import timedelta
 from typing import List, Optional
 
 from fastapi import HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app import models
@@ -83,6 +84,25 @@ def avisar(db: Session, usuario_id: int, texto: str) -> None:
 
 
 # ---------------------------------------------------------------- advertencias
+def contar_advertencias_varios(db: Session, usuario_ids) -> dict:
+    """Advertencias vigentes de varias cuentas en una sola consulta: {usuario_id: cantidad}."""
+    ids = list(usuario_ids)
+    if not ids:
+        return {}
+    desde = ahora() - timedelta(days=DIAS_ADVERTENCIAS)
+    filas = (
+        db.query(models.Advertencia.usuario_id, func.count(models.Advertencia.id))
+        .filter(
+            models.Advertencia.usuario_id.in_(ids),
+            models.Advertencia.cuenta.is_(True),
+            models.Advertencia.fecha >= desde,
+        )
+        .group_by(models.Advertencia.usuario_id)
+        .all()
+    )
+    return dict(filas)
+
+
 def contar_advertencias(db: Session, usuario_id: int) -> int:
     desde = ahora() - timedelta(days=DIAS_ADVERTENCIAS)
     return (

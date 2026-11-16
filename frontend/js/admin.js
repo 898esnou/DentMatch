@@ -255,13 +255,13 @@
     if (decision === "baneo") {
       abrirFormulario({
         titulo: d.reportado.estado_cuenta === "baneado" ? "Mantener el baneo" : "Banear cuenta",
-        descripcion: `${nombre} quedará bloqueado sin fecha de término. Se cancelan sus postulaciones y citas activas y se avisa a las otras personas.`,
+        descripcion: `${nombre} quedará bloqueado sin fecha de término. Se cancelan sus postulaciones activas y se avisa a las otras personas.`,
         textoBoton: "Confirmar baneo", campos: [campoNota], onEnviar: enviar,
       });
     } else if (decision === "suspension") {
       abrirFormulario({
         titulo: "Dar time-out",
-        descripcion: `${nombre} no podrá entrar durante ese tiempo y luego volverá a tener acceso con sus advertencias en cero. Se cancelan sus postulaciones y citas activas.`,
+        descripcion: `${nombre} no podrá entrar durante ese tiempo y luego volverá a tener acceso con sus advertencias en cero. Se cancelan sus postulaciones activas.`,
         textoBoton: "Aplicar time-out",
         campos: [
           { nombre: "dias", etiqueta: "Duración", tipo: "select", requerido: true, valor: "7",
@@ -467,7 +467,7 @@
   function levantarSancion(id, nombre) {
     abrirFormulario({
       titulo: "Levantar sanción",
-      descripcion: `${nombre} podrá volver a entrar y sus advertencias vuelven a cero. Los chats y citas que se cancelaron no se reabren, pero se avisa a ambas personas.`,
+      descripcion: `${nombre} podrá volver a entrar y sus advertencias vuelven a cero. Los chats que se cancelaron no se reabren, pero se avisa a ambas personas.`,
       textoBoton: "Levantar sanción", campos: [],
       onEnviar: async () => {
         const r = await llamar(`/api/admin/cuentas/${id}/levantar-sancion`, "POST");

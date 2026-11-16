@@ -21,7 +21,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import models, sanciones
 from app.auth import require_rol
@@ -39,8 +39,7 @@ solo_admin = require_rol("admin")
 
 
 # ---------------------------------------------------------------- piezas comunes
-def _estado_cuenta(db: Session, usuario_id: int) -> str:
-    fila = db.get(models.EstadoCuenta, usuario_id)
+def _estado_efectivo(fila: Optional[models.EstadoCuenta]) -> str:
     if fila is None:
         return "activo"
     # Un time-out que ya venció cuenta como activo aunque nadie haya vuelto a entrar todavía.
@@ -49,21 +48,35 @@ def _estado_cuenta(db: Session, usuario_id: int) -> str:
     return fila.estado
 
 
-def _persona(db: Session, u: models.Usuario) -> PersonaAdminOut:
-    return PersonaAdminOut(
-        id=u.id,
-        nombre=u.nombre_completo,
-        rol=u.rol,
-        estado_cuenta=_estado_cuenta(db, u.id),
-        advertencias=sanciones.contar_advertencias(db, u.id),
-    )
+def _estado_cuenta(db: Session, usuario_id: int) -> str:
+    return _estado_efectivo(db.get(models.EstadoCuenta, usuario_id))
 
 
-def _lista_out(db: Session, r: models.Reporte) -> ReporteListaOut:
+def _personas(db: Session, usuarios) -> dict:
+    """PersonaAdminOut de varios usuarios con 2 consultas en total (no 2 por persona)."""
+    ids = list({u.id for u in usuarios})
+    if not ids:
+        return {}
+    filas = {
+        e.usuario_id: e
+        for e in db.query(models.EstadoCuenta).filter(models.EstadoCuenta.usuario_id.in_(ids)).all()
+    }
+    advertencias = sanciones.contar_advertencias_varios(db, ids)
+    return {
+        u.id: PersonaAdminOut(
+            id=u.id, nombre=u.nombre_completo, rol=u.rol,
+            estado_cuenta=_estado_efectivo(filas.get(u.id)),
+            advertencias=advertencias.get(u.id, 0),
+        )
+        for u in usuarios
+    }
+
+
+def _lista_out(r: models.Reporte, personas: dict) -> ReporteListaOut:
     return ReporteListaOut(
         id=r.id, origen=r.origen, estado=r.estado, decision=r.decision, motivo=r.motivo,
         fecha_creacion=r.fecha_creacion,
-        reportado=_persona(db, r.reportado),
+        reportado=personas[r.reportado_id],
         reportante=r.reportante.nombre_completo if r.reportante else None,
     )
 
@@ -84,13 +97,16 @@ def listar_reportes(
 ):
     if estado is not None and estado not in ESTADOS_REPORTE:
         raise HTTPException(status_code=422, detail="Estado inválido")
-    consulta = db.query(models.Reporte)
+    consulta = db.query(models.Reporte).options(
+        joinedload(models.Reporte.reportado), joinedload(models.Reporte.reportante)
+    )
     if estado:
         consulta = consulta.filter(models.Reporte.estado == estado)
     reportes = consulta.order_by(models.Reporte.id.desc()).all()
     # Primero los automáticos (ya hay una cuenta baneada esperando decisión), luego los más nuevos.
     reportes.sort(key=lambda r: 0 if r.origen == "automatico" else 1)
-    return [_lista_out(db, r) for r in reportes]
+    personas = _personas(db, [r.reportado for r in reportes])
+    return [_lista_out(r, personas) for r in reportes]
 
 
 @router.get("/reportes/{reporte_id}", response_model=ReporteDetalleOut)
@@ -126,7 +142,7 @@ def ver_reporte(
         )
 
     return ReporteDetalleOut(
-        **_lista_out(db, r).model_dump(),
+        **_lista_out(r, _personas(db, [r.reportado])).model_dump(),
         otra_persona=otra.nombre_completo if otra else None,
         conversacion=p.solicitud.titulo if p else None,
         reportes_previos=previos,
@@ -178,27 +194,46 @@ def listar_cuentas(
 ):
     if estado is not None and estado not in ESTADOS_CUENTA:
         raise HTTPException(status_code=422, detail="Estado inválido")
-    U = models.Usuario
-    consulta = db.query(U).filter(U.rol.in_(("estudiante", "paciente")))
+    U, E = models.Usuario, models.EstadoCuenta
+    base = db.query(U).filter(U.rol.in_(("estudiante", "paciente")))
     if q and q.strip():
         patron = f"%{q.strip()}%"
-        consulta = consulta.filter(U.nombre_completo.ilike(patron) | U.correo.ilike(patron))
+        base = base.filter(U.nombre_completo.ilike(patron) | U.correo.ilike(patron))
+    # Las sancionadas se buscan aparte para que ninguna quede fuera del tope de 200 por ser antigua.
+    sancionadas = base.join(E, E.usuario_id == U.id).filter(E.estado != "activo").order_by(U.id.desc()).all()
+    ids_sancionadas = {u.id for u in sancionadas}
+    resto = []
+    if estado != "baneado" and estado != "suspendido":
+        resto = [u for u in base.order_by(U.id.desc()).limit(200 + len(ids_sancionadas)).all()
+                 if u.id not in ids_sancionadas][:200]
+    usuarios = sancionadas + resto
+
+    ids = [u.id for u in usuarios]
+    filas = {e.usuario_id: e for e in db.query(E).filter(E.usuario_id.in_(ids)).all()} if ids else {}
+    advertencias = sanciones.contar_advertencias_varios(db, ids)
+    reportes = dict(
+        db.query(models.Reporte.reportado_id, func.count(models.Reporte.id))
+        .filter(models.Reporte.reportado_id.in_(ids))
+        .group_by(models.Reporte.reportado_id)
+        .all()
+    ) if ids else {}
+
     salida = []
-    for u in consulta.order_by(U.id.desc()).limit(200).all():
-        actual = _estado_cuenta(db, u.id)
+    for u in usuarios:
+        fila = filas.get(u.id)
+        actual = _estado_efectivo(fila)
         if estado and actual != estado:
             continue
-        fila = db.get(models.EstadoCuenta, u.id)
         salida.append(CuentaAdminOut(
             id=u.id, nombre_completo=u.nombre_completo, correo=u.correo, rol=u.rol,
             estado_cuenta=actual,
             suspendido_hasta=fila.suspendido_hasta if fila and actual == "suspendido" else None,
             motivo=fila.motivo if fila and actual != "activo" else None,
-            advertencias=sanciones.contar_advertencias(db, u.id),
-            reportes_recibidos=db.query(func.count(models.Reporte.id)).filter(models.Reporte.reportado_id == u.id).scalar(),
+            advertencias=advertencias.get(u.id, 0),
+            reportes_recibidos=reportes.get(u.id, 0),
         ))
-    # Las cuentas sancionadas primero: es lo que el admin suele venir a buscar.
-    salida.sort(key=lambda c: 0 if c.estado_cuenta != "activo" else 1)
+    # Las cuentas sancionadas primero (es lo que el admin suele buscar), luego las más nuevas.
+    salida.sort(key=lambda c: (0 if c.estado_cuenta != "activo" else 1, -c.id))
     return salida
 
 

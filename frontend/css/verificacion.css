@@ -25,9 +25,7 @@ body.no-verificado [data-accion="nuevo-requerimiento"],
 body.no-verificado [data-accion="editar-requerimiento"],
 body.no-verificado [data-accion="avance"],
 body.no-verificado [data-accion="responder"],
-body.no-verificado [data-accion="agendar"],
-body.no-verificado [data-accion="completar"],
-body.no-verificado [data-accion="cita-editar"] {
+body.no-verificado [data-accion="completar"] {
   opacity: .5; filter: grayscale(.4);
 }
 #boton-verificar:disabled { opacity: .6; cursor: not-allowed; }
