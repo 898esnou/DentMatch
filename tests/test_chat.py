@@ -108,6 +108,33 @@ def test_el_historial_se_borra_a_los_30_dias_del_cierre(paciente, estudiante):
     assert paciente.get(f"/api/chat/{pid}/mensajes").json()["mensajes"] == []
 
 
+def _consultas_de(peticion):
+    """Cuántas consultas SQL hace una petición (cada una cuesta un viaje a la base en la nube)."""
+    from sqlalchemy import event
+
+    from app.database import engine
+
+    cuenta = []
+    escuchar = lambda *a, **k: cuenta.append(1)  # noqa: E731
+    event.listen(engine, "before_cursor_execute", escuchar)
+    try:
+        respuesta = peticion()
+    finally:
+        event.remove(engine, "before_cursor_execute", escuchar)
+    assert respuesta.status_code < 300, respuesta.text
+    return len(cuenta)
+
+
+def test_el_chat_hace_pocas_consultas(paciente, estudiante):
+    """El portal consulta lista e hilo cada pocos segundos: no deben crecer las consultas por petición."""
+    pid = _vinculo(paciente, estudiante)
+    for i in range(5):
+        _enviar(paciente, pid, f"Hola {i}")
+    assert _consultas_de(lambda: estudiante.get("/api/chat/conversaciones")) <= 6
+    assert _consultas_de(lambda: estudiante.get(f"/api/chat/{pid}/mensajes")) <= 8
+    assert _consultas_de(lambda: _enviar(estudiante, pid, "Nos vemos el martes")) <= 6
+
+
 def test_una_conversacion_abierta_nunca_se_borra(paciente, estudiante):
     pid = _vinculo(paciente, estudiante)
     _enviar(paciente, pid)

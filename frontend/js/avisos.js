@@ -4,7 +4,7 @@
  * Avisos importantes para el usuario (ej. "tu postulación fue cancelada porque la otra
  * persona ya no está disponible"). Se consultan al entrar y cada minuto; el servidor
  * entrega cada aviso una sola vez y se muestran hasta que la persona los cierra.
- * Requiere session.js, api.js, utils.js (esc) y formulario-modal.js (apiJson).
+ * Requiere session.js, api.js (apiJson) y utils.js (esc).
  * ---------------------------------------------------------------------
  */
 (function () {

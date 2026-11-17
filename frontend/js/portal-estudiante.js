@@ -7,7 +7,7 @@
    5. Requerimientos clínicos (con su tutor)
    6. Postulaciones
    7. Acciones (un solo oyente para todos los botones)
-   Requiere session.js, api.js, utils.js y formulario-modal.js cargados antes.
+   Requiere session.js, api.js, utils.js, formulario-modal.js y verificacion.js cargados antes.
    ========================================================================= */
 
 /* ---------- 1. AYUDAS Y CATÁLOGOS ---------- */
@@ -17,7 +17,7 @@ let requerimientos = [];   // los míos (se usan para vincular al postular)
 let casos = [];
 let postulaciones = [];
 let ramos = [];
-let filtroActual = "todos";
+let filtroActual = "todos";  // pestaña activa de "Explorar pacientes" (clave de FILTROS)
 
 const ICONO_AREA = {
   prevencion: "dentistry", operatoria: "dentistry", endodoncia: "bookmark", periodoncia: "biotech",
@@ -34,25 +34,11 @@ const FILTROS = {
 
 const nombreArea = (clave) => (AREAS.find((a) => a.clave === clave) || {}).nombre || clave;
 const opcionesAreas = () => AREAS.map((a) => ({ valor: a.clave, texto: a.nombre }));
-const fechaHora = (iso) => new Date(iso).toLocaleString("es-CL", { dateStyle: "medium", timeStyle: "short" });
 const soloFecha = (iso) => new Date(iso + "T00:00:00").toLocaleDateString("es-CL", { dateStyle: "medium" });
-const poner = (id, texto) => { document.getElementById(id).textContent = texto; };
-
-function claseEstado(estado) {
-  if (["Aceptada", "Completado", "Completada", "Realizada", "Activo"].includes(estado)) return "chip-tag chip-tag--green";
-  if (["Rechazada", "Rechazado", "Cancelada", "Cancelado"].includes(estado)) return "chip-tag chip-tag--danger";
-  return "chip-tag chip-tag--warn";
-}
-
-async function cargar(ruta) {
-  const r = await apiJson(ruta);
-  if (!r.ok) throw new Error(textoDeError(r));
-  return r.data;
-}
 
 /* ---------- 2. PERFIL Y RESUMEN ---------- */
 async function cargarPerfil() {
-  const datos = await cargar("/api/perfil");
+  const datos = await obtenerJson("/api/perfil");
   const e = datos.estudiante;
   if (!e) return;
   poner("perfil-ano", `${e.ano_carrera}° Año de Carrera`);
@@ -70,43 +56,37 @@ const LIMITE_LISTA = 3;    // casos, requerimientos y postulaciones
 const expandido = {};      // clave de lista -> true si está expandida
 let nombresRamos = [];
 
-// HTML de los primeros `limite` elementos + el botón "Mostrar más / menos" si sobran.
-function conVerMas(clave, items, limite, fila) {
-  const visibles = expandido[clave] ? items : items.slice(0, limite);
-  const boton = items.length <= limite ? "" :
-    `<button type="button" class="ver-mas" data-accion="ver-mas" data-lista="${clave}">
-      ${expandido[clave] ? "Mostrar menos" : `Mostrar más (${items.length - limite})`}</button>`;
-  return visibles.map(fila).join("") + boton;
-}
+// Lista con "Mostrar más / menos" (conVerMas viene de utils.js).
+const listaConVerMas = (clave, items, limite, fila) => conVerMas(clave, items, limite, fila, expandido[clave]);
 
 const tagRamo = (n) => `<span class="chip-tag chip-tag--soft"><span class="dot"></span> ${esc(n)}</span>`;
 const vacio = (texto) => `<p class="vacio">${texto}</p>`;
 
 function pintarTagsRamos() {
-  document.getElementById("tags-ramos").innerHTML = conVerMas("ramos", nombresRamos, LIMITE_TAGS_RAMOS, tagRamo);
+  document.getElementById("tags-ramos").innerHTML = listaConVerMas("ramos", nombresRamos, LIMITE_TAGS_RAMOS, tagRamo);
 }
 
 function pintarClinicas() {
   document.getElementById("lista-clinicas").innerHTML = ramos.length
-    ? conVerMas("clinicas", ramos, LIMITE_CLINICAS, tarjetaClinica)
+    ? listaConVerMas("clinicas", ramos, LIMITE_CLINICAS, tarjetaClinica)
     : `<p class="empty">Aún no agregas ramos. Usa "Agregar Ramo".</p>`;
 }
 
 function pintarCasos() {
   document.getElementById("lista-casos").innerHTML = casos.length
-    ? conVerMas("casos", casos, LIMITE_LISTA, filaCaso)
+    ? listaConVerMas("casos", casos, LIMITE_LISTA, filaCaso)
     : `<p class="empty">No hay casos disponibles con ese filtro.</p>`;
 }
 
 function pintarRequerimientos() {
   document.getElementById("lista-requerimientos").innerHTML = requerimientos.length
-    ? conVerMas("requerimientos", requerimientos, LIMITE_LISTA, filaRequerimiento)
+    ? listaConVerMas("requerimientos", requerimientos, LIMITE_LISTA, filaRequerimiento)
     : vacio('Aún no declaras requerimientos. Usa "Declarar requerimiento" e indica tu profesor.');
 }
 
 function pintarPostulaciones() {
   document.getElementById("lista-postulaciones").innerHTML = postulaciones.length
-    ? conVerMas("postulaciones", postulaciones, LIMITE_LISTA, filaPostulacion)
+    ? listaConVerMas("postulaciones", postulaciones, LIMITE_LISTA, filaPostulacion)
     : vacio("Aún no tienes postulaciones. Postula a un caso o espera solicitudes de pacientes.");
 }
 
@@ -117,7 +97,7 @@ const REPINTAR = {
 };
 
 async function cargarResumen() {
-  const r = await cargar("/api/resumen");
+  const r = await obtenerJson("/api/resumen");
   poner("stat-abiertos", r.requerimientos_abiertos);
   poner("stat-completados", r.requerimientos_completados);
   poner("stat-recibidas", r.postulaciones_recibidas);
@@ -181,7 +161,7 @@ function filaCaso(c) {
 }
 
 async function cargarCasos() {
-  casos = await cargar(`/api/casos${FILTROS[filtroActual]}`);
+  casos = await obtenerJson(`/api/casos${FILTROS[filtroActual]}`);
   pintarCasos();
 }
 
@@ -222,7 +202,7 @@ function tarjetaClinica(c) {
 }
 
 async function cargarRamos() {
-  ramos = await cargar("/api/ramos");
+  ramos = await obtenerJson("/api/ramos");
   pintarClinicas();
 }
 
@@ -314,7 +294,7 @@ function filaRequerimiento(r) {
 }
 
 async function cargarRequerimientos() {
-  requerimientos = await cargar("/api/requerimientos");
+  requerimientos = await obtenerJson("/api/requerimientos");
   pintarRequerimientos();
 }
 
@@ -403,7 +383,7 @@ function filaPostulacion(p) {
 }
 
 async function cargarPostulaciones() {
-  postulaciones = await cargar("/api/postulaciones");
+  postulaciones = await obtenerJson("/api/postulaciones");
   pintarPostulaciones();
 }
 
@@ -449,9 +429,9 @@ document.addEventListener("click", (evento) => {
       if (confirm("¿Eliminar este requerimiento cancelado? Dejará de aparecer en tu lista.")) accion(`/api/requerimientos/${id}/definitivo`, "DELETE", undefined, "Requerimiento eliminado.", () => Promise.all([cargarRequerimientos(), cargarResumen()]));
       return;
     case "ver-mas": {
-      const lista = el.dataset.lista;
-      expandido[lista] = !expandido[lista];
-      return REPINTAR[lista]();
+      const clave = el.dataset.lista;
+      expandido[clave] = !expandido[clave];
+      return REPINTAR[clave]();
     }
     case "nuevo-ramo": return abrirNuevoRamo();
     case "editar-ramo": return abrirEditarRamo(id);
@@ -488,7 +468,7 @@ document.addEventListener("verificacion-actualizada", () => {
 
 /* ---------- INICIO ---------- */
 async function iniciar() {
-  const catalogos = await cargar("/api/catalogos");
+  const catalogos = await obtenerJson("/api/catalogos");
   AREAS = catalogos.areas;
   DIAS = catalogos.dias_semana;
   // la verificación primero: define si los botones de los casos están activos

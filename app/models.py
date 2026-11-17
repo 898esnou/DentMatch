@@ -3,9 +3,16 @@ Modelos SQLAlchemy que reflejan las tablas de Supabase.
 
 Tablas del equipo (no se modifican): usuarios, perfil_estudiante, solicitudes,
 catalogo_tratamientos.
-Tablas de este backend: perfil_paciente, ramos_estudiante, requerimientos,
-solicitud_detalle, postulaciones, citas, mensajes. Se crean solas al arrancar (create_all);
-create_all nunca altera una tabla que ya existe.
+Tablas de este backend (se crean solas al arrancar con create_all, que nunca altera una
+tabla que ya existe; un cambio de columnas necesita un script en migraciones/):
+- perfiles y estudiante:  perfil_paciente, verificaciones_estudiante, ramos_estudiante, requerimientos
+- solicitudes y vínculo:  solicitud_detalle, postulaciones
+  (no hay agenda de citas: fecha y hora se coordinan por el chat. La tabla antigua "citas"
+  puede seguir en Supabase, pero ya no la usa nadie; si se borra una postulación, la
+  base elimina sus filas sola por el ON DELETE CASCADE)
+- chat y moderación:      mensajes, advertencias, reportes, estado_cuenta, avisos_usuario,
+                          cierres_moderacion, conversaciones_archivadas, bloqueos_chat
+- búsqueda semántica:     retroalimentacion_busqueda
 """
 from sqlalchemy import (
     Boolean, CheckConstraint, Column, Date, ForeignKey, Integer, String, Text,
@@ -15,7 +22,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.catalogos import (
-    CATEGORIAS_MODERACION, DECISIONES_REPORTE, ESTADOS_CERTIFICADO, ESTADOS_CITA,
+    CATEGORIAS_MODERACION, DECISIONES_REPORTE, ESTADOS_CERTIFICADO,
     ESTADOS_CUENTA, ESTADOS_POSTULACION, ESTADOS_REPORTE, ESTADOS_REQUERIMIENTO,
     ESTADOS_VERIFICACION, ORIGENES_REPORTE, sql_in,
 )
@@ -314,7 +321,6 @@ class Postulacion(Base):
     solicitud = relationship("Solicitud", back_populates="postulaciones")
     estudiante = relationship("Usuario")
     requerimiento = relationship("Requerimiento")
-    citas = relationship("Cita", back_populates="postulacion", cascade="all, delete-orphan")
     mensajes = relationship("Mensaje", back_populates="postulacion", cascade="all, delete-orphan")
     cierre_moderacion = relationship(
         "CierreModeracion", uselist=False, cascade="all, delete-orphan", passive_deletes=True
@@ -325,27 +331,6 @@ class Postulacion(Base):
     bloqueo_chat = relationship(
         "BloqueoChat", uselist=False, cascade="all, delete-orphan", passive_deletes=True
     )
-
-
-class Cita(Base):
-    """Sesión agendada para una postulación aceptada."""
-    __tablename__ = "citas"
-
-    id = Column(Integer, primary_key=True, index=True)
-    postulacion_id = Column(
-        Integer, ForeignKey("postulaciones.id", ondelete="CASCADE"), nullable=False, index=True
-    )
-    fecha_hora = Column(TIMESTAMP, nullable=False)
-    lugar = Column(String(200))
-    notas = Column(Text)
-    estado = Column(String(20), nullable=False, default="Agendada")
-    fecha_creacion = Column(TIMESTAMP, server_default=func.now())
-
-    __table_args__ = (
-        CheckConstraint(f"estado IN ({sql_in(ESTADOS_CITA)})", name="chk_estado_cita"),
-    )
-
-    postulacion = relationship("Postulacion", back_populates="citas")
 
 
 class Mensaje(Base):
@@ -492,7 +477,7 @@ class CierreModeracion(Base):
 class ConversacionArchivada(Base):
     """
     Una de las dos personas archivó el chat de una postulación: queda de solo lectura para
-    ambas y solo quien lo archivó puede reabrirlo. No toca la postulación ni las citas.
+    ambas y solo quien lo archivó puede reabrirlo. No cambia la postulación.
     """
     __tablename__ = "conversaciones_archivadas"
 

@@ -8,14 +8,14 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app import models
 from app.auth import require_rol
 from app.catalogos import AREAS
 from app.database import get_db
 from app.schemas_dominio import CasoOut
-from app.utils import nombre_corto
+from app.utils import ESCAPE_LIKE, nombre_corto, patron_contiene
 
 router = APIRouter(prefix="/api/casos", tags=["casos"])
 
@@ -43,6 +43,7 @@ def _caso_out(s: models.Solicitud, mi_postulacion: Optional[models.Postulacion])
 
 
 def _mis_postulaciones(db: Session, usuario: models.Usuario, solicitud_ids: List[int]) -> dict:
+    """{solicitud_id: postulación del estudiante} para marcar los casos en los que ya participa."""
     if not solicitud_ids:
         return {}
     filas = (
@@ -75,6 +76,7 @@ def listar_casos(
     consulta = (
         db.query(models.Solicitud)
         .outerjoin(D, D.solicitud_id == models.Solicitud.id)
+        .options(joinedload(models.Solicitud.paciente))  # el nombre del paciente, sin una consulta por fila
         .filter(models.Solicitud.estado == "Buscando")
     )
     area_efectiva = func.coalesce(D.area, "diagnostico")
@@ -83,11 +85,13 @@ def listar_casos(
         consulta = consulta.filter(area_efectiva == area)
     if urgente is not None:
         consulta = consulta.filter(urgente_efectivo == urgente)
-    if comuna:
-        consulta = consulta.filter(models.Solicitud.comuna.ilike(f"%{comuna}%"))
-    if q:
-        patron = f"%{q}%"
-        consulta = consulta.filter(D.titulo.ilike(patron) | models.Solicitud.descripcion.ilike(patron))
+    if comuna and comuna.strip():
+        consulta = consulta.filter(models.Solicitud.comuna.ilike(patron_contiene(comuna), escape=ESCAPE_LIKE))
+    if q and q.strip():
+        patron = patron_contiene(q)
+        consulta = consulta.filter(
+            D.titulo.ilike(patron, escape=ESCAPE_LIKE) | models.Solicitud.descripcion.ilike(patron, escape=ESCAPE_LIKE)
+        )
     # Primero las urgentes y, dentro de cada grupo, las más recientes.
     filas = (
         consulta.order_by(urgente_efectivo.desc(), models.Solicitud.id.desc())

@@ -3,10 +3,11 @@
    1. Ayudas y catálogos
    2. Perfil y resumen
    3. Publicar una solicitud (buscador)
-   4b. Haz tu consulta (búsqueda semántica)
    4. Estudiantes disponibles y "Solicitar atención"
-   5. Mis solicitudes con sus candidatos (postulaciones)
-   6. Acciones (un solo oyente para todos los botones)
+   5. Interruptor del buscador (consultar / publicar)
+   6. Haz tu consulta (búsqueda semántica)
+   7. Mis solicitudes con sus candidatos (postulaciones)
+   8. Acciones (un solo oyente para todos los botones)
    Requiere session.js, api.js, utils.js y formulario-modal.js cargados antes.
    ========================================================================= */
 
@@ -15,21 +16,15 @@ let AREAS = [];
 let solicitudes = [];
 let postulaciones = [];
 let estudiantes = [];
-let filtroActual = "todos";
-const abiertas = new Set(); // ids de solicitudes con sus candidatos desplegados
+let filtroActual = "todos";                   // pestaña activa de "Estudiantes disponibles"
+let avisoSinEstudiantes = "";                 // texto cuando la lista de estudiantes queda vacía
+const solicitudesDesplegadas = new Set();     // ids de solicitudes con sus candidatos a la vista
 
 // "Mostrar más / menos": cuántos elementos se ven al inicio en cada lista.
 const LIMITE_ESTUDIANTES = 3;
 const LIMITE_SOLICITUDES = 5;
 const expandido = {};
-
-function conVerMas(clave, items, limite, fila) {
-  const visibles = expandido[clave] ? items : items.slice(0, limite);
-  const boton = items.length <= limite ? "" :
-    `<button type="button" class="ver-mas" data-accion="ver-mas" data-lista="${clave}">
-      ${expandido[clave] ? "Mostrar menos" : `Mostrar más (${items.length - limite})`}</button>`;
-  return visibles.map(fila).join("") + boton;
-}
+const listaConVerMas = (clave, items, limite, fila) => conVerMas(clave, items, limite, fila, expandido[clave]);
 
 const botonEliminar = (accion, id, etiqueta) =>
   `<button class="icon-btn" aria-label="${etiqueta}" title="${etiqueta}" data-accion="${accion}" data-id="${id}">
@@ -37,7 +32,6 @@ const botonEliminar = (accion, id, etiqueta) =>
   </button>`;
 
 const nombreArea = (clave) => (AREAS.find((a) => a.clave === clave) || {}).nombre || clave;
-const poner = (id, texto) => { document.getElementById(id).textContent = texto; };
 
 function hace(iso) {
   const dias = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
@@ -45,30 +39,18 @@ function hace(iso) {
   return dias === 1 ? "Creada hace 1 día" : `Creada hace ${dias} días`;
 }
 
-function claseEstado(estado) {
-  if (["Aceptada", "Asignada", "Completada", "Realizada"].includes(estado)) return "chip-tag chip-tag--green";
-  if (["Rechazada", "Cancelada"].includes(estado)) return "chip-tag chip-tag--danger";
-  return "chip-tag chip-tag--warn";
-}
-
-async function cargar(ruta) {
-  const r = await apiJson(ruta);
-  if (!r.ok) throw new Error(textoDeError(r));
-  return r.data;
-}
-
 const solicitudesAbiertas = () => solicitudes.filter((s) => ["Abierta", "En Revisión"].includes(s.estado));
 const solicitudActiva = () => solicitudes.find((s) => String(s.id) === document.getElementById("solicitud-activa").value);
 
 /* ---------- 2. PERFIL Y RESUMEN ---------- */
 async function cargarPerfil() {
-  const datos = await cargar("/api/perfil");
+  const datos = await obtenerJson("/api/perfil");
   const comuna = datos.paciente && datos.paciente.comuna;
   poner("perfil-comuna", comuna || "sin definir");
 }
 
 async function cargarResumen() {
-  const r = await cargar("/api/resumen");
+  const r = await obtenerJson("/api/resumen");
   poner("stat-activas", r.solicitudes_activas);
   poner("stat-completados", r.tratamientos_completados);
   poner("stat-por-responder", r.notificaciones);
@@ -122,6 +104,8 @@ document.getElementById("search-form").addEventListener("submit", async (evento)
     document.getElementById("area").value = "diagnostico";
     await recargarTodo(r.data.id);
     document.getElementById("resultados").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (error) {
+    mostrarAviso("No se pudo conectar con el servidor.", true);
   } finally {
     boton.disabled = false;
   }
@@ -131,11 +115,11 @@ document.getElementById("search-form").addEventListener("submit", async (evento)
 function llenarSelectorSolicitud(seleccionarId) {
   const select = document.getElementById("solicitud-activa");
   const actual = seleccionarId ? String(seleccionarId) : select.value;
-  const abiertas_ = solicitudesAbiertas();
-  select.innerHTML = abiertas_.length
-    ? abiertas_.map((s) => `<option value="${s.id}">${esc(s.codigo)} · ${esc(s.titulo)}</option>`).join("")
+  const disponibles = solicitudesAbiertas();
+  select.innerHTML = disponibles.length
+    ? disponibles.map((s) => `<option value="${s.id}">${esc(s.codigo)} · ${esc(s.titulo)}</option>`).join("")
     : `<option value="">Crea una solicitud para poder pedir atención</option>`;
-  if (abiertas_.some((s) => String(s.id) === actual)) select.value = actual;
+  if (disponibles.some((s) => String(s.id) === actual)) select.value = actual;
 }
 
 // Puntaje de coincidencia (solo viene en los resultados de "Haz tu consulta").
@@ -163,7 +147,7 @@ function tarjetaEstudiante(e) {
     <article class="card cand" data-id="${e.id}">
       <div class="cand__side">
         <div class="cand__photo">
-          <span class="avatar">${esc(e.nombre.split(" ").slice(0, 2).map((p) => p[0]).join("").toUpperCase())}</span>
+          <span class="avatar">${esc(iniciales(e.nombre))}</span>
           <span class="cand__year">${esc(e.ano_carrera)}° Año</span>
         </div>
         <strong class="cand__name">${esc(e.nombre)}</strong>
@@ -195,21 +179,19 @@ async function cargarEstudiantes() {
   if (filtroActual === "manana" || filtroActual === "tarde") params.set("turno", filtroActual);
   if (filtroActual === "coincidentes" && activa) params.set("area", activa.area);
 
-  estudiantes = await cargar(`/api/estudiantes?${params}`);
-  const aviso = filtroActual === "coincidentes" && !activa
+  estudiantes = await obtenerJson(`/api/estudiantes?${params}`);
+  avisoSinEstudiantes = filtroActual === "coincidentes" && !activa
     ? `<p class="empty">Crea una solicitud para ver estudiantes de tu tipo de tratamiento.</p>`
     : `<p class="empty">No hay estudiantes disponibles con ese filtro.</p>`;
-  avisoEstudiantes = aviso;
   pintarEstudiantes();
   const n = estudiantes.length;
   poner("contador", `${n} Estudiante${n === 1 ? "" : "s"}`);
 }
 
-let avisoEstudiantes = "";
 function pintarEstudiantes() {
   document.getElementById("lista-estudiantes").innerHTML = estudiantes.length
-    ? conVerMas("estudiantes", estudiantes, LIMITE_ESTUDIANTES, tarjetaEstudiante)
-    : avisoEstudiantes;
+    ? listaConVerMas("estudiantes", estudiantes, LIMITE_ESTUDIANTES, tarjetaEstudiante)
+    : avisoSinEstudiantes;
 }
 
 async function solicitar(estudianteId) {
@@ -246,7 +228,7 @@ document.getElementById("solicitud-activa").addEventListener("change", () => {
   cargarEstudiantes().catch((e) => mostrarAviso(e.message, true));
 });
 
-/* ---------- 4b-0. INTERRUPTOR: CONSULTAR / PUBLICAR ---------- */
+/* ---------- 5. INTERRUPTOR: CONSULTAR / PUBLICAR ---------- */
 // El recuadro del buscador tiene dos modos. Cada uno conserva su propio campo de texto;
 // al cambiar de modo, si el campo de destino está vacío, se le copia lo ya escrito.
 let modoActual = "consultar";
@@ -276,7 +258,7 @@ document.addEventListener("click", (evento) => {
   if (el) cambiarModo(el.dataset.modo);
 });
 
-/* ---------- 4b. HAZ TU CONSULTA (búsqueda semántica) ---------- */
+/* ---------- 6. HAZ TU CONSULTA (búsqueda semántica) ---------- */
 // Respuesta de la última consulta: { procedimientos, area_sugerida, estudiantes, mensaje,
 // aviso_urgencia, pagina, paginas, total_estudiantes }.
 let consultaActual = null;
@@ -462,17 +444,8 @@ async function enviarOpinion(util) {
   pintarConsulta();
 }
 
-// Acciones propias de los resultados de la consulta (las demás, como "solicitar", las atiende el oyente general).
-document.getElementById("consulta-resultados").addEventListener("click", (evento) => {
-  const mas = evento.target.closest('[data-accion="mas-resultados"]');
-  if (mas) return cargarMasResultados(mas);
-  const opinion = evento.target.closest('[data-accion="opinion"]');
-  if (opinion) return enviarOpinion(opinion.dataset.util === "1").catch(() => mostrarAviso("No se pudo enviar tu opinión.", true));
-});
-
 // Lleva la consulta (y el área sugerida) al formulario de "publicar solicitud".
-document.getElementById("consulta-resultados").addEventListener("click", (evento) => {
-  if (!evento.target.closest('[data-accion="usar-consulta"]')) return;
+function usarConsultaParaPublicar() {
   cambiarModo("publicar"); // el formulario de publicar está oculto en el modo consulta
   document.getElementById("consulta").value = document.getElementById("consulta-semantica").value.trim();
   actualizarContador();
@@ -481,9 +454,18 @@ document.getElementById("consulta-resultados").addEventListener("click", (evento
   }
   document.getElementById("buscador").scrollIntoView({ behavior: "smooth", block: "start" });
   document.getElementById("consulta").focus();
+}
+
+// Acciones propias de los resultados de la consulta (las demás, como "solicitar", las atiende el oyente general).
+document.getElementById("consulta-resultados").addEventListener("click", (evento) => {
+  const mas = evento.target.closest('[data-accion="mas-resultados"]');
+  if (mas) return cargarMasResultados(mas);
+  const opinion = evento.target.closest('[data-accion="opinion"]');
+  if (opinion) return enviarOpinion(opinion.dataset.util === "1").catch(() => mostrarAviso("No se pudo enviar tu opinión.", true));
+  if (evento.target.closest('[data-accion="usar-consulta"]')) usarConsultaParaPublicar();
 });
 
-/* ---------- 5. MIS SOLICITUDES Y CANDIDATOS ---------- */
+/* ---------- 7. MIS SOLICITUDES Y CANDIDATOS ---------- */
 function botonesPostulacion(p) {
   if (p.puede_responder) {
     return `<button class="btn btn--primary btn--sm" data-accion="responder" data-respuesta="aceptar" data-id="${p.id}">Aceptar</button>
@@ -519,7 +501,7 @@ function filaCandidato(p) {
 
 function filaSolicitud(s) {
   const candidatos = postulaciones.filter((p) => p.solicitud.id === s.id && p.estado !== "Cancelada");
-  const desplegada = abiertas.has(s.id);
+  const desplegada = solicitudesDesplegadas.has(s.id);
   const activa = !["Completada", "Cancelada"].includes(s.estado);
   return `
     <div class="fila" data-id="${s.id}">
@@ -548,20 +530,20 @@ function filaSolicitud(s) {
 }
 
 async function cargarSolicitudes() {
-  [solicitudes, postulaciones] = await Promise.all([cargar("/api/solicitudes"), cargar("/api/postulaciones")]);
+  [solicitudes, postulaciones] = await Promise.all([obtenerJson("/api/solicitudes"), obtenerJson("/api/postulaciones")]);
   // Las solicitudes con postulaciones por responder se muestran desplegadas.
-  postulaciones.filter((p) => p.puede_responder).forEach((p) => abiertas.add(p.solicitud.id));
+  postulaciones.filter((p) => p.puede_responder).forEach((p) => solicitudesDesplegadas.add(p.solicitud.id));
   poner("total-solicitudes", solicitudes.length);
   pintarSolicitudes();
 }
 
 function pintarSolicitudes() {
   document.getElementById("lista-solicitudes").innerHTML = solicitudes.length
-    ? conVerMas("solicitudes", solicitudes, LIMITE_SOLICITUDES, filaSolicitud)
+    ? listaConVerMas("solicitudes", solicitudes, LIMITE_SOLICITUDES, filaSolicitud)
     : `<p class="vacio">Aún no has publicado solicitudes. Cuéntanos qué necesitas en el recuadro de arriba.</p>`;
 }
 
-/* ---------- 6. ACCIONES ---------- */
+/* ---------- 8. ACCIONES ---------- */
 async function recargarTodo(seleccionarSolicitudId) {
   await Promise.all([cargarSolicitudes(), cargarResumen()]);
   llenarSelectorSolicitud(seleccionarSolicitudId);
@@ -610,7 +592,7 @@ document.addEventListener("click", (evento) => {
   switch (el.dataset.accion) {
     case "solicitar": return solicitar(id);
     case "candidatos":
-      if (abiertas.has(id)) abiertas.delete(id); else abiertas.add(id);
+      if (solicitudesDesplegadas.has(id)) solicitudesDesplegadas.delete(id); else solicitudesDesplegadas.add(id);
       pintarSolicitudes();
       return;
     case "responder":
@@ -624,9 +606,9 @@ document.addEventListener("click", (evento) => {
       if (confirm("¿Cancelar esta solicitud? También se cancelarán sus postulaciones.")) accion(`/api/solicitudes/${id}/cancelar`, "POST", undefined, "Solicitud cancelada.");
       return;
     case "ver-mas": {
-      const lista = el.dataset.lista;
-      expandido[lista] = !expandido[lista];
-      return { estudiantes: pintarEstudiantes, solicitudes: pintarSolicitudes }[lista]();
+      const clave = el.dataset.lista;
+      expandido[clave] = !expandido[clave];
+      return { estudiantes: pintarEstudiantes, solicitudes: pintarSolicitudes }[clave]();
     }
     case "eliminar-solicitud":
       if (confirm("¿Eliminar esta solicitud cancelada? Dejará de aparecer en tu lista.")) accion(`/api/solicitudes/${id}/definitivo`, "DELETE", undefined, "Solicitud eliminada.");
@@ -638,7 +620,7 @@ document.addEventListener("perfil-actualizado", () => cargarPerfil().catch(() =>
 
 /* ---------- INICIO ---------- */
 async function iniciar() {
-  AREAS = (await cargar("/api/catalogos")).areas;
+  AREAS = (await obtenerJson("/api/catalogos")).areas;
   llenarAreas();
   const resultados = await Promise.allSettled([cargarPerfil(), recargarTodo()]);
   if (resultados.some((r) => r.status === "rejected")) {

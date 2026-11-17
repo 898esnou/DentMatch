@@ -32,6 +32,7 @@ from app.schemas_dominio import (
     ReporteDetalleOut, ReporteListaOut, ResolucionOut, ResumenAdminOut,
 )
 from app.servicios import ahora
+from app.utils import ESCAPE_LIKE, patron_contiene
 
 router = APIRouter(prefix="/api/admin", tags=["admin: moderación"])
 
@@ -40,6 +41,7 @@ solo_admin = require_rol("admin")
 
 # ---------------------------------------------------------------- piezas comunes
 def _estado_efectivo(fila: Optional[models.EstadoCuenta]) -> str:
+    """Estado real de la cuenta: 'activo' si no tiene fila o si su time-out ya terminó."""
     if fila is None:
         return "activo"
     # Un time-out que ya venció cuenta como activo aunque nadie haya vuelto a entrar todavía.
@@ -197,8 +199,8 @@ def listar_cuentas(
     U, E = models.Usuario, models.EstadoCuenta
     base = db.query(U).filter(U.rol.in_(("estudiante", "paciente")))
     if q and q.strip():
-        patron = f"%{q.strip()}%"
-        base = base.filter(U.nombre_completo.ilike(patron) | U.correo.ilike(patron))
+        patron = patron_contiene(q)
+        base = base.filter(U.nombre_completo.ilike(patron, escape=ESCAPE_LIKE) | U.correo.ilike(patron, escape=ESCAPE_LIKE))
     # Las sancionadas se buscan aparte para que ninguna quede fuera del tope de 200 por ser antigua.
     sancionadas = base.join(E, E.usuario_id == U.id).filter(E.estado != "activo").order_by(U.id.desc()).all()
     ids_sancionadas = {u.id for u in sancionadas}

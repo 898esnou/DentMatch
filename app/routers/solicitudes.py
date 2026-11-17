@@ -162,9 +162,6 @@ def cancelar_solicitud(
         if p.estado in ("Pendiente", "Aceptada"):
             p.estado = "Cancelada"
             p.fecha_respuesta = ahora()
-            for c in p.citas:
-                if c.estado == "Agendada":
-                    c.estado = "Cancelada"
     db.commit()
     db.refresh(s)
     return _out_con_conteo(db, s)
@@ -176,7 +173,7 @@ def eliminar_solicitud_cancelada(
     usuario: models.Usuario = Depends(require_rol("paciente")),
     db: Session = Depends(get_db),
 ):
-    """Borra de verdad una solicitud cancelada, junto con su detalle, postulaciones y citas."""
+    """Borra de verdad una solicitud cancelada, junto con su detalle y sus postulaciones."""
     s = _propia(db, solicitud_id, usuario)
     if s.estado_api != "Cancelada":
         raise HTTPException(status_code=409, detail="Solo se pueden eliminar solicitudes canceladas")

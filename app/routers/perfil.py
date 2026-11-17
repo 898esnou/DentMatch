@@ -4,7 +4,7 @@ Rutas de perfil (cada rol edita solo el suyo):
 - PUT /api/perfil/estudiante   -> actualiza perfil de estudiante
 - PUT /api/perfil/paciente     -> actualiza perfil de paciente
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app import models, schemas
@@ -30,6 +30,8 @@ def actualizar_perfil_estudiante(
     db: Session = Depends(get_db),
 ):
     perfil = usuario.perfil_estudiante
+    if perfil is None:  # no debería pasar (el registro lo crea), pero evita un error 500
+        raise HTTPException(status_code=404, detail="Perfil de estudiante no encontrado")
     for campo, valor in datos.model_dump(exclude_unset=True).items():
         setattr(perfil, campo, valor)
     db.commit()

@@ -41,7 +41,9 @@ from app.matching import (
     puntaje_procedimiento,
     puntaje_ubicacion,
 )
-from app.routers.estudiantes import _cargar, _estados_para_solicitud, _out
+from app.routers.estudiantes import (
+    cargar_ramos_y_requerimientos, consulta_estudiantes_visibles, estados_por_estudiante, estudiante_out,
+)
 from app.schemas_dominio import EstudianteOut
 from app.urgencia import MENSAJE_URGENCIA, detectar_urgencia
 
@@ -153,18 +155,15 @@ def verificar_limite(
 
 # --- Lógica de estudiantes -------------------------------------------------
 def estudiantes_con_cupo_en_areas(db: Session, areas: List[str], limite: int) -> List[models.Usuario]:
-    """Estudiantes verificados con un requerimiento Abierto y cupos pendientes en `areas`.
+    """Estudiantes visibles (verificados y sin sanción) con un requerimiento Abierto y cupos en `areas`.
 
     Se filtra en SQL (a diferencia de /api/estudiantes) y, a propósito, solo por
     requerimientos: tener un ramo en esa área no significa que necesite pacientes.
     """
     return (
-        db.query(models.Usuario)
-        .join(models.PerfilEstudiante, models.PerfilEstudiante.usuario_id == models.Usuario.id)
+        consulta_estudiantes_visibles(db)
         .join(models.Requerimiento, models.Requerimiento.estudiante_id == models.Usuario.id)
         .filter(
-            models.Usuario.rol == "estudiante",
-            models.PerfilEstudiante.estado_verificacion == "Activo",
             models.Requerimiento.estado == "Abierto",
             models.Requerimiento.area.in_(areas),
             models.Requerimiento.cantidad_completada < models.Requerimiento.cantidad_requerida,
@@ -247,7 +246,7 @@ def consultar(
         raise HTTPException(status_code=422, detail="Escribe al menos unas palabras sobre lo que necesitas.")
 
     verificar_limite(usuario.id)
-    estados = _estados_para_solicitud(db, usuario, datos.solicitud_id)
+    estados = estados_por_estudiante(db, usuario, datos.solicitud_id)
     aviso_urgencia = MENSAJE_URGENCIA if detectar_urgencia(texto) else None
 
     try:
@@ -276,9 +275,10 @@ def consultar(
     ]
 
     usuarios = estudiantes_con_cupo_en_areas(db, areas, MAX_CANDIDATOS)
-    ramos, reqs = _cargar(db, usuarios)
+    ramos, requerimientos = cargar_ramos_y_requerimientos(db, usuarios)
     estudiantes = [
-        _out(e, ramos.get(e.id, []), reqs.get(e.id, []), estados.get(e.id)) for e in usuarios
+        estudiante_out(e, ramos.get(e.id, []), requerimientos.get(e.id, []), estados.get(e.id))
+        for e in usuarios
     ]
     comuna, disponibilidad = datos_del_paciente(db, usuario, datos.solicitud_id)
     ordenados = clasificar_estudiantes(estudiantes, coincidencias, comuna, disponibilidad)

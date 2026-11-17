@@ -68,7 +68,7 @@ document.getElementById("boton-cambiar-rol").addEventListener("click", () => {
   ocultarError();
 });
 
-// Si ya hay sesión iniciada, no tiene sentido registrarse: ir al index
+// Si ya hay sesión iniciada, no tiene sentido registrarse: ir a su portal
 if (obtenerToken() && DESTINO_TRAS_LOGIN[obtenerRol()]) window.location.replace(DESTINO_TRAS_LOGIN[obtenerRol()]);
 
 // Si viene de login con ?rol=..., saltamos directo al formulario
@@ -184,7 +184,7 @@ formulario.addEventListener("submit", async (evento) => {
   }
 
   // Arma los datos a enviar. Usamos FormData porque el backend espera
-  // "multipart/form-data" (definido así en main.py con Form(...)).
+  // "multipart/form-data" (definido así en app/routers/auth.py con Form(...)).
   const datosFormulario = new FormData(formulario);
 
   // El campo "confirmar_contrasena" no tiene "name", así que no viaja
@@ -205,8 +205,8 @@ formulario.addEventListener("submit", async (evento) => {
       alert(aviso);
       window.location.href = `/login?rol=${inputRolElegido.value}`;
     } else {
-      // El backend devuelve el error en la propiedad "detail"
-      mostrarError(resultado.data.detail || "Ocurrió un error al crear la cuenta.");
+      // El backend devuelve el error en "detail" (texto, o una lista si falló la validación)
+      mostrarError(textoDeError(resultado, "Ocurrió un error al crear la cuenta."));
     }
   } catch (error) {
     mostrarError("No se pudo conectar con el servidor. ¿Está corriendo el backend?");

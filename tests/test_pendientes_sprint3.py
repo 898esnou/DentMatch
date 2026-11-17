@@ -66,7 +66,7 @@ def test_archivar_deja_el_chat_en_solo_lectura_para_las_dos_personas(paciente, e
     assert len(estudiante.get(f"/api/chat/{pid}/mensajes").json()["mensajes"]) == 1
 
 
-def test_archivar_no_cambia_la_postulacion_ni_las_citas(paciente, estudiante):
+def test_archivar_no_cambia_la_postulacion(paciente, estudiante):
     pid = _vinculo(paciente, estudiante)
     paciente.post(f"/api/chat/{pid}/archivar")
     assert paciente.get(f"/api/postulaciones/{pid}").json()["estado"] == "Aceptada"

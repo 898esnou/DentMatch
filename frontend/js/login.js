@@ -70,7 +70,7 @@ formulario.addEventListener("submit", async (evento) => {
   evento.preventDefault();
   ocultarError();
 
-  const correo = document.getElementById("correo").value;
+  const correo = document.getElementById("correo").value.trim();
   const contrasena = document.getElementById("contrasena").value;
 
   botonEnviar.disabled = true;
@@ -96,7 +96,7 @@ formulario.addEventListener("submit", async (evento) => {
     } else if (typeof resultado.data.detail === "string" && /suspendida/i.test(resultado.data.detail)) {
       mostrarCuentaSuspendida(resultado.data.detail);   // cuenta sancionada por la moderación
     } else {
-      mostrarError(resultado.data.detail || "No se pudo iniciar sesión.");
+      mostrarError(textoDeError(resultado, "No se pudo iniciar sesión."));
     }
   } catch (error) {
     mostrarError("No se pudo conectar con el servidor. ¿Está corriendo el backend?");
@@ -106,7 +106,7 @@ formulario.addEventListener("submit", async (evento) => {
   }
 });
 
-/* Si ya hay una sesión iniciada, saltar directo al index */
+/* Si ya hay una sesión iniciada, saltar directo a su portal */
 if (obtenerToken() && DESTINO_TRAS_LOGIN[obtenerRol()]) {
   window.location.replace(DESTINO_TRAS_LOGIN[obtenerRol()]);
 }

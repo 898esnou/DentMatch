@@ -23,6 +23,9 @@ function calcularDvRut(cuerpo) {
   return String(resto);
 }
 
+// Desde 50.000.000 los RUT son de empresas (personas jurídicas), igual que en app/documentos.py.
+const RUT_MINIMO_EMPRESA = 50000000;
+
 /** Devuelve un texto de error, o null si el documento es válido. */
 function validarDocumento(tipo, texto) {
   if (tipo === "extranjero") {
@@ -33,7 +36,9 @@ function validarDocumento(tipo, texto) {
   }
   const limpio = texto.replace(/[.\s-]/g, "").toUpperCase();
   if (!/^\d{7,8}[0-9K]$/.test(limpio)) return "El RUT no tiene un formato válido (ejemplo: 12.345.678-5).";
-  if (calcularDvRut(limpio.slice(0, -1)) !== limpio.slice(-1)) return "El RUT no es válido: el dígito verificador no coincide.";
+  const cuerpo = limpio.slice(0, -1);
+  if (calcularDvRut(cuerpo) !== limpio.slice(-1)) return "El RUT no es válido: el dígito verificador no coincide.";
+  if (Number(cuerpo) >= RUT_MINIMO_EMPRESA) return "Ese RUT corresponde a una empresa: ingresa el RUT personal de una persona natural.";
   return null;
 }
 

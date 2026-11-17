@@ -8,7 +8,7 @@
  *   30 segundos; la bandeja de reportes también, sin perder el reporte que se está leyendo.
  * - Toda decisión pasa por un cuadro de confirmación con una nota interna opcional.
  *
- * Requiere session.js, api.js, utils.js (esc) y formulario-modal.js (apiJson, abrirFormulario...).
+ * Requiere session.js, api.js, utils.js y formulario-modal.js (abrirFormulario).
  * ---------------------------------------------------------------------
  */
 (function () {
@@ -29,9 +29,7 @@
   const CATEGORIAS = { insulto: "Insulto", acoso: "Acoso o insinuación", fuera_de_tema: "Fuera de tema" };
   const FUENTES = { reglas: "Detectado por reglas", ia: "Detectado por IA" };
 
-  /* ---------- utilidades ---------- */
-  const iniciales = (nombre) => nombre.split(/\s+/).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
-
+  /* ---------- utilidades (esc, iniciales y mostrarAviso vienen de utils.js) ---------- */
   function fechaRel(iso) {
     const f = new Date(iso);
     const min = Math.round((Date.now() - f.getTime()) / 60000);
@@ -42,7 +40,6 @@
     return f.toLocaleDateString("es-CL", { day: "2-digit", month: "short" });
   }
   const fechaLarga = (iso) => new Date(iso).toLocaleString("es-CL", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-  const hora = (iso) => new Date(iso).toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit" });
 
   const tag = (texto, color, icono) =>
     `<span class="tag tag--${color}">${icono ? `<span class="material-symbols-rounded">${icono}</span>` : ""}${esc(texto)}</span>`;
@@ -180,13 +177,13 @@
       <div class="bloqueado">
         ${tag(CATEGORIAS[b.categoria] || b.categoria, "rojo")}
         <q>${esc(b.contenido)}</q>
-        <small>${esc(FUENTES[b.fuente] || b.fuente)} · ${esc(hora(b.fecha))}</small>
+        <small>${esc(FUENTES[b.fuente] || b.fuente)} · ${esc(fechaLarga(b.fecha))}</small>
       </div>`).join("") : `<div class="detalle__caja">La moderación no bloqueó ningún mensaje de esta persona en esta conversación.</div>`;
 
     const hilo = d.mensajes.length ? `<div class="hilo">${d.mensajes.map((m) => `
       <div class="hilo__msg ${m.de_reportado ? "hilo__msg--reportado" : ""}">
         <span class="hilo__burbuja">${esc(m.contenido)}</span>
-        <small>${esc(m.autor)}${m.de_reportado ? " (reportado)" : ""} · ${esc(hora(m.fecha))}</small>
+        <small>${esc(m.autor)}${m.de_reportado ? " (reportado)" : ""} · ${esc(fechaLarga(m.fecha))}</small>
       </div>`).join("")}</div>`
       : `<div class="detalle__caja">No hay mensajes guardados en la copia de esta conversación.</div>`;
 
@@ -301,6 +298,10 @@
 
   let listaVerif = [];
 
+  // Solo se decide sobre un certificado subido, y no se repite la decisión que ya tiene.
+  const puedeAprobar = (u) => Boolean(u.certificado_documento) && u.estado_verificacion !== "Activo";
+  const puedeRechazar = (u) => Boolean(u.certificado_documento) && u.estado_verificacion !== "Rechazado";
+
   async function verVerificaciones() {
     const filtros = `<select class="admin__select" id="filtro-verif" aria-label="Estado">
       ${ESTADOS_VERIF.map((e) => `<option value="${e}" ${e === filtroVerif ? "selected" : ""}>${e || "Todos los estados"}</option>`).join("")}</select>`;
@@ -317,20 +318,12 @@
           <div class="fila__datos"><span>${esc(u.universidad)} · ${u.ano_carrera}º año</span>${tag(u.estado_verificacion, COLOR_VERIF[u.estado_verificacion] || "gris")}</div>
           <div class="fila__acciones">
             <button type="button" class="btn btn--ghost btn--sm" data-revisar="${u.id}"><span class="material-symbols-rounded">fact_check</span> Revisar solicitud</button>
-            <button type="button" class="btn btn--primary btn--sm" data-verif="Activo" data-id="${u.id}" data-nombre="${esc(u.nombre_completo)}"><span class="material-symbols-rounded">check</span> Aprobar</button>
-            <button type="button" class="btn btn--ghost btn--sm" data-verif="Rechazado" data-id="${u.id}" data-nombre="${esc(u.nombre_completo)}"><span class="material-symbols-rounded">close</span> Rechazar</button>
+            ${puedeAprobar(u) ? `<button type="button" class="btn btn--primary btn--sm" data-verif="Activo" data-id="${u.id}" data-nombre="${esc(u.nombre_completo)}"><span class="material-symbols-rounded">check</span> Aprobar</button>` : ""}
+            ${puedeRechazar(u) ? `<button type="button" class="btn btn--ghost btn--sm" data-verif="Rechazado" data-id="${u.id}" data-nombre="${esc(u.nombre_completo)}"><span class="material-symbols-rounded">close</span> Rechazar</button>` : ""}
           </div>
         </div>`).join("")}</div>`
         : vacio("task_alt", filtroVerif === "En Verificación" ? "No hay certificados esperando revisión." : "No hay estudiantes con ese estado.");
     contenido.innerHTML = cabecera("Verificaciones", "Estudiantes que subieron su certificado de alumno regular. Revísalo y apruébalo o recházalo.", filtros) + lista;
-  }
-
-  async function abrirCertificado(id) {
-    const respuesta = await apiFetch(`/api/admin/estudiantes/${id}/certificado`);
-    if (!respuesta.ok) return mostrarAviso("No se pudo abrir el certificado.", true);
-    const url = URL.createObjectURL(await respuesta.blob());
-    window.open(url, "_blank");
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
   /** Revisión con todo a la vista: los datos que ingresó el estudiante y su certificado, lado a lado. */
@@ -367,8 +360,8 @@
         <div class="rev__visor" id="rev-visor"><p class="vacio-admin">Cargando certificado…</p></div>
       </div>
       <footer class="rev__pie">
-        <button type="button" class="btn btn--ghost" data-rev="rechazar"><span class="material-symbols-rounded">close</span> Rechazar</button>
-        <button type="button" class="btn btn--primary" data-rev="aprobar"><span class="material-symbols-rounded">check</span> Aprobar</button>
+        ${puedeRechazar(u) ? `<button type="button" class="btn btn--ghost" data-rev="rechazar"><span class="material-symbols-rounded">close</span> Rechazar</button>` : ""}
+        ${puedeAprobar(u) ? `<button type="button" class="btn btn--primary" data-rev="aprobar"><span class="material-symbols-rounded">check</span> Aprobar</button>` : ""}
       </footer>`;
     document.body.appendChild(dialogo);
     let urlBlob = null;
@@ -421,8 +414,6 @@
     if (e.target.id === "filtro-cuentas") { filtroCuentas = e.target.value; verCuentas(true); }
   });
   contenido.addEventListener("click", (e) => {
-    const cert = e.target.closest("[data-cert]");
-    if (cert) return abrirCertificado(cert.dataset.cert);
     const rev = e.target.closest("[data-revisar]");
     if (rev) return revisarSolicitud(rev.dataset.revisar);
     const v = e.target.closest("[data-verif]");

@@ -96,7 +96,6 @@ def test_sin_verificar_puede_ver_casos_pero_no_actuar(estudiante_nuevo, paciente
     for r in (
         estudiante_nuevo.post("/api/postulaciones", json={"solicitud_id": sol["id"]}),
         estudiante_nuevo.post("/api/requerimientos", json=REQUERIMIENTO),
-        estudiante_nuevo.post("/api/citas", json={"postulacion_id": 1, "fecha_hora": "2099-01-01T10:00:00"}),
         estudiante_nuevo.post("/api/postulaciones/1/responder", json={"accion": "aceptar"}),
         estudiante_nuevo.post("/api/postulaciones/1/completar"),
     ):

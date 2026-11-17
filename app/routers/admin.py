@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager
 
 from app import almacenamiento, models
 from app.auth import require_rol
@@ -22,6 +22,7 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 def _out(u: models.Usuario, ultima: Optional[models.VerificacionEstudiante] = None) -> EstudianteAdminOut:
+    """Datos del estudiante + su último certificado, para revisar la verificación con todo a la vista."""
     p = u.perfil_estudiante
     return EstudianteAdminOut(
         id=u.id,
@@ -63,6 +64,7 @@ def listar_estudiantes(
     consulta = (
         db.query(models.Usuario)
         .join(models.PerfilEstudiante, models.PerfilEstudiante.usuario_id == models.Usuario.id)
+        .options(contains_eager(models.Usuario.perfil_estudiante))  # el perfil viene en la misma consulta
         .filter(models.Usuario.rol == "estudiante")
     )
     if estado:

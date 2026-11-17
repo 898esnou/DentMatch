@@ -2,7 +2,7 @@
 Proyecto Capstone Grupo Ockham
 
 ## Descripción
-DentMatch es una plataforma web que conecta a estudiantes de Odontología que necesitan pacientes para sus prácticas clínicas con personas que buscan atención dental de bajo costo. Los estudiantes crean un perfil verificado con sus procedimientos pendientes, su disponibilidad y su lugar de atención. Los pacientes publican su necesidad y encuentran estudiantes que se ajusten a ella. La plataforma gestiona las postulaciones entre ambas partes y la agenda de citas, mostrando información que genera confianza (universidad, año de carrera, supervisión docente).
+DentMatch es una plataforma web que conecta a estudiantes de Odontología que necesitan pacientes para sus prácticas clínicas con personas que buscan atención dental de bajo costo. Los estudiantes crean un perfil verificado con sus procedimientos pendientes, su disponibilidad y su lugar de atención. Los pacientes publican su necesidad y encuentran estudiantes que se ajusten a ella. La plataforma gestiona las postulaciones entre ambas partes y un chat donde acuerdan el día, la hora y el lugar de la atención, mostrando información que genera confianza (universidad, año de carrera, supervisión docente).
 
 El **puntaje de coincidencia** (0 a 100) combina el procedimiento que necesita el paciente (50 %), la ubicación (30 %) y la disponibilidad (20 %). La ubicación premia la misma comuna y baja según cuántas comunas separan al paciente del estudiante, con un mínimo de 0,3 (ver `app/comunas.py`).
 
@@ -161,7 +161,7 @@ Importante: en Vercel el índice de la búsqueda no se puede construir, así que
 ## Estructura del proyecto
 ```
 app/            Backend (FastAPI)
-  routers/      Un archivo por sección de la API (auth, solicitudes, postulaciones, citas, chat, admin...)
+  routers/      Un archivo por sección de la API (auth, solicitudes, postulaciones, chat, admin...)
   models.py     Tablas de la base de datos
   matching.py   Puntaje de coincidencia (con comunas.py)
   moderacion.py, sanciones.py   Moderación del chat, advertencias, baneos y reportes

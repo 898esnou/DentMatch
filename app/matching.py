@@ -15,10 +15,10 @@ quien simplemente no ha completado su perfil.
 Todo son funciones puras (sin base de datos ni API) para poder probarlas fácilmente.
 """
 import re
-import unicodedata
 from typing import List, Optional, Set, Tuple
 
 from app.comunas import saltos_entre
+from app.texto import normalizar
 
 PESO_PROCEDIMIENTO = 0.5
 PESO_UBICACION = 0.3
@@ -39,11 +39,6 @@ _TURNOS = {
 }
 _COMUNA_SIN_DATO = {"", "por definir", "sin especificar", "sin definir"}
 _CUALQUIERA = ("cualquier dia", "todos los dias", "cualquier horario", "flexible", "toda la semana", "siempre")
-
-
-def normalizar(texto: Optional[str]) -> str:
-    texto = unicodedata.normalize("NFD", (texto or "").lower())
-    return "".join(c for c in texto if unicodedata.category(c) != "Mn").strip()
 
 
 # ------------------------------------------------------------------ ubicación

@@ -5,8 +5,9 @@ Cada comuna lista las comunas con las que limita. La tabla es una aproximación 
 (no usa mapas ni coordenadas) y se completa sola en ambos sentidos: basta con anotar cada
 par una vez. Para agregar o corregir una comuna se edita `_LIMITES`.
 """
-import unicodedata
 from typing import Dict, FrozenSet, Optional
+
+from app.texto import normalizar as _norm
 
 _LIMITES = {
     "Santiago": ["Estación Central", "Quinta Normal", "Independencia", "Recoleta", "Providencia", "Ñuñoa",
@@ -57,11 +58,6 @@ _LIMITES = {
     "María Pinto": ["Melipilla", "Curacaví"],
     "Melipilla": ["Isla de Maipo", "Talagante"],
 }
-
-
-def _norm(texto: Optional[str]) -> str:
-    texto = unicodedata.normalize("NFD", (texto or "").lower())
-    return "".join(c for c in texto if unicodedata.category(c) != "Mn").strip()
 
 
 def _construir() -> Dict[str, FrozenSet[str]]:

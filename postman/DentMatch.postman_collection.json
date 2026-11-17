@@ -25,8 +25,7 @@
                   "pm.collectionVariables.set('sufijo', String(s));",
                   "pm.collectionVariables.set('rutPaciente', rutNuevo());",
                   "pm.collectionVariables.set('rutEstudiante', rutNuevo());",
-                  "pm.collectionVariables.set('rutPaciente2', rutNuevo());",
-                  "pm.collectionVariables.set('fechaFutura', new Date(s + 10 * 86400000).toISOString().slice(0, 19));"
+                  "pm.collectionVariables.set('rutPaciente2', rutNuevo());"
                 ]
               }
             },
@@ -1777,7 +1776,7 @@
       ]
     },
     {
-      "name": "5. Postulaciones y citas",
+      "name": "5. Postulaciones",
       "item": [
         {
           "name": "Estudiante postula al caso",
@@ -2051,123 +2050,14 @@
           }
         },
         {
-          "name": "Cita con fecha pasada es rechazada",
+          "name": "No hay agenda de citas (se coordina por el chat)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Responde 422', () => pm.response.to.have.status(422));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/citas",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "citas"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{tokenEstudiante}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"postulacion_id\": {{postulacionId}},\n  \"fecha_hora\": \"2020-01-01T10:00:00\",\n  \"lugar\": \"Clínica\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "Estudiante agenda una cita",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
-                  "pm.test('estado = Agendada', () => pm.expect(pm.response.json().estado).to.eql(\"Agendada\"));",
-                  "if (pm.response.code < 300) { const d = pm.response.json();",
-                  "  pm.collectionVariables.set('citaId', d.id);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/citas",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "citas"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{tokenEstudiante}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"postulacion_id\": {{postulacionId}},\n  \"fecha_hora\": \"{{fechaFutura}}\",\n  \"lugar\": \"Clínica odontológica\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          }
-        },
-        {
-          "name": "Paciente lista sus citas",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
-                  "pm.test('La respuesta es una lista', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));"
                 ]
               }
             }
@@ -2194,59 +2084,6 @@
                   "type": "string"
                 }
               ]
-            }
-          }
-        },
-        {
-          "name": "Paciente no puede marcar la cita como realizada",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Responde 403', () => pm.response.to.have.status(403));"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "PATCH",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/api/citas/{{citaId}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "api",
-                "citas",
-                "{{citaId}}"
-              ]
-            },
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{tokenPaciente}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"estado\": \"Realizada\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           }
         }

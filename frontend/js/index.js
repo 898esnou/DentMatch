@@ -37,9 +37,20 @@ function seccionVisible() {
   return actual;
 }
 
-let esperando = false;
+// Al pulsar un enlace manda lo que eligió la persona (una sección corta al final de la página
+// puede no llegar nunca arriba); si luego se desplaza a mano, se vuelve a calcular.
+// Es la misma regla que usan los portales (portal-nav.js).
+let elegidoPorClic = false;
+enlacesMenu.forEach((enlace, id) => enlace.addEventListener("click", () => {
+  elegidoPorClic = true;
+  marcarActiva(id);
+}));
+["wheel", "touchstart", "keydown"].forEach((evento) =>
+  window.addEventListener(evento, () => { elegidoPorClic = false; }, { passive: true }));
+
+let esperando = false;  // como mucho un cálculo por cuadro de animación
 window.addEventListener("scroll", () => {
-  if (esperando) return;
+  if (esperando || elegidoPorClic) return;
   esperando = true;
   requestAnimationFrame(() => {
     marcarActiva(seccionVisible());

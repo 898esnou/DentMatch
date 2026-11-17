@@ -17,14 +17,11 @@ import os
 import random
 import re
 import sys
-from datetime import datetime, timedelta
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 INTERNO = "Authorization"
 
 # --------------------------------------------------------------------------- datos de apoyo
-FUTURO = (datetime.now() + timedelta(days=10)).strftime("%Y-%m-%dT10:00:00")
-PASADO = "2020-01-01T10:00:00"
 SOLICITUD = {
     "titulo": "Dolor en molar inferior",
     "descripcion": "Me duele al masticar en una muela de abajo desde hace una semana",
@@ -44,7 +41,6 @@ pm.collectionVariables.set('sufijo', String(s));
 pm.collectionVariables.set('rutPaciente', rutNuevo());
 pm.collectionVariables.set('rutEstudiante', rutNuevo());
 pm.collectionVariables.set('rutPaciente2', rutNuevo());
-pm.collectionVariables.set('fechaFutura', new Date(s + 10 * 86400000).toISOString().slice(0, 19));
 """.strip()
 
 
@@ -60,7 +56,7 @@ def p(carpeta, nombre, metodo, ruta, quien=None, ok=200, json_=None, form=None, 
 
 C0, C1, C2, C3, C4, C5, C6, C7, C8, C9 = (
     "0. Preparación", "1. Autenticación", "2. Seguridad y roles", "3. Solicitudes", "4. Requerimientos",
-    "5. Postulaciones y citas", "6. Chat y moderación", "7. Panel de administración",
+    "5. Postulaciones", "6. Chat y moderación", "7. Panel de administración",
     "8. Baneo por advertencias", "9. Búsqueda y cierre")
 
 
@@ -151,7 +147,7 @@ PASOS = [
     p(C4, "Estudiante lista sus requerimientos", "GET", "/api/requerimientos", quien="estudiante", lista=True),
     p(C4, "Paciente2 no puede registrar avance ajeno", "POST", "/api/requerimientos/{{requerimientoId}}/avance", quien="paciente2", ok=403, json_={"cantidad": 1}),
 
-    # ------------------------------------------------------------------ 5. Postulaciones y citas
+    # ------------------------------------------------------------------ 5. Postulaciones
     p(C5, "Estudiante postula al caso", "POST", "/api/postulaciones", quien="estudiante", ok=201,
       json_={"solicitud_id": "{{solicitudId}}", "requerimiento_id": "{{requerimientoId}}", "mensaje": "Puedo atenderte."},
       guarda={"postulacionId": "id"}, campos={"estado": "Pendiente"}),
@@ -163,14 +159,7 @@ PASOS = [
       json_={"accion": "aceptar"}),
     p(C5, "Paciente acepta la postulación", "POST", "/api/postulaciones/{{postulacionId}}/responder", quien="paciente",
       json_={"accion": "aceptar"}, campos={"estado": "Aceptada"}),
-    p(C5, "Cita con fecha pasada es rechazada", "POST", "/api/citas", quien="estudiante", ok=422,
-      json_={"postulacion_id": "{{postulacionId}}", "fecha_hora": PASADO, "lugar": "Clínica"}),
-    p(C5, "Estudiante agenda una cita", "POST", "/api/citas", quien="estudiante", ok=201,
-      json_={"postulacion_id": "{{postulacionId}}", "fecha_hora": "{{fechaFutura}}", "lugar": "Clínica odontológica"},
-      guarda={"citaId": "id"}, campos={"estado": "Agendada"}),
-    p(C5, "Paciente lista sus citas", "GET", "/api/citas", quien="paciente", lista=True),
-    p(C5, "Paciente no puede marcar la cita como realizada", "PATCH", "/api/citas/{{citaId}}", quien="paciente", ok=403,
-      json_={"estado": "Realizada"}),
+    p(C5, "No hay agenda de citas (se coordina por el chat)", "GET", "/api/citas", quien="paciente", ok=404),
 
     # ------------------------------------------------------------------ 6. Chat y moderación
     p(C6, "Paciente envía un mensaje", "POST", "/api/chat/{{postulacionId}}/mensajes", quien="paciente", ok=201,
@@ -346,7 +335,7 @@ def _rut():
 def probar(base, admin_correo, admin_pass):
     import httpx
 
-    v = {"adminCorreo": admin_correo, "adminContrasena": admin_pass, "fechaFutura": FUTURO,
+    v = {"adminCorreo": admin_correo, "adminContrasena": admin_pass,
          "sufijo": str(random.randint(10**9, 10**10))}
     for k in ("rutPaciente", "rutEstudiante", "rutPaciente2"):
         v[k] = _rut()

@@ -17,14 +17,19 @@ SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 if not SQLALCHEMY_DATABASE_URL:
     raise ValueError("No se encontró DATABASE_URL en el archivo .env")
 
-if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
-    # Solo para los tests (SQLite en memoria): una única conexión compartida.
+if SQLALCHEMY_DATABASE_URL in ("sqlite://", "sqlite:///:memory:"):
+    # Tests (SQLite en memoria): una única conexión compartida, porque cada conexión nueva
+    # sería una base vacía. Sirve solo para peticiones de a una, como las de pytest.
     from sqlalchemy.pool import StaticPool
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+elif SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    # Servidor de prueba de Postman (archivo SQLite temporal): una conexión por petición, así
+    # aguanta peticiones en paralelo (el chat pide la lista y el hilo a la vez).
+    engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 else:
     # pool_pre_ping: el pooler de Supabase cierra las conexiones inactivas; así la app las comprueba
     # antes de usarlas y no falla la primera petición tras un rato sin tráfico (típico en Vercel).

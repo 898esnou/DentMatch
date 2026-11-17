@@ -1,5 +1,6 @@
 /* =========================================================================
-   MODAL "EDITAR MI PERFIL" (compartido por ambos dashboards)
+   MODALES (.pm): "Editar mi perfil" y todos los formularios de abrirFormulario()
+   Compartido por los portales y el panel de administración.
    ========================================================================= */
 .pm {
   margin: auto; /* el reset global de márgenes le quita el centrado al <dialog> */
@@ -11,6 +12,7 @@
 .pm__form { display: flex; flex-direction: column; gap: 14px; padding: 24px; }
 .pm__title { margin: 0; font-size: 20px; }
 .pm__lead { margin: -8px 0 0; font-size: 13px; color: var(--text-muted); }
+.pm__campos { display: flex; flex-direction: column; gap: 14px; }
 .pm__field { display: flex; flex-direction: column; gap: 6px; }
 .pm__field label { font-size: 12px; font-weight: 700; }
 .pm__field input, .pm__field textarea {

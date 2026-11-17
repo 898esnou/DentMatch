@@ -5,7 +5,7 @@ Reglas:
 - Un mensaje bloqueado por insulto o acoso es una advertencia; las advertencias valen
   DIAS_ADVERTENCIAS días. Al llegar a MAX_ADVERTENCIAS la cuenta queda baneada y se crea un
   reporte automático para el administrador. Los mensajes "fuera de tema" solo avisan.
-- Al banear, las postulaciones y citas de esa persona se cancelan y a quienes tenían un
+- Al banear, las postulaciones de esa persona se cancelan y a quienes tenían un
   vínculo con ella se les deja un aviso (sin contarles el motivo).
 - Las funciones NO hacen commit: lo hace quien las llama (así todo queda en una transacción).
 """
@@ -172,8 +172,8 @@ def _retirar_de_circulacion(
     db: Session, usuario: models.Usuario, estado: str, hasta, motivo: str
 ) -> None:
     """
-    Deja la cuenta baneada o suspendida y la saca de circulación: cancela sus postulaciones y
-    citas, cierra las solicitudes del paciente y avisa a quienes tenían un vínculo con esta persona.
+    Deja la cuenta baneada o suspendida y la saca de circulación: cancela sus postulaciones,
+    cierra las solicitudes del paciente y avisa a quienes tenían un vínculo con esta persona.
     """
     fila = db.get(models.EstadoCuenta, usuario.id)
     if fila is None:
@@ -194,9 +194,6 @@ def _retirar_de_circulacion(
             continue  # un tratamiento ya terminado no se toca
         tenia_chat = p.estado == "Aceptada"
         p.estado, p.fecha_respuesta = "Cancelada", ahora()
-        for cita in p.citas:
-            if cita.estado == "Agendada":
-                cita.estado = "Cancelada"
         contraparte_id = solicitud.paciente_id if usuario.rol == "estudiante" else p.estudiante_id
         contraparte_rol = "paciente" if usuario.rol == "estudiante" else "estudiante"
         if tenia_chat:
@@ -313,7 +310,7 @@ def reiniciar_advertencias(db: Session, usuario_id: int) -> None:
 
 def levantar_sancion(db: Session, usuario: models.Usuario) -> None:
     """
-    Reactiva la cuenta. Los chats y citas que se cancelaron NO se restituyen (la persona puede
+    Reactiva la cuenta. Las postulaciones y chats que se cancelaron NO se restituyen (la persona puede
     iniciar vínculos nuevos), pero se avisa a ambas partes.
     """
     fila = db.get(models.EstadoCuenta, usuario.id)

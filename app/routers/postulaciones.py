@@ -236,9 +236,6 @@ def cancelar_postulacion(
 
     p.estado = "Cancelada"
     p.fecha_respuesta = ahora()
-    for c in p.citas:
-        if c.estado == "Agendada":
-            c.estado = "Cancelada"
     recalcular_estado_solicitud(p.solicitud)
     db.commit()
     return postulacion_out(_visible(db, p.id, usuario), usuario)
@@ -259,9 +256,6 @@ def completar_tratamiento(
 
     # La tabla del equipo queda en 'Asignado'; la fecha de término vive en solicitud_detalle.
     asegurar_detalle(p.solicitud).completada_en = ahora()
-    for c in p.citas:
-        if c.estado == "Agendada":
-            c.estado = "Realizada"
     r = p.requerimiento
     if r is not None and r.estado == "Abierto":
         r.cantidad_completada = min(r.cantidad_completada + 1, r.cantidad_requerida)

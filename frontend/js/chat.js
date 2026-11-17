@@ -7,15 +7,19 @@
  * - Se pinta dentro de <div id="chat-app"> (ver los HTML de los portales).
  * - Cualquier botón con data-accion="chatear" data-id="<id postulación>" lleva
  *   a la sección y abre esa conversación.
- * - Sin WebSockets: se consulta la API cada pocos segundos (polling).
+ * - Sin WebSockets: se consulta la API cada pocos segundos (polling), más seguido
+ *   con una conversación abierta. Lista e hilo se piden en paralelo.
+ * - Lo que escribe la persona aparece al instante ("Enviando…") mientras el
+ *   servidor lo modera y lo guarda; si se rechaza, se quita y se explica por qué.
  * - Si la conversación está cerrada (cancelada o terminada) es solo lectura y
  *   se avisa cuándo se borra el historial (30 días después del cierre).
  *
- * Requiere session.js, api.js, utils.js (esc) y formulario-modal.js (apiJson).
+ * Requiere session.js, api.js, utils.js y formulario-modal.js (abrirFormulario).
  * ---------------------------------------------------------------------
  */
 (function () {
-  const REFRESCO_MS = 5000;   // cada cuánto se consulta la API
+  const REFRESCO_HILO_MS = 2500;   // con una conversación abierta: los mensajes nuevos llegan rápido
+  const REFRESCO_LISTA_MS = 6000;  // sin conversación abierta: solo la lista y el contador
   const DIAS_HISTORIAL = 30;  // debe coincidir con DIAS_HISTORIAL del backend (app/routers/chat.py)
   const MIN_MENSAJES_REPORTAR = 3;  // debe coincidir con MIN_MENSAJES_REPORTAR de app/sanciones.py
 
@@ -25,15 +29,14 @@
   let hilo = null;            // última respuesta del hilo abierto
   let errorHilo = "";         // por qué no se pudo cargar el hilo abierto (se reintenta solo)
   let verInapropiados = false; // el usuario decidió leer los mensajes bloqueados de la otra persona
+  const hilosVistos = new Map();  // id -> último hilo cargado: al volver a una conversación se muestra al tiro
+  let enviando = [];          // mensajes propios que el servidor aún no confirma: { clave, contenido, desdeId }
+  let siguienteClave = 0;
 
   const app = document.getElementById("chat-app");
   if (!app) return;
 
-  /* ---------- utilidades de formato ---------- */
-  function iniciales(nombre) {
-    return nombre.split(/\s+/).slice(0, 2).map((p) => p[0]).join("").toUpperCase();
-  }
-
+  /* ---------- utilidades de formato (iniciales y esc vienen de utils.js) ---------- */
   // Hora si es de hoy; si no, día y mes.
   function fechaCorta(iso) {
     const f = new Date(iso);
@@ -82,7 +85,6 @@
   const elMensajes = document.getElementById("chat-mensajes");
   const elForm = document.getElementById("chat-form");
   const elTexto = document.getElementById("chat-texto");
-  const elEnviar = document.getElementById("chat-enviar");
   const elAlerta = document.getElementById("chat-alerta");
   const elNota = document.getElementById("chat-nota");
 
@@ -141,6 +143,11 @@
         <span class="material-symbols-rounded">visibility_off</span> Ocultar mensajes</button></div>`;
   }
 
+  // Un mensaje «Enviando…» que el refresco ya trajo guardado (llegó antes que la respuesta del envío).
+  function yaLlego(pendiente) {
+    return hilo.mensajes.some((m) => m.mio && m.id > pendiente.desdeId && m.contenido === pendiente.contenido);
+  }
+
   function pintarHilo() {
     if (activa == null || !hilo) {
       elCabecera.innerHTML = "";
@@ -175,8 +182,12 @@
       <div class="chat__msg ${m.mio ? "chat__msg--mio" : ""}">
         <div class="chat__burbuja">${esc(m.contenido)}</div>
         <small>${esc(hora(m.fecha_creacion))}${m.mio ? ` · ${m.leido ? "Visto" : "Enviado"}` : ""}</small>
+      </div>`).join("") + enviando.filter((m) => !yaLlego(m)).map((m) => `
+      <div class="chat__msg chat__msg--mio chat__msg--enviando">
+        <div class="chat__burbuja">${esc(m.contenido)}</div>
+        <small>Enviando…</small>
       </div>`).join("");
-    const vacio = hilo.mensajes.length ? "" :
+    const vacio = hilo.mensajes.length || enviando.length ? "" :
       `<p class="chat__vacio chat__vacio--centro">Aún no hay mensajes. Coordinen aquí fecha, hora y detalles de la atención.</p>`;
     const cerrada = c.puede_escribir ? "" : (c.cerrada_por_moderacion ? `
       <p class="chat__sistema chat__sistema--detenido">
@@ -210,10 +221,22 @@
   }
 
   /* ---------- datos ---------- */
+  // La conversación abierta se está leyendo (el hilo la marca como leída en el servidor):
+  // no muestra "no leídos" aunque la lista haya llegado antes que el hilo.
+  function sinNoLeidosEnLaAbierta() {
+    conversaciones.forEach((c) => { if (c.postulacion_id === activa) c.no_leidos = 0; });
+  }
+
   async function cargarLista() {
-    const r = await apiJson("/api/chat/conversaciones");
+    let r;
+    try {
+      r = await apiJson("/api/chat/conversaciones");
+    } catch (error) {
+      return;                             // sin conexión: se reintenta en el próximo refresco
+    }
     if (!r.ok) return;
     conversaciones = r.data;
+    sinNoLeidosEnLaAbierta();
     pintarLista();
     pintarContador();
   }
@@ -237,10 +260,11 @@
       return;
     }
     errorHilo = "";
-    // Solo se repinta si algo cambió (evita parpadeos y saltos de scroll).
     if (hilo && hilo.aviso_moderacion && !r.data.aviso_moderacion) {
       r.data.aviso_moderacion = hilo.aviso_moderacion;  // el servidor lo entrega una sola vez
     }
+    hilosVistos.set(id, r.data);
+    // Solo se repinta si algo cambió (evita parpadeos y saltos de scroll).
     if (!hilo || JSON.stringify(hilo) !== JSON.stringify(r.data)) {
       const eraNueva = !hilo;
       hilo = r.data;
@@ -258,11 +282,39 @@
     insignia.hidden = total === 0;
   }
 
-  async function refrescar() {
+  /* ---------- refresco automático ----------
+     Lista e hilo se piden EN PARALELO (antes iban uno tras otro y la lista dos veces).
+     Se usa setTimeout encadenado en vez de setInterval: si la red está lenta, una
+     consulta nunca se encima con la siguiente. Con la pestaña oculta no se consulta. */
+  let temporizador = null;
+  let refrescando = null;   // la promesa del refresco en curso (para no duplicarlo)
+
+  function refrescar() {
+    if (refrescando) return refrescando;
+    refrescando = Promise.all([cargarLista(), cargarHilo()])
+      .catch(() => {})
+      .finally(() => { refrescando = null; });
+    return refrescando;
+  }
+
+  function programarRefresco() {
+    clearTimeout(temporizador);
+    temporizador = setTimeout(async () => {
+      if (!document.hidden) await refrescar();
+      programarRefresco();
+    }, activa == null ? REFRESCO_LISTA_MS : REFRESCO_HILO_MS);
+  }
+
+  // Tras una acción del usuario (archivar, bloquear...): hilo y lista frescos, a la vez.
+  // No reutiliza un refresco en curso, porque ese pudo empezar antes de la acción.
+  function actualizarTodo() {
+    return Promise.all([cargarHilo(), cargarLista()]);
+  }
+
+  // Al volver a la pestaña se actualiza al tiro, sin esperar al próximo ciclo.
+  function refrescarAhora() {
     if (document.hidden) return;
-    await cargarLista();
-    await cargarHilo();   // abrir/mantener el hilo abierto marca sus mensajes como leídos
-    await cargarLista();  // ...y se refleja en la lista y en el contador
+    refrescar().finally(programarRefresco);
   }
 
   /* ---------- acciones ---------- */
@@ -283,8 +335,7 @@
         const r = await apiJson(`/api/chat/${id}/archivar`, "POST");
         if (!r.ok) return { ok: false, error: textoDeError(r) };
         mostrarAviso("Conversación archivada.");
-        await cargarHilo();
-        await cargarLista();
+        await actualizarTodo();
         return { ok: true };
       },
     });
@@ -295,8 +346,7 @@
     const r = await apiJson(`/api/chat/${activa}/reabrir`, "POST");
     if (!r.ok) return mostrarAviso(textoDeError(r), true);
     mostrarAviso("Conversación reabierta.");
-    await cargarHilo();
-    await cargarLista();
+    await actualizarTodo();
   }
 
   function bloquear() {
@@ -311,8 +361,7 @@
         const r = await apiJson(`/api/chat/${id}/bloquear`, "POST");
         if (!r.ok) return { ok: false, error: textoDeError(r) };
         mostrarAviso("Conversación bloqueada.");
-        await cargarHilo();
-        await cargarLista();
+        await actualizarTodo();
         return { ok: true };
       },
     });
@@ -323,8 +372,7 @@
     const r = await apiJson(`/api/chat/${activa}/desbloquear`, "POST");
     if (!r.ok) return mostrarAviso(textoDeError(r), true);
     mostrarAviso("Conversación desbloqueada.");
-    await cargarHilo();
-    await cargarLista();
+    await actualizarTodo();
   }
 
   function reportar() {
@@ -346,41 +394,73 @@
     });
   }
   async function abrirConversacion(id) {
+    const cambia = id !== activa;
     activa = id;
-    hilo = null;
+    if (cambia) {
+      // Si ya se había abierto antes, se muestra lo último que se vio mientras llega lo nuevo.
+      hilo = hilosVistos.get(id) || null;
+      enviando = [];
+      verInapropiados = false;
+      mostrarAlerta("");
+    }
     errorHilo = "";
-    verInapropiados = false;
-    mostrarAlerta("");
+    sinNoLeidosEnLaAbierta();
     pintarLista();
+    pintarContador();
     pintarHilo();
-    await cargarHilo();
-    await cargarLista();
+    elMensajes.scrollTop = elMensajes.scrollHeight;
+    await actualizarTodo();
+    programarRefresco();  // con una conversación abierta se consulta más seguido
     if (!elForm.hidden) elTexto.focus();
   }
 
+  /**
+   * Envío "optimista": el mensaje se ve al instante como «Enviando…» y el cuadro queda libre
+   * para seguir escribiendo. La moderación (que puede tardar un poco si consulta a la IA)
+   * corre en el servidor; si lo rechaza, el mensaje se quita y vuelve al cuadro de texto.
+   */
   async function enviar(evento) {
     evento.preventDefault();
     const contenido = elTexto.value.trim();
     if (!contenido || activa == null) return;
-    elEnviar.disabled = true;
+    const id = activa;
+    const ultimo = hilo && hilo.mensajes.length ? hilo.mensajes[hilo.mensajes.length - 1].id : 0;
+    const pendiente = { clave: siguienteClave++, contenido, desdeId: ultimo };
+    enviando.push(pendiente);
+    elTexto.value = "";
+    mostrarAlerta("");
+    pintarHilo();
+    elMensajes.scrollTop = elMensajes.scrollHeight;
+
+    let r;
     try {
-      const r = await apiJson(`/api/chat/${activa}/mensajes`, "POST", { contenido });
-      if (!r.ok) {
-        // 422 = mensaje bloqueado por la moderación; 403 = la cuenta quedó suspendida.
-        // (si fue suspensión, api.js ya muestra el cuadro de "Tu cuenta fue suspendida")
-        if (!(r.status === 403 && /suspendida/i.test(textoDeError(r)))) mostrarAlerta(textoDeError(r));
-        return;
-      }
-      mostrarAlerta("");
-      elTexto.value = "";
-      await cargarHilo();
-      await cargarLista();
+      r = await apiJson(`/api/chat/${id}/mensajes`, "POST", { contenido });
     } catch (error) {
-      mostrarAviso("No se pudo enviar el mensaje. Revisa tu conexión.", true);
-    } finally {
-      elEnviar.disabled = false;
-      elTexto.focus();
+      r = null;                             // sin conexión
     }
+    if (id !== activa) return;              // se cambió de conversación mientras se enviaba
+    enviando = enviando.filter((m) => m.clave !== pendiente.clave);
+
+    if (r && r.ok) {
+      // Se agrega la respuesta del servidor (si el refresco no la trajo ya) sin esperar otra consulta.
+      if (hilo && !hilo.mensajes.some((m) => m.id === r.data.id)) hilo.mensajes.push(r.data);
+      pintarHilo();
+      elMensajes.scrollTop = elMensajes.scrollHeight;
+      refrescar();                          // actualiza vista previa y orden de la lista
+      return;
+    }
+    // No se envió: se devuelve el texto al cuadro para que no se pierda.
+    if (!elTexto.value) elTexto.value = contenido;
+    pintarHilo();
+    if (!r) {
+      mostrarAviso("No se pudo enviar el mensaje. Revisa tu conexión.", true);
+    } else if (!(r.status === 403 && /suspendida/i.test(textoDeError(r)))) {
+      // 422 = bloqueado por la moderación; 409 = conversación cerrada.
+      // (403 por suspensión: api.js ya muestra el cuadro de "Tu cuenta fue suspendida")
+      mostrarAlerta(textoDeError(r));
+      if (r.status === 409) refrescar();    // se cerró mientras tanto: se actualiza la vista
+    }
+    elTexto.focus();
   }
 
   /* ---------- eventos ---------- */
@@ -404,17 +484,18 @@
   });
 
   // Botones "Chatear" de las postulaciones: llevan a la sección y abren la conversación.
-  document.addEventListener("click", async (e) => {
+  document.addEventListener("click", (e) => {
     const boton = e.target.closest('[data-accion="chatear"]');
     if (!boton) return;
     document.getElementById("mensajes").scrollIntoView({ behavior: "smooth", block: "start" });
-    await cargarLista();
-    abrirConversacion(Number(boton.dataset.id));
+    abrirConversacion(Number(boton.dataset.id));  // ya pide la lista y el hilo a la vez
   });
+
+  document.addEventListener("visibilitychange", refrescarAhora);
+  window.addEventListener("focus", refrescarAhora);
 
   /* ---------- inicio ---------- */
   pintarLista();
   pintarHilo();
-  refrescar().catch(() => {});
-  setInterval(() => refrescar().catch(() => {}), REFRESCO_MS);
+  refrescarAhora();
 })();

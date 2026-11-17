@@ -1,14 +1,17 @@
 """
-Esquemas Pydantic: definen la forma de los datos que entran y salen de la API.
+Esquemas Pydantic de autenticación y perfil: la forma de los datos que entran y salen de la API.
+(El registro llega como formulario multipart, así que sus campos se validan en app/routers/auth.py.)
+Los esquemas del resto del dominio están en schemas_dominio.py.
 """
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 # ---------- LOGIN ----------
 class LoginRequest(BaseModel):
     correo: EmailStr
-    contrasena: str
+    contrasena: str = Field(..., max_length=72)  # límite de bcrypt (ver app/auth.py)
 
 
 class TokenResponse(BaseModel):
@@ -18,20 +21,7 @@ class TokenResponse(BaseModel):
     nombre_completo: str
 
 
-# ---------- REGISTRO ----------
-class RegistroRequest(BaseModel):
-    nombre_completo: str = Field(..., max_length=150)
-    correo: EmailStr
-    contrasena: str = Field(..., min_length=6)
-    rol: str = Field(..., pattern="^(estudiante|paciente|admin)$")
-
-    # Campos opcionales, solo se usan si rol == "estudiante"
-    universidad: Optional[str] = None
-    ano_carrera: Optional[int] = None
-    comuna_atencion: Optional[str] = None
-    disponibilidad: Optional[str] = None
-
-
+# ---------- USUARIO ----------
 class UsuarioOut(BaseModel):
     id: int
     nombre_completo: str

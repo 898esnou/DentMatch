@@ -1,9 +1,5 @@
-"""Solicitudes, casos, postulaciones en ambos sentidos, citas y resumen."""
-from datetime import datetime, timedelta
-
+"""Solicitudes, casos, postulaciones en ambos sentidos y resumen."""
 from tests.conftest import REQUERIMIENTO, SOLICITUD
-
-FUTURO = (datetime.now() + timedelta(days=3)).replace(microsecond=0).isoformat()
 
 
 def test_paciente_publica_y_el_estudiante_la_ve_como_caso(paciente, estudiante):
@@ -168,37 +164,20 @@ def test_cancelar_solicitud_cancela_lo_pendiente(paciente, estudiante):
     assert paciente.patch(f"/api/solicitudes/{sol['id']}", json={"titulo": "Nuevo título"}).status_code == 409
 
 
-def test_flujo_completo_citas_y_avance_del_requerimiento(paciente, estudiante):
+def test_flujo_completo_y_avance_del_requerimiento(paciente, estudiante):
     req = estudiante.post("/api/requerimientos", json={**REQUERIMIENTO, "cantidad_requerida": 1}).json()
     sol = paciente.post("/api/solicitudes", json=SOLICITUD).json()
     p = paciente.post("/api/postulaciones", json={"solicitud_id": sol["id"], "estudiante_id": estudiante.id,
                                                   "requerimiento_id": req["id"]}).json()
 
-    # Sin aceptar todavía no se puede agendar
-    assert estudiante.post("/api/citas", json={"postulacion_id": p["id"], "fecha_hora": FUTURO}).status_code == 409
+    # Sin aceptar todavía no se puede completar
+    assert estudiante.post(f"/api/postulaciones/{p['id']}/completar").status_code == 409
     estudiante.post(f"/api/postulaciones/{p['id']}/responder", json={"accion": "aceptar"})
-
-    cita = estudiante.post("/api/citas", json={"postulacion_id": p["id"], "fecha_hora": FUTURO,
-                                               "lugar": "Box 8-B", "notas": "Traer radiografía"})
-    assert cita.status_code == 201, cita.text
-    assert cita.json()["estudiante"]["nombre"] == "Matías Rojas V."
-    assert cita.json()["paciente"]["nombre"] == "Camila Soto M."
-    # La fecha pasada se rechaza y el paciente no puede agendar
-    assert estudiante.post("/api/citas", json={"postulacion_id": p["id"], "fecha_hora": "2020-01-01T10:00:00"}).status_code == 422
-    assert paciente.post("/api/citas", json={"postulacion_id": p["id"], "fecha_hora": FUTURO}).status_code == 403
-
-    assert len(paciente.get("/api/citas?proximas=true").json()) == 1
-    assert paciente.get("/api/resumen").json()["citas_proximas"] == 1
-    # El paciente solo puede cancelar, no cambiar el lugar
-    cid = cita.json()["id"]
-    assert paciente.patch(f"/api/citas/{cid}", json={"lugar": "Mi casa"}).status_code == 403
-    assert estudiante.patch(f"/api/citas/{cid}", json={"lugar": "Box 9"}).json()["lugar"] == "Box 9"
 
     hecho = estudiante.post(f"/api/postulaciones/{p['id']}/completar")
     assert hecho.status_code == 200, hecho.text
     assert estudiante.get(f"/api/requerimientos/{req['id']}").json()["estado"] == "Completado"
     assert paciente.get(f"/api/solicitudes/{sol['id']}").json()["estado"] == "Completada"
-    assert estudiante.get("/api/citas?estado=Realizada").json()[0]["id"] == cid
     assert estudiante.post(f"/api/postulaciones/{p['id']}/completar").status_code == 409
 
     r = paciente.get("/api/resumen").json()
@@ -207,26 +186,10 @@ def test_flujo_completo_citas_y_avance_del_requerimiento(paciente, estudiante):
     assert e["requerimientos_completados"] == 1 and e["requerimientos_abiertos"] == 0
 
 
-def test_paciente_puede_cancelar_su_cita(paciente, estudiante):
-    sol = paciente.post("/api/solicitudes", json=SOLICITUD).json()
-    p = paciente.post("/api/postulaciones", json={"solicitud_id": sol["id"], "estudiante_id": estudiante.id}).json()
-    estudiante.post(f"/api/postulaciones/{p['id']}/responder", json={"accion": "aceptar"})
-    cid = estudiante.post("/api/citas", json={"postulacion_id": p["id"], "fecha_hora": FUTURO}).json()["id"]
-    assert paciente.patch(f"/api/citas/{cid}", json={"estado": "Cancelada"}).json()["estado"] == "Cancelada"
-    assert estudiante.patch(f"/api/citas/{cid}", json={"lugar": "x"}).status_code == 409
-
-
-def test_paciente_elimina_cita_cancelada_pero_no_agendada(paciente, paciente2, estudiante):
-    sol = paciente.post("/api/solicitudes", json=SOLICITUD).json()
-    p = paciente.post("/api/postulaciones", json={"solicitud_id": sol["id"], "estudiante_id": estudiante.id}).json()
-    estudiante.post(f"/api/postulaciones/{p['id']}/responder", json={"accion": "aceptar"})
-    cid = estudiante.post("/api/citas", json={"postulacion_id": p["id"], "fecha_hora": FUTURO}).json()["id"]
-    assert paciente.delete(f"/api/citas/{cid}/definitivo").status_code == 409  # sigue agendada
-    paciente.patch(f"/api/citas/{cid}", json={"estado": "Cancelada"})
-    assert estudiante.delete(f"/api/citas/{cid}/definitivo").status_code == 403  # solo el paciente
-    assert paciente2.delete(f"/api/citas/{cid}/definitivo").status_code == 404  # ajena
-    assert paciente.delete(f"/api/citas/{cid}/definitivo").status_code == 204
-    assert paciente.get("/api/citas").json() == []
+def test_no_hay_agenda_de_citas(paciente):
+    """Fecha y hora se coordinan solo por el chat: la API de citas ya no existe."""
+    assert paciente.get("/api/citas").status_code == 404
+    assert "citas_proximas" not in paciente.get("/api/resumen").json()
 
 
 def test_paciente_elimina_solicitud_solo_si_esta_cancelada(paciente, paciente2):

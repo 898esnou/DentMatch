@@ -9,7 +9,8 @@ Funciona con reglas simples y no usa IA ni sale del servidor: el texto del pacie
 envía a ningún servicio externo por este motivo, no se guarda y no se escribe en los logs.
 """
 import re
-import unicodedata
+
+from app.texto import normalizar
 
 MENSAJE_URGENCIA = (
     "Algunos de los síntomas que describes podrían necesitar atención rápida. Si tienes "
@@ -35,12 +36,7 @@ _SENALES = [
 ]
 
 
-def _normalizar(texto: str) -> str:
-    texto = unicodedata.normalize("NFD", texto.lower())
-    return "".join(c for c in texto if unicodedata.category(c) != "Mn")
-
-
 def detectar_urgencia(texto: str) -> bool:
     """True si el texto menciona alguna señal de posible urgencia."""
-    limpio = _normalizar(texto)
+    limpio = normalizar(texto)
     return any(patron.search(limpio) for patron in _SENALES)

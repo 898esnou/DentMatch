@@ -6,7 +6,7 @@
  * - Incluye el botón «Cerrar sesión» (lo atiende session.js).
  * - Al guardar dispara el evento "perfil-actualizado" en document, para
  *   que cada dashboard vuelva a dibujar sus datos.
- * Requiere session.js y api.js cargados antes.
+ * Requiere session.js, api.js y utils.js cargados antes.
  * ---------------------------------------------------------------------
  */
 
@@ -51,7 +51,6 @@ function valorInicial(valor) {
 
 function dibujarCampos(contenedor, campos, datos) {
   contenedor.innerHTML = "";
-  contenedor.style.cssText = "display:flex;flex-direction:column;gap:14px";
   for (const c of campos) {
     const campo = document.createElement("div");
     campo.className = "pm__field";
@@ -83,9 +82,12 @@ async function abrirEditarPerfil() {
   const botonGuardar = dialogo.querySelector("[data-pm='guardar']");
   cajaError.hidden = true;
 
-  const respuesta = await apiFetch("/api/perfil");
-  if (!respuesta.ok) return;
-  const datos = (await respuesta.json())[rol] || {};
+  let datos;
+  try {
+    datos = (await obtenerJson("/api/perfil"))[rol] || {};
+  } catch (error) {
+    return mostrarAviso("No se pudo cargar tu perfil. Inténtalo de nuevo.", true);
+  }
   dibujarCampos(dialogo.querySelector(".pm__campos"), campos, datos);
 
   formulario.onsubmit = async (evento) => {
@@ -102,16 +104,12 @@ async function abrirEditarPerfil() {
     }
 
     try {
-      const guardado = await apiFetch(`/api/perfil/${rol}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(cuerpo),
-      });
+      const guardado = await apiJson(`/api/perfil/${rol}`, "PUT", cuerpo);
       if (guardado.ok) {
         dialogo.close();
-        document.dispatchEvent(new CustomEvent("perfil-actualizado", { detail: await guardado.json() }));
+        document.dispatchEvent(new CustomEvent("perfil-actualizado", { detail: guardado.data }));
       } else {
-        cajaError.textContent = "No se pudo guardar el perfil. Revisa los datos e inténtalo de nuevo.";
+        cajaError.textContent = textoDeError(guardado, "No se pudo guardar el perfil. Revisa los datos e inténtalo de nuevo.");
         cajaError.hidden = false;
       }
     } catch (error) {

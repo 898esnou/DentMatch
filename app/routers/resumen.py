@@ -21,8 +21,7 @@ def resumen(
     usuario: models.Usuario = Depends(require_rol("estudiante", "paciente")),
     db: Session = Depends(get_db),
 ):
-    P, S, C, R = models.Postulacion, models.Solicitud, models.Cita, models.Requerimiento
-    proximas = (C.estado == "Agendada") & (C.fecha_hora >= ahora())
+    P, S, R = models.Postulacion, models.Solicitud, models.Requerimiento
 
     if usuario.rol == "estudiante":
         def contar_req(estado):
@@ -54,10 +53,6 @@ def resumen(
                 .order_by(models.RamoEstudiante.id)
             ],
             postulaciones_pendientes=contar_post(False),
-            citas_proximas=db.query(func.count(C.id))
-            .join(P, C.postulacion_id == P.id)
-            .filter(P.estudiante_id == usuario.id, proximas)
-            .scalar(),
             notificaciones=recibidas + aviso_verificacion,
             estado_verificacion=estado_verificacion,
         )
@@ -86,10 +81,5 @@ def resumen(
         solicitudes_activas=contar_solicitudes("Abierta", "En Revisión", "Asignada"),
         tratamientos_completados=contar_solicitudes("Completada"),
         postulaciones_pendientes=contar_post(True),
-        citas_proximas=db.query(func.count(C.id))
-        .join(P, C.postulacion_id == P.id)
-        .join(S, P.solicitud_id == S.id)
-        .filter(S.paciente_id == usuario.id, proximas)
-        .scalar(),
         notificaciones=por_responder,
     )

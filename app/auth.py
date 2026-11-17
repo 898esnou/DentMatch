@@ -11,21 +11,24 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
-from app.database import get_db
 from app import models
+from app.database import get_db
 from app.sanciones import verificar_cuenta
-from app.vigencia import vencer_caducadas
+from app.vigencia import revisar_vencimientos
 
 load_dotenv()
 
-# --- Config del token (cámbialas por variables de entorno reales en producción) ---
+# --- Configuración del token: SECRET_KEY viene del .env (local) o de las variables de Vercel ---
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("No se encontró SECRET_KEY en el archivo .env")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # 8 horas
+
+# bcrypt solo considera los primeros 72 bytes: más largo, las versiones nuevas fallan con un error 500.
+LARGO_MAXIMO_CONTRASENA = 72
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
@@ -57,18 +60,18 @@ def get_current_user(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        usuario_id: str = payload.get("sub")
-        if usuario_id is None:
-            raise credentials_exception
-    except JWTError:
+        usuario_id = int(payload.get("sub"))
+    except (JWTError, TypeError, ValueError):  # token inválido, vencido o sin "sub" numérico
         raise credentials_exception
 
-    usuario = db.query(models.Usuario).filter(models.Usuario.id == int(usuario_id)).first()
+    # El perfil de estudiante viene en la misma consulta: casi todas las peticiones lo usan
+    # (vigencia del certificado, exigir_estudiante_verificado) y así no es una consulta aparte.
+    usuario = db.get(models.Usuario, usuario_id, options=[joinedload(models.Usuario.perfil_estudiante)])
     if usuario is None:
         raise credentials_exception
     verificar_cuenta(db, usuario)  # baneados y en time-out no pueden usar la API
     # Vence a los estudiantes cuyo certificado semestral caducó (ver app/vigencia.py).
-    if vencer_caducadas(db):
+    if revisar_vencimientos(db, usuario):
         db.refresh(usuario)
     return usuario
 

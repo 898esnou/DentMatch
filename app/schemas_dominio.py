@@ -1,6 +1,6 @@
 """
 Esquemas Pydantic del dominio de DentMatch: ramos, requerimientos, solicitudes,
-postulaciones, citas, resumen y administración.
+postulaciones, chat, resumen y administración.
 (Los de login/registro/perfil siguen en schemas.py.)
 """
 from datetime import date, datetime
@@ -202,34 +202,6 @@ class PostulacionOut(BaseModel):
     puede_responder: bool = False
 
 
-# ---------- CITAS ----------
-class CitaIn(BaseModel):
-    postulacion_id: int
-    fecha_hora: datetime
-    lugar: Optional[str] = Field(None, max_length=200)
-    notas: Optional[str] = None
-
-
-class CitaUpdate(BaseModel):
-    fecha_hora: Optional[datetime] = None
-    lugar: Optional[str] = Field(None, max_length=200)
-    notas: Optional[str] = None
-    estado: Optional[Literal["Realizada", "Cancelada"]] = None
-
-
-class CitaOut(BaseModel):
-    id: int
-    postulacion_id: int
-    fecha_hora: datetime
-    lugar: Optional[str] = None
-    notas: Optional[str] = None
-    estado: str
-    solicitud_codigo: str
-    titulo: str
-    estudiante: ParticipanteOut
-    paciente: ParticipanteOut
-
-
 # ---------- RESUMEN (cabecera de cada portal) ----------
 class ResumenOut(BaseModel):
     rol: str
@@ -243,7 +215,6 @@ class ResumenOut(BaseModel):
     tratamientos_completados: Optional[int] = None
     # ambos
     postulaciones_pendientes: int = 0  # esperando respuesta de la otra parte
-    citas_proximas: int = 0
     notificaciones: int = 0  # cosas que requieren mi acción
     estado_verificacion: Optional[str] = None  # solo estudiante
 

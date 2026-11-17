@@ -25,7 +25,6 @@ oficial fijo; las redirecciones solo se siguen dentro de ese mismo dominio.
 import html
 import io
 import re
-import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -33,6 +32,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Dict, Optional
 
+from app.texto import quitar_tildes
 from app.vigencia import fin_de_semestre
 
 DOMINIO_OFICIAL = "certificados.unab.cl"
@@ -51,8 +51,8 @@ class ResultadoVerificacion:
 
 
 def _sin_acentos(texto: str) -> str:
-    base = unicodedata.normalize("NFD", texto or "")
-    return "".join(c for c in base if unicodedata.category(c) != "Mn").upper()
+    """Mayúsculas y sin tildes: así se comparan los datos de la página de la UNAB."""
+    return quitar_tildes(texto).upper()
 
 
 def _palabras(texto: str):

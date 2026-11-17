@@ -24,9 +24,10 @@ import json
 import logging
 import os
 import re
-import unicodedata
 from dataclasses import dataclass
 from typing import List, Optional
+
+from app.texto import quitar_tildes
 
 logger = logging.getLogger(__name__)
 
@@ -76,8 +77,7 @@ _LEET = str.maketrans({"0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t
 
 def normalizar(texto: str) -> str:
     """Minúsculas, sin tildes, sin letras repetidas de más y con los trucos típicos (p0t4) deshechos."""
-    t = unicodedata.normalize("NFD", (texto or "").lower())
-    t = "".join(c for c in t if unicodedata.category(c) != "Mn")
+    t = quitar_tildes((texto or "").lower())
     t = t.translate(_LEET)
     t = re.sub(r"(.)\1{2,}", r"\1", t)          # puuuuta -> puta
     t = re.sub(r"(?<=\w)[.\-_*](?=\w)", "", t)  # p.u.t.a / p-u-t-a -> puta
@@ -173,9 +173,14 @@ def interpretar_respuesta(respuesta: str) -> Optional[str]:
     return categoria if categoria in CATEGORIAS else None
 
 
+def requiere_ia(texto: str) -> bool:
+    """Si este mensaje se le preguntaría a Gemini (IA activa y texto con palabras de verdad)."""
+    return ia_habilitada() and len(texto.strip()) >= LARGO_MINIMO_IA and bool(re.search(r"[a-zA-Z]", texto))
+
+
 def clasificar_con_ia(texto: str, contexto: List[str]) -> Resultado:
     """Pregunta a Gemini. Ante cualquier fallo deja pasar el mensaje."""
-    if not ia_habilitada() or len(texto.strip()) < LARGO_MINIMO_IA or not re.search(r"[a-zA-Z]", texto):
+    if not requiere_ia(texto):
         return OK
     try:
         from google.genai import types

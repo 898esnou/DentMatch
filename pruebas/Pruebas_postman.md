@@ -4,7 +4,7 @@
 
 Colección de Postman que recorre la API de DentMatch como lo haría cada rol (paciente, estudiante y administrador) y comprueba las respuestas. Complementa a las pruebas automáticas de `tests/` (ver `Pruebas_codigo.md`, en esta misma carpeta): esas se ejecutan por código; esta se ve y se ejecuta con una herramienta visual, útil para demostrar el sistema y para evidencia.
 
-**80 peticiones en 10 carpetas. Cada una incluye sus pruebas (`pm.test`) y las variables se encadenan solas** (el token y los ids que devuelve una petición los usa la siguiente).
+**77 peticiones en 10 carpetas. Cada una incluye sus pruebas (`pm.test`) y las variables se encadenan solas** (el token y los ids que devuelve una petición los usa la siguiente).
 
 ## Archivos
 Este documento está en `pruebas/`; los archivos de la colección están en `postman/`.
@@ -36,7 +36,7 @@ Queda escuchando en `http://127.0.0.1:8011` (otro puerto: `python -m postman.ser
 ### 3. Ejecutar
 Clic derecho en la colección → **Run collection** → **Run**. Las peticiones deben ejecutarse **en orden** (es el orden por defecto), porque cada carpeta usa datos creados antes. Se puede repetir las veces que se quiera: los RUT y correos se inventan nuevos en cada corrida.
 
-Resultado esperado: **las 80 peticiones con todas sus pruebas en verde.**
+Resultado esperado: **las 77 peticiones con todas sus pruebas en verde.**
 
 ## Qué hace la colección
 
@@ -47,7 +47,7 @@ Resultado esperado: **las 80 peticiones con todas sus pruebas en verde.**
 | 2. Seguridad y roles | 5 | Cada rol solo accede a lo suyo (403) y sin sesión se rechaza (401) |
 | 3. Solicitudes | 8 | Publicar (201), validar descripción corta, de más de 500 caracteres y área inexistente (422), listar, editar, que otro paciente no vea la solicitud ajena (404) y que el estudiante vea los casos **sin RUT ni correo** |
 | 4. Requerimientos | 5 | Declarar un requerimiento, rechazar sin tutor o con cantidad 0 (422), listar y bloquear a quien no es el estudiante dueño (403) |
-| 5. Postulaciones y citas | 9 | Postular, no postular dos veces (409), no escribir antes de aceptar (409), que el estudiante no responda su propia postulación, aceptar, rechazar cita con fecha pasada, agendar, listar y que el paciente no pueda marcar la cita como realizada |
+| 5. Postulaciones | 6 | Postular, no postular dos veces (409), no escribir antes de aceptar (409), que el estudiante no responda su propia postulación, aceptar y que no exista agenda de citas (404: el día y la hora se acuerdan por el chat) |
 | 6. Chat y moderación | 15 | Enviar y responder mensajes; rechazar vacíos; dejar pasar un mensaje clínico normal; bloquear un insulto (advertencia) sin que llegue a la otra persona; reportar (y no dos veces); archivar, bloquear escritura en chat archivado, reabrir solo quien archivó; avisos |
 | 7. Panel de administración | 9 | Resumen, listar reportes, ver el detalle con evidencia, exigir días en una suspensión, descartar un reporte (y no resolverlo dos veces), listar cuentas y estudiantes, exigir motivo al rechazar a un estudiante |
 | 8. Baneo por advertencias | 8 | Con otra pareja paciente–estudiante: tres insultos seguidos dan advertencia 1, advertencia 2 y baneo (403); el baneo genera un reporte automático y el administrador levanta la sanción |
@@ -69,10 +69,10 @@ newman run postman/DentMatch.postman_collection.json -e postman/DentMatch.local.
 
 El servidor de prueba debe estar encendido (paso 1). `reporte_newman.html` es el reporte visual de la última corrida, útil como evidencia; se abre con cualquier navegador.
 
-**Última ejecución con Newman (14-11-2026):** 80 peticiones, 80 scripts de prueba y 108 verificaciones; **0 fallidas**. Duración total: 13 s.
+**Última ejecución con Newman (14-11-2026):** 80 peticiones, 80 scripts de prueba y 108 verificaciones; **0 fallidas**. Duración total: 13 s. (Esa corrida es de la versión anterior, que todavía incluía la agenda de citas.)
 
 ## Comprobar la colección sin Postman ni Node
-`generar_coleccion.py` repite los mismos 80 pasos con Python y verifica los mismos resultados. Sirve para confirmar, por ejemplo en una revisión, que la colección sigue correcta aunque cambie el código:
+`generar_coleccion.py` repite los mismos 77 pasos con Python y verifica los mismos resultados. Sirve para confirmar, por ejemplo en una revisión, que la colección sigue correcta aunque cambie el código:
 
 ```bash
 python -m postman.generar_coleccion --probar http://127.0.0.1:8011 admin@prueba.cl prueba123
@@ -80,7 +80,7 @@ python -m postman.generar_coleccion --probar http://127.0.0.1:8011 admin@prueba.
 
 Además regenera los archivos `.json`. Si se agrega o cambia un paso, se edita la lista `PASOS` de ese archivo y se vuelve a ejecutar; no se editan los `.json` a mano.
 
-**Última comprobación:** 80 de 80 peticiones correctas (14-11-2026), contra un servidor local con base temporal.
+**Última comprobación:** 77 de 77 peticiones correctas (16-11-2026, ya sin la agenda de citas), contra un servidor local con base temporal.
 
 ## Notas
 - El administrador del entorno es solo de prueba; no poner credenciales reales en un archivo que se suba a Git.

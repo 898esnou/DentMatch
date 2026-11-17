@@ -157,15 +157,12 @@ def test_tres_advertencias_banean_y_crean_reporte_automatico(client, paciente, e
         db.close()
 
 
-def test_baneo_cancela_vinculos_cita_y_avisa_a_la_contraparte(paciente, paciente2, estudiante):
+def test_baneo_cancela_vinculos_y_avisa_a_la_contraparte(paciente, paciente2, estudiante):
     pid = _vinculo(paciente, estudiante)
-    cita = estudiante.post("/api/citas", json={"postulacion_id": pid, "fecha_hora": "2099-01-10T15:00:00"})
-    assert cita.status_code == 201, cita.text
     for texto in ("idiota", "imbécil", "te voy a matar"):
         _enviar(estudiante, pid, texto)
 
     assert paciente.get(f"/api/postulaciones/{pid}").json()["estado"] == "Cancelada"
-    assert [c["estado"] for c in paciente.get("/api/citas").json()] == ["Cancelada"]
     # La solicitud de la paciente volvió a estar abierta y el chat quedó cerrado.
     sol = paciente.get("/api/solicitudes").json()[0]
     assert sol["estado"] == "Abierta"

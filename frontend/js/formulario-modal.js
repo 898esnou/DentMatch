@@ -1,47 +1,11 @@
 /**
  * formulario-modal.js
  * ---------------------------------------------------------------------
- * Utilidades compartidas por los portales:
- * - abrirFormulario({...}): modal con campos y envío (usa estilos .pm)
- * - mostrarAviso(texto, esError): mensaje flotante breve
- * - apiJson(ruta, metodo, cuerpo): llamada a la API con JSON
- * Requiere session.js y api.js cargados antes, y utils.js (esc).
+ * abrirFormulario({...}): cuadro de diálogo con campos y envío (estilos .pm).
+ * Lo usan los portales y el panel de administración para crear, editar y confirmar.
+ * Requiere session.js, api.js y utils.js cargados antes.
  * ---------------------------------------------------------------------
  */
-
-function mostrarAviso(texto, esError = false) {
-  const aviso = document.createElement("div");
-  aviso.className = "aviso" + (esError ? " aviso--error" : "");
-  aviso.setAttribute("role", "status");
-  aviso.textContent = texto;
-  document.body.appendChild(aviso);
-  setTimeout(() => aviso.remove(), 3500);
-}
-
-/** Llama a la API con JSON. Devuelve { ok, status, data } (data puede ser null). */
-async function apiJson(ruta, metodo = "GET", cuerpo) {
-  const opciones = { method: metodo };
-  if (cuerpo !== undefined) {
-    opciones.headers = { "Content-Type": "application/json" };
-    opciones.body = JSON.stringify(cuerpo);
-  }
-  const respuesta = await apiFetch(ruta, opciones);
-  let data = null;
-  try { data = await respuesta.json(); } catch (e) { /* 204 sin cuerpo */ }
-  return { ok: respuesta.ok, status: respuesta.status, data };
-}
-
-/** Convierte el error de la API (detail de FastAPI) en un texto para mostrar. */
-function textoDeError(resultado, porDefecto = "No se pudo completar la acción.") {
-  const detalle = resultado && resultado.data && resultado.data.detail;
-  if (typeof detalle === "string") return detalle;
-  if (Array.isArray(detalle) && detalle.length) {
-    const d = detalle[0];
-    const campo = Array.isArray(d.loc) ? d.loc[d.loc.length - 1] : "";
-    return campo ? `${campo}: ${d.msg}` : d.msg;
-  }
-  return porDefecto;
-}
 
 /**
  * abrirFormulario({
@@ -60,7 +24,7 @@ function abrirFormulario(config) {
       <h2 class="pm__title"></h2>
       <p class="pm__lead" hidden></p>
       <p class="pm__error" role="alert" hidden></p>
-      <div class="pm__campos" style="display:flex;flex-direction:column;gap:14px"></div>
+      <div class="pm__campos"></div>
       <div class="pm__actions">
         <button type="button" class="btn btn--ghost" data-pm="cancelar">Cancelar</button>
         <button type="submit" class="btn btn--primary" data-pm="guardar"></button>

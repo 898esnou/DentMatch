@@ -7,9 +7,12 @@ Lo que cuenta es el MES Y AÑO de emisión del certificado (el día da lo mismo)
 Después del fin de semestre hay GRACIA_DIAS días para renovarlo manteniendo el
 acceso (el estudiante recibe un aviso); pasado ese plazo vuelve a 'No verificado'.
 
-El vencimiento se aplica al consultar (vencer_caducadas), sin tareas programadas.
+El vencimiento se aplica al consultar, sin tareas programadas (ver revisar_vencimientos):
+- en cada petición se revisa SOLO a quien la hace (una consulta, barato);
+- cada INTERVALO_REVISION_GLOBAL se revisa a todos los estudiantes activos, para que los
+  pacientes dejen de ver a quien no ha vuelto a entrar desde que se le venció el certificado.
 """
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Dict, NamedTuple, Optional
 
 from sqlalchemy.orm import Session
@@ -18,6 +21,8 @@ from app import models
 from app.servicios import ahora
 
 GRACIA_DIAS = 7
+INTERVALO_REVISION_GLOBAL = timedelta(minutes=15)
+_ultima_revision_global: Optional[datetime] = None   # por proceso del servidor
 
 
 class Vigencia(NamedTuple):
@@ -77,3 +82,30 @@ def vencer_caducadas(db: Session, hoy: Optional[date] = None) -> int:
         )
         db.commit()
     return len(vencidos)
+
+
+def vencer_si_caducada(db: Session, usuario: models.Usuario, hoy: Optional[date] = None) -> bool:
+    """Revisa solo a esta persona: si es un estudiante Activo con el certificado caducado, lo vence."""
+    perfil = usuario.perfil_estudiante if usuario.rol == "estudiante" else None
+    if perfil is None or perfil.estado_verificacion != "Activo":
+        return False
+    certificado = ultima_aprobada(db, usuario.id)
+    if certificado is None or not calcular(_fecha_base(certificado)).caducada(hoy or ahora().date()):
+        return False
+    perfil.estado_verificacion = "No verificado"
+    db.commit()
+    return True
+
+
+def revisar_vencimientos(db: Session, usuario: models.Usuario) -> bool:
+    """
+    Se llama en cada petición autenticada (app/auth.py). Devuelve True si cambió algún estado
+    (quien llama refresca al usuario). La revisión de todos se hace como mucho una vez por intervalo.
+    """
+    global _ultima_revision_global
+    cambio = vencer_si_caducada(db, usuario)
+    momento = ahora()
+    if _ultima_revision_global is None or momento - _ultima_revision_global >= INTERVALO_REVISION_GLOBAL:
+        _ultima_revision_global = momento
+        cambio = vencer_caducadas(db) > 0 or cambio
+    return cambio

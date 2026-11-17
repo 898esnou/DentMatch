@@ -17,5 +17,4 @@ def obtener_catalogos():
         "estados_requerimiento": list(catalogos.ESTADOS_REQUERIMIENTO),
         "estados_solicitud": list(catalogos.ESTADOS_SOLICITUD),
         "estados_postulacion": list(catalogos.ESTADOS_POSTULACION),
-        "estados_cita": list(catalogos.ESTADOS_CITA),
     }

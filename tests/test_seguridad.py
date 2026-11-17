@@ -4,7 +4,7 @@ from tests.conftest import REQUERIMIENTO, SOLICITUD
 
 def test_endpoints_exigen_sesion(client):
     for ruta in ("/api/requerimientos", "/api/solicitudes", "/api/casos", "/api/postulaciones",
-                 "/api/citas", "/api/resumen", "/api/ramos", "/api/estudiantes"):
+                 "/api/chat/conversaciones", "/api/resumen", "/api/ramos", "/api/estudiantes"):
         assert client.get(ruta).status_code == 401, ruta
 
 
