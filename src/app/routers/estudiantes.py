@@ -19,6 +19,7 @@ from app import models
 from app.auth import require_rol
 from app.catalogos import AREAS
 from app.database import get_db
+from app.matching import calcular_puntaje, motivos_de_coincidencia, puntaje_disponibilidad, puntaje_ubicacion
 from app.sanciones import cuenta_activa
 from app.schemas_dominio import EstudianteOut, RequerimientoResumen
 from app.utils import ESCAPE_LIKE, nombre_corto, patron_contiene
@@ -113,6 +114,23 @@ def estados_por_estudiante(db: Session, usuario: models.Usuario, solicitud_id: O
     return {p.estudiante_id: p.estado for p in s.postulaciones}
 
 
+def ordenar_por_coincidencia(estudiantes: List[EstudianteOut], solicitud: models.Solicitud) -> None:
+    """
+    Pone a cada estudiante su puntaje de coincidencia con la solicitud (0 a 100) y los ordena
+    de mayor a menor; en empate gana el más reciente.
+
+    Procedimiento: 100 % si tiene un requerimiento abierto del área de la solicitud, 0 si no
+    (la búsqueda con IA, en busqueda.py, usa en cambio qué tan parecido es el texto escrito).
+    """
+    for e in estudiantes:
+        busca_el_area = any(r.area == solicitud.area for r in e.requerimientos_abiertos)
+        ubicacion = puntaje_ubicacion(solicitud.comuna, e.comuna_atencion)
+        horario = puntaje_disponibilidad(solicitud.disponibilidad, e.disponibilidad)
+        e.puntaje = calcular_puntaje(1.0 if busca_el_area else 0.0, ubicacion, horario)
+        e.motivos = motivos_de_coincidencia(AREAS.get(solicitud.area) if busca_el_area else None, ubicacion, horario)
+    estudiantes.sort(key=lambda e: (-e.puntaje, -e.id))
+
+
 # ---------------------------------------------------------------- endpoints
 @router.get("", response_model=List[EstudianteOut])
 def listar_estudiantes(
@@ -145,6 +163,8 @@ def listar_estudiantes(
     # El área sale de los ramos y requerimientos del estudiante, por eso se filtra aquí y no en SQL.
     if area:
         salida = [e for e in salida if area in e.areas]
+    if solicitud_id is not None:  # ya se validó que la solicitud es de este paciente
+        ordenar_por_coincidencia(salida, db.get(models.Solicitud, solicitud_id))
     return salida[offset : offset + limit]
 
 

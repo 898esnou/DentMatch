@@ -66,14 +66,10 @@ OPINIONES_POR_VENTANA = 20
 VENTANA_SEGUNDOS = 60
 
 MENSAJE_SIN_COINCIDENCIA = (
-    "No encontramos un procedimiento claramente parecido a lo que describes. Puedes probar con "
-    "otras palabras o publicar tu solicitud igualmente, y explicarle estos mismos síntomas al "
-    "estudiante que te atienda para ver si corresponden a lo que él trata."
+    "Prueba con otras palabras o publica tu solicitud y cuéntale tus síntomas al estudiante que te atienda."
 )
 MENSAJE_COINCIDENCIA_MEDIA = (
-    "Estas son recomendaciones cercanas a lo que describes, pero no estamos seguros de que sean lo "
-    "que necesitas. Te recomendamos explicarle estos mismos síntomas al estudiante que te atenderá, "
-    "para ver si son acordes a lo que él trata."
+    "Son sugerencias cercanas, pero no estamos seguros. Comenta tus síntomas con el estudiante para confirmar."
 )
 
 
@@ -96,8 +92,7 @@ class ProcedimientoOut(BaseModel):
 
 
 class EstudianteCoincidenciaOut(EstudianteOut):
-    puntaje: int = 0  # 0 a 100, ver app/matching.py
-    motivos: List[str] = []
+    puntaje: int = 0  # 0 a 100, ver app/matching.py (aquí siempre viene)
 
 
 class BusquedaOut(BaseModel):
@@ -225,7 +220,7 @@ def clasificar_estudiantes(
         horario = puntaje_disponibilidad(disponibilidad, e.disponibilidad)
         resultado.append(
             EstudianteCoincidenciaOut(
-                **e.model_dump(),
+                **e.model_dump(exclude={"puntaje", "motivos"}),
                 puntaje=calcular_puntaje(procedimiento, ubicacion, horario),
                 motivos=motivos_de_coincidencia(AREAS.get(mejor_area), ubicacion, horario),
             )

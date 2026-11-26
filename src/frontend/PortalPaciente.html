@@ -107,6 +107,19 @@
           Te mostraremos procedimientos relacionados y estudiantes que hoy necesitan pacientes para ellos.
         </p>
 
+        <!-- Aviso de uso de IA: reúne lo que podría ser riesgoso para que el resto de la pantalla quede limpio -->
+        <aside class="aviso-ia" role="note">
+          <span class="material-symbols-rounded aviso-ia__icono">warning</span>
+          <div>
+            <strong>Esta búsqueda usa inteligencia artificial</strong>
+            <p>
+              Solo entrega recomendaciones y puede equivocarse. No escribas tu nombre, RUT ni teléfono, y si tienes dudas
+              consúltalas con uno de los estudiantes. Si prefieres no usarla, no hay problema:
+              <button type="button" class="aviso-ia__enlace" data-modo="publicar">publica tu solicitud directamente</button>.
+            </p>
+          </div>
+        </aside>
+
         <form class="searchbox" id="consulta-form">
           <div class="searchbox__input">
             <span class="material-symbols-rounded">search</span>
@@ -116,7 +129,7 @@
           <div class="searchbox__bottom">
             <small>
               Esta búsqueda solo relaciona tus palabras con procedimientos; no es un diagnóstico ni reemplaza
-              la evaluación de un profesional. No escribas tu nombre, RUT ni teléfono. Si tienes dudas sobre si este procedimiento es el adecuado para tu búsqueda, consultalo con uno de los estudiantes recomendados.
+              la evaluación de un profesional.
             </small>
             <button type="submit" class="btn btn--primary btn--lg" id="boton-consulta">
               <span class="material-symbols-rounded">search</span> Haz tu consulta

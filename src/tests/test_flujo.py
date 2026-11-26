@@ -289,3 +289,22 @@ def test_comuna_vacia_se_guarda_como_sin_especificar(paciente):
     sin_comuna = {k: v for k, v in SOLICITUD.items() if k != "comuna"}
     sol = paciente.post("/api/solicitudes", json=sin_comuna).json()
     assert sol["comuna"] is None  # la API no expone el texto de relleno
+
+
+def test_estudiantes_con_solicitud_traen_su_porcentaje_de_coincidencia(paciente, estudiante, estudiante2):
+    # Mismo requerimiento del área de la solicitud y misma comuna/horario -> coincidencia alta.
+    estudiante.put("/api/perfil/estudiante", json={"comuna_atencion": "Providencia", "disponibilidad": "Martes por la tarde"})
+    estudiante.post("/api/requerimientos", json=REQUERIMIENTO)
+    # El otro no busca pacientes de esa área y atiende lejos -> coincidencia baja.
+    estudiante2.put("/api/perfil/estudiante", json={"comuna_atencion": "Puente Alto", "disponibilidad": "Sábado por la mañana"})
+    sol = paciente.post("/api/solicitudes", json=SOLICITUD).json()
+
+    # Sin solicitud no hay con qué comparar: no se calcula el porcentaje.
+    assert all(e["puntaje"] is None for e in paciente.get("/api/estudiantes").json())
+
+    lista = paciente.get(f"/api/estudiantes?solicitud_id={sol['id']}").json()
+    assert [e["id"] for e in lista] == [estudiante.id, estudiante2.id]  # ordenados de mayor a menor
+    mejor, peor = lista
+    assert mejor["puntaje"] == 100 and 0 <= peor["puntaje"] < 50
+    assert "Atiende en tu comuna" in mejor["motivos"] and "Su disponibilidad coincide con la tuya" in mejor["motivos"]
+    assert not any("Necesita pacientes" in m for m in peor["motivos"])

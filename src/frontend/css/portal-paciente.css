@@ -95,7 +95,7 @@ body.tema-paciente {
   .finder__title { font-size: 28px; }
 }
 
-/* ---------- 6. HAZ TU CONSULTA: urgencia, afinidad, opinión ---------- */
+/* ---------- 6. HAZ TU CONSULTA: urgencia, procedimientos sugeridos, coincidencia, opinión ---------- */
 .alerta-urgencia {
   display: flex; gap: 12px; align-items: flex-start;
   background: var(--danger-soft); color: var(--danger);
@@ -103,13 +103,119 @@ body.tema-paciente {
 }
 .alerta-urgencia p { margin: 0; font-size: 14px; line-height: 1.5; font-weight: 600; }
 .alerta-urgencia .material-symbols-rounded { flex: none; }
-.coincide { color: var(--text-muted); font-size: 12px; }
-.consulta__mensaje {
-  background: var(--panel-bg); color: var(--text-muted);
-  border-radius: 12px; padding: 12px 16px; margin: 0 0 16px; font-size: 14px; line-height: 1.5;
+
+/* Tres niveles con el mismo código de color en todo el portal: alta (verde), media (ámbar), baja (gris azulado). */
+.proc--alta, .afinidad--alta { --nivel: #0f9d77; --nivel-fondo: #e3f8ef; }
+.proc--media, .afinidad--media { --nivel: #d98a00; --nivel-fondo: #fff4d6; }
+.proc--baja, .afinidad--baja { --nivel: #6b7a99; --nivel-fondo: #eef2fa; }
+
+/* Aviso de uso de IA, antes del cuadro de búsqueda */
+.aviso-ia {
+  display: flex; align-items: flex-start; gap: 12px; margin: 0 0 14px;
+  padding: 12px 16px; border-radius: 12px;
+  background: var(--warning-soft); border: 1px solid #f6d58a; color: #6b4300;
 }
-.afinidad { margin: 8px 0 4px; }
-.afinidad__motivos { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: var(--text-muted); }
-.opinion { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px; font-size: 14px; flex-wrap: wrap; }
-.opinion--gracias { color: var(--text-muted); }
-.consulta__mas { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 12px; }
+.aviso-ia__icono { flex: none; font-size: 24px; color: var(--warning); }
+.aviso-ia strong { display: block; font-size: 14px; font-weight: 800; color: #5c3a00; }
+.aviso-ia p { margin: 2px 0 0; font-size: 13px; line-height: 1.5; }
+.aviso-ia__enlace {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-weight: 700; color: var(--primary); text-decoration: underline;
+}
+
+.consulta { margin-top: 18px; display: flex; flex-direction: column; gap: 14px; }
+.consulta h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 16px; font-weight: 800; color: var(--text); }
+.consulta h3 .material-symbols-rounded { color: var(--secondary-dark); font-size: 22px; }
+.consulta__encabezado { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.consulta__subtitulo { margin-top: 6px !important; }
+.consulta__ayuda summary {
+  display: inline-flex; align-items: center; gap: 6px; cursor: pointer; list-style: none;
+  font-size: 13px; font-weight: 700; color: var(--primary);
+  padding: 6px 12px; border-radius: var(--radius-pill); background: var(--primary-soft);
+}
+.consulta__ayuda summary::-webkit-details-marker { display: none; }
+.consulta__ayuda summary .material-symbols-rounded { font-size: 18px; }
+.consulta__ayuda p { margin: 8px 0 0; max-width: 420px; font-size: 13px; line-height: 1.5; color: var(--text-muted); }
+
+/* Procedimientos sugeridos */
+.consulta__procs { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+.proc {
+  display: flex; align-items: center; gap: 14px; padding: 14px 16px;
+  background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--nivel);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-card);
+}
+.proc__icono {
+  flex: none; width: 44px; height: 44px; border-radius: 12px;
+  display: grid; place-items: center; background: var(--nivel-fondo); color: var(--nivel);
+}
+.proc__texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.proc__texto strong { font-size: 15px; font-weight: 800; }
+.proc__texto span { font-size: 12px; color: var(--text-muted); }
+.proc__texto small { font-size: 12px; color: var(--text-muted); font-style: italic; }
+.proc__nivel { flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.proc__nivel b { font-size: 14px; color: var(--nivel); }
+.proc__nivel small { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+.proc__barras { display: flex; align-items: flex-end; gap: 3px; height: 18px; }
+.proc__barras i { display: block; width: 6px; border-radius: 3px; background: #dbe2f0; }
+.proc__barras i:nth-child(1) { height: 7px; }
+.proc__barras i:nth-child(2) { height: 12px; }
+.proc__barras i:nth-child(3) { height: 18px; }
+.proc__barras i.on { background: var(--nivel); }
+
+.consulta__mensaje {
+  display: flex; align-items: flex-start; gap: 10px; margin: 0;
+  background: var(--warning-soft); color: #7a4a00;
+  border-radius: 12px; padding: 12px 16px; font-size: 14px; line-height: 1.5;
+}
+.consulta__mensaje .material-symbols-rounded { flex: none; font-size: 20px; color: var(--warning); }
+
+/* Sin resultados */
+.consulta__vacio {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px;
+  padding: 26px 20px; border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--primary-soft), var(--secondary-soft));
+}
+.consulta__vacio h3 { justify-content: center; font-size: 18px; }
+.consulta__vacio p { margin: 0; max-width: 460px; font-size: 14px; line-height: 1.5; color: var(--text-muted); }
+.consulta__vacio-icono {
+  width: 60px; height: 60px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--surface); box-shadow: var(--shadow-card); color: var(--secondary-dark); margin-bottom: 4px;
+}
+.consulta__vacio-icono .material-symbols-rounded { font-size: 32px; }
+.consulta__publicar { display: flex; justify-content: center; }
+
+/* Porcentaje de coincidencia en la ficha del estudiante */
+.afinidad {
+  display: flex; align-items: center; gap: 14px; padding: 10px 14px;
+  background: var(--nivel-fondo); border-radius: 14px;
+}
+.afinidad__anillo {
+  position: relative; flex: none; width: 68px; height: 68px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: conic-gradient(var(--nivel) calc(var(--pct) * 1%), rgba(255, 255, 255, .85) 0);
+}
+.afinidad__anillo::before { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--surface); }
+.afinidad__anillo strong { position: relative; font-size: 14px; letter-spacing: -.02em; font-weight: 800; color: var(--nivel); }
+.afinidad__info { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.afinidad__info > strong { font-size: 14px; font-weight: 800; color: var(--text); }
+.afinidad__motivos { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--text-muted); }
+.afinidad__motivos li { display: inline-flex; align-items: center; gap: 4px; }
+.afinidad__motivos .material-symbols-rounded { font-size: 15px; color: var(--nivel); }
+
+/* Opinión */
+.opinion { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: var(--text-muted); flex-wrap: wrap; }
+.opinion--gracias { margin: 0; }
+.opinion--gracias .material-symbols-rounded { font-size: 18px; color: var(--secondary-dark); }
+.opinion__voto {
+  display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+  padding: 6px 14px; border-radius: var(--radius-pill); border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font: inherit; font-size: 13px; font-weight: 700;
+}
+.opinion__voto .material-symbols-rounded { font-size: 18px; color: var(--secondary-dark); }
+.opinion__voto:hover { background: var(--secondary-soft); border-color: var(--secondary); }
+.consulta__mas { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+@media (max-width: 560px) {
+  .proc { flex-wrap: wrap; }
+  .afinidad { align-items: flex-start; }
+}

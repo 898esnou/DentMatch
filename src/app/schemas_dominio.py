@@ -159,6 +159,10 @@ class EstudianteOut(BaseModel):
     ramos: List[str] = []
     requerimientos_abiertos: List[RequerimientoResumen] = []
     mi_postulacion_estado: Optional[str] = None
+    # Coincidencia con la solicitud del paciente (0 a 100, ver app/matching.py).
+    # Solo viene cuando se pide con ?solicitud_id= o en los resultados de la búsqueda.
+    puntaje: Optional[int] = None
+    motivos: List[str] = []
 
 
 # ---------- POSTULACIONES ----------

@@ -122,13 +122,27 @@ function llenarSelectorSolicitud(seleccionarId) {
   if (disponibles.some((s) => String(s.id) === actual)) select.value = actual;
 }
 
-// Puntaje de coincidencia (solo viene en los resultados de "Haz tu consulta").
+// Porcentaje de coincidencia (viene cuando hay una solicitud activa o en los resultados de "Haz tu consulta").
+// El color y la frase acompañan al número, para que no dependa solo del color.
+function nivelAfinidad(puntaje) {
+  if (puntaje >= 75) return { clase: "alta", frase: "Muy buena coincidencia" };
+  if (puntaje >= 50) return { clase: "media", frase: "Buena coincidencia" };
+  return { clase: "baja", frase: "Coincidencia parcial" };
+}
+
 function bloqueAfinidad(e) {
   if (e.puntaje === undefined || e.puntaje === null) return "";
-  const motivos = (e.motivos || []).map((m) => `<li>${esc(m)}</li>`).join("");
-  return `<div class="afinidad">
-      <span class="chip-tag chip-tag--green"><span class="material-symbols-rounded">insights</span> Afinidad ${esc(e.puntaje)} de 100</span>
-      ${motivos ? `<ul class="afinidad__motivos">${motivos}</ul>` : ""}
+  const puntaje = Math.max(0, Math.min(100, Number(e.puntaje) || 0));
+  const nivel = nivelAfinidad(puntaje);
+  const motivos = (e.motivos || [])
+    .map((m) => `<li><span class="material-symbols-rounded">check_circle</span>${esc(m)}</li>`)
+    .join("");
+  return `<div class="afinidad afinidad--${nivel.clase}" title="Calculado según el procedimiento, la comuna y el horario">
+      <div class="afinidad__anillo" style="--pct:${puntaje}"><strong>${puntaje}%</strong></div>
+      <div class="afinidad__info">
+        <strong>${nivel.frase}</strong>
+        ${motivos ? `<ul class="afinidad__motivos">${motivos}</ul>` : ""}
+      </div>
     </div>`;
 }
 
@@ -267,26 +281,32 @@ let opinionEnviada = false;  // una opinión por consulta
 const estudiantesDeConsulta = () => (consultaActual ? consultaActual.estudiantes : []);
 
 // Qué tan parecido es lo escrito al procedimiento (no es un diagnóstico ni una probabilidad).
-// El color ayuda, pero lo que informa es el texto, para que no dependa solo del color.
+// Las barras y el color ayudan, pero lo que informa es la palabra (Alta / Media / Baja).
 const NIVELES_COINCIDENCIA = {
-  alta: { etiqueta: "Coincidencia alta", clase: "chip-tag chip-tag--green" },
-  media: { etiqueta: "Coincidencia media", clase: "chip-tag chip-tag--warn" },
-  baja: { etiqueta: "Coincidencia baja", clase: "chip-tag chip-tag--soft" },
+  alta: { etiqueta: "Alta", barras: 3 },
+  media: { etiqueta: "Media", barras: 2 },
+  baja: { etiqueta: "Baja", barras: 1 },
 };
 
-function chipProcedimiento(p) {
-  const nivel = NIVELES_COINCIDENCIA[p.coincidencia] || NIVELES_COINCIDENCIA.baja; // si falta el dato, lo más prudente
+function tarjetaProcedimiento(p) {
+  const clave = NIVELES_COINCIDENCIA[p.coincidencia] ? p.coincidencia : "baja"; // si falta el dato, lo más prudente
+  const nivel = NIVELES_COINCIDENCIA[clave];
+  const barras = [1, 2, 3].map((n) => `<i class="${n <= nivel.barras ? "on" : ""}"></i>`).join("");
   // "Se parece a": la frase del catálogo que coincidió, para que se entienda por qué se sugiere.
-  const motivo = p.coincide_con ? `<small class="coincide">Se parece a: “${esc(p.coincide_con)}”</small>` : "";
-  return `<span style="display:inline-flex;flex-direction:column;gap:2px">
-    <span style="display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">
-      <span class="chip-tag chip-tag--soft">
-        <span class="material-symbols-rounded">medical_services</span> ${esc(p.nombre)} · ${esc(p.area_nombre)}
-      </span>
-      <span class="${nivel.clase}">${esc(nivel.etiqueta)}</span>
-    </span>
-    ${motivo}
-  </span>`;
+  const motivo = p.coincide_con ? `<small>Se parece a: “${esc(p.coincide_con)}”</small>` : "";
+  return `<div class="proc proc--${clave}">
+    <span class="proc__icono"><span class="material-symbols-rounded">medical_services</span></span>
+    <div class="proc__texto">
+      <strong>${esc(p.nombre)}</strong>
+      <span>${esc(p.area_nombre)}</span>
+      ${motivo}
+    </div>
+    <div class="proc__nivel" aria-label="Coincidencia ${esc(nivel.etiqueta.toLowerCase())}">
+      <span class="proc__barras" aria-hidden="true">${barras}</span>
+      <b>${esc(nivel.etiqueta)}</b>
+      <small>coincidencia</small>
+    </div>
+  </div>`;
 }
 
 // Aviso de posible urgencia: va primero y con rol "alert" para que lo lea un lector de pantalla.
@@ -300,11 +320,17 @@ function bloqueUrgencia(consulta) {
 
 // "¿Te sirvió esta sugerencia?": opinión anónima, una vez por consulta.
 function bloqueOpinion() {
-  if (opinionEnviada) return `<p class="opinion opinion--gracias">Gracias por tu opinión.</p>`;
+  if (opinionEnviada) {
+    return `<p class="opinion opinion--gracias"><span class="material-symbols-rounded">favorite</span> ¡Gracias por tu opinión!</p>`;
+  }
   return `<div class="opinion">
     <span>¿Te sirvió esta sugerencia?</span>
-    <button type="button" class="btn btn--outline btn--sm" data-accion="opinion" data-util="1">Sí</button>
-    <button type="button" class="btn btn--outline btn--sm" data-accion="opinion" data-util="0">No</button>
+    <button type="button" class="opinion__voto" data-accion="opinion" data-util="1" aria-label="Sí, me sirvió">
+      <span class="material-symbols-rounded">thumb_up</span> Sí
+    </button>
+    <button type="button" class="opinion__voto" data-accion="opinion" data-util="0" aria-label="No me sirvió">
+      <span class="material-symbols-rounded">thumb_down</span> No
+    </button>
   </div>`;
 }
 
@@ -320,10 +346,19 @@ function bloqueMas(consulta) {
 
 // Botón que lleva la consulta al formulario de publicar (lo atiende el oyente de "usar-consulta").
 function botonPublicar(etiqueta, principal) {
-  return `<div style="display:flex;justify-content:center;margin-top:16px">
-    <button type="button" class="btn ${principal ? "btn--primary" : "btn--outline"}" data-accion="usar-consulta">
+  return `<div class="consulta__publicar">
+    <button type="button" class="btn ${principal ? "btn--primary btn--lg" : "btn--outline"}" data-accion="usar-consulta">
       <span class="material-symbols-rounded">edit_note</span> ${etiqueta}
     </button>
+  </div>`;
+}
+
+// Tarjeta vacía con icono, título corto y una línea de apoyo.
+function estadoVacio(icono, titulo, detalle) {
+  return `<div class="consulta__vacio">
+    <span class="consulta__vacio-icono"><span class="material-symbols-rounded">${icono}</span></span>
+    <h3>${titulo}</h3>
+    <p>${detalle}</p>
   </div>`;
 }
 
@@ -335,42 +370,53 @@ function pintarConsulta() {
   }
   const { procedimientos, estudiantes: lista } = consultaActual;
   const urgencia = bloqueUrgencia(consultaActual);
-  // Mensaje del servidor cuando la coincidencia es débil: sugiere hablar con el estudiante.
-  const mensaje = consultaActual.mensaje ? `<p class="consulta__mensaje">${esc(consultaActual.mensaje)}</p>` : "";
 
   // Caso 1: no se reconoció ningún procedimiento.
   if (!procedimientos.length) {
-    caja.innerHTML = `${urgencia}
-      <p class="empty">${esc(consultaActual.mensaje || "No encontramos procedimientos relacionados con lo que escribiste. Prueba con otras palabras o publica tu solicitud para que los estudiantes interesados puedan postular a ella.")}</p>
+    caja.innerHTML = `${urgencia}<div class="consulta">
+      ${estadoVacio("search_off", "No encontramos algo parecido",
+        esc(consultaActual.mensaje || "Prueba con otras palabras o publica tu solicitud para que los estudiantes interesados puedan postular."))}
+      ${botonPublicar("Publicar mi solicitud con este texto", true)}
       ${bloqueOpinion()}
-      ${botonPublicar("Publicar mi solicitud con este texto", false)}`;
+    </div>`;
     return;
   }
 
-  const chips = `
-    <p class="portal-section-sub">Procedimientos relacionados con tu consulta:</p>
-    <div class="cand__tags" style="margin:8px 0 6px">${procedimientos.map(chipProcedimiento).join("")}</div>
-    <small style="display:block;margin-bottom:12px">La coincidencia indica qué tan parecido es tu texto a cada procedimiento.
-      No es un diagnóstico: son recomendaciones, no una verdad absoluta. Si no es lo que buscabas, prueba con otras palabras.</small>
+  // Mensaje del servidor cuando la coincidencia es débil: sugiere hablar con el estudiante.
+  const mensaje = consultaActual.mensaje
+    ? `<p class="consulta__mensaje"><span class="material-symbols-rounded">lightbulb</span>${esc(consultaActual.mensaje)}</p>`
+    : "";
+  const encabezado = `
+    <div class="consulta__encabezado">
+      <h3><span class="material-symbols-rounded">auto_awesome</span> Esto entendimos de tu consulta</h3>
+      <details class="consulta__ayuda">
+        <summary><span class="material-symbols-rounded">info</span> ¿Cómo se lee?</summary>
+        <p>Relacionamos tus palabras con procedimientos. No es un diagnóstico, solo una sugerencia: si no es lo que buscabas, prueba con otras palabras.</p>
+      </details>
+    </div>
+    <div class="consulta__procs">${procedimientos.map(tarjetaProcedimiento).join("")}</div>
     ${mensaje}`;
 
   // Caso 2: hay procedimientos, pero ningún estudiante busca pacientes para ellos -> invitar a publicar.
   if (!lista.length) {
     const nombres = procedimientos.map((p) => p.nombre).join(", ");
-    caja.innerHTML = `${urgencia}${chips}
-      <p class="empty">Por ahora ningún estudiante está buscando pacientes para <strong>${esc(nombres)}</strong>.
-      Publica tu solicitud: los estudiantes que cumplan con lo que necesitas podrán postular a ella.</p>
+    caja.innerHTML = `${urgencia}<div class="consulta">${encabezado}
+      ${estadoVacio("person_search", "Aún no hay estudiantes para esto",
+        `Nadie busca pacientes de <strong>${esc(nombres)}</strong> por ahora. Publica tu solicitud y los estudiantes interesados postularán a ella.`)}
+      ${botonPublicar(`Publicar mi solicitud de ${esc(procedimientos[0].nombre)}`, true)}
       ${bloqueOpinion()}
-      ${botonPublicar(`Publicar mi solicitud de ${esc(procedimientos[0].nombre)}`, true)}`;
+    </div>`;
     return;
   }
 
-  // Caso 3: hay estudiantes -> tarjetas ordenadas por afinidad, y la opción de publicar como alternativa.
-  caja.innerHTML = `${urgencia}${chips}
+  // Caso 3: hay estudiantes -> tarjetas ordenadas por coincidencia, y la opción de publicar como alternativa.
+  caja.innerHTML = `${urgencia}<div class="consulta">${encabezado}
+    <h3 class="consulta__subtitulo"><span class="material-symbols-rounded">groups</span> Estudiantes recomendados</h3>
     ${lista.map(tarjetaEstudiante).join("")}
     ${bloqueMas(consultaActual)}
     ${bloqueOpinion()}
-    ${botonPublicar("Usar esta consulta para publicar mi solicitud", false)}`;
+    ${botonPublicar("Usar esta consulta para publicar mi solicitud", false)}
+  </div>`;
 }
 
 // Tras pedir atención desde los resultados, el botón pasa a "Solicitud pendiente" sin volver a consultar la IA.
