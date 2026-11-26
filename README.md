@@ -4,7 +4,7 @@ Proyecto Capstone Grupo Ockham
 ## Descripción
 DentMatch es una plataforma web que conecta a estudiantes de Odontología que necesitan pacientes para sus prácticas clínicas con personas que buscan atención dental de bajo costo. Los estudiantes crean un perfil verificado con sus procedimientos pendientes, su disponibilidad y su lugar de atención. Los pacientes publican su necesidad y encuentran estudiantes que se ajusten a ella. La plataforma gestiona las postulaciones entre ambas partes y un chat donde acuerdan el día, la hora y el lugar de la atención, mostrando información que genera confianza (universidad, año de carrera, supervisión docente).
 
-El **puntaje de coincidencia** (0 a 100) combina el procedimiento que necesita el paciente (50 %), la ubicación (30 %) y la disponibilidad (20 %). La ubicación premia la misma comuna y baja según cuántas comunas separan al paciente del estudiante, con un mínimo de 0,3 (ver `app/comunas.py`).
+El **puntaje de coincidencia** (0 a 100) combina el procedimiento que necesita el paciente (50 %), la ubicación (30 %) y la disponibilidad (20 %). La ubicación premia la misma comuna y baja según cuántas comunas separan al paciente del estudiante, con un mínimo de 0,3 (ver `src/app/comunas.py`).
 
 Además incluye una búsqueda con IA que relaciona lo que escribe el paciente con procedimientos odontológicos, un puntaje de coincidencia entre pacientes y estudiantes, un chat de coordinación moderado automáticamente (reglas y IA), reportes de conducta y un panel de administración.
 
@@ -39,8 +39,10 @@ DentMatch es un **proyecto académico** (Capstone). No está pensado para usuari
 ### 1. Obtener el código
 ```bash
 git clone <URL-del-repositorio>
-cd DentMatch
+cd DentMatch/src
 ```
+
+Todo el código de la aplicación está en la carpeta `src/`, y **todos los comandos de esta guía se ejecutan desde ahí** (el servidor busca `frontend/` y `uploads/` con rutas relativas a esa carpeta).
 
 ### 2. Crear y activar el entorno virtual
 ```bash
@@ -146,7 +148,7 @@ Las pruebas usan una base de datos temporal en memoria: **no tocan** la base rea
 Presiona `Ctrl + C` en la terminal. Para salir del entorno virtual, escribe `deactivate`.
 
 ## Despliegue en Vercel
-La aplicación se publica desde la rama `main`: cada `git push` genera un despliegue nuevo. En **Settings → Environment Variables** del proyecto deben estar:
+La aplicación se publica desde la rama `main`: cada `git push` genera un despliegue nuevo. Como el código vive en `src/`, en **Settings → General → Root Directory** del proyecto debe estar `src`. En **Settings → Environment Variables** del proyecto deben estar:
 
 | Variable | Para qué |
 |---|---|
@@ -156,20 +158,26 @@ La aplicación se publica desde la rama `main`: cada `git push` genera un despli
 | `GEMINI_API_KEY` | Búsqueda con IA |
 | `GEMINI_API_KEY_MODERACION` | Moderación del chat (opcional; si falta se usa la anterior o solo las reglas) |
 
-Importante: en Vercel el índice de la búsqueda no se puede construir, así que `app/datos/embeddings_cache.npz` debe viajar en el repositorio junto con `app/datos/procedimientos.json`. Si se cambia el catálogo, hay que regenerarlo con `python -m scripts.construir_cache` y subir ambos archivos.
+Importante: en Vercel el índice de la búsqueda no se puede construir, así que `src/app/datos/embeddings_cache.npz` debe viajar en el repositorio junto con `src/app/datos/procedimientos.json`. Si se cambia el catálogo, hay que regenerarlo con `python -m scripts.construir_cache` y subir ambos archivos.
 
 ## Estructura del proyecto
 ```
-app/            Backend (FastAPI)
-  routers/      Un archivo por sección de la API (auth, solicitudes, postulaciones, chat, admin...)
-  models.py     Tablas de la base de datos
-  matching.py   Puntaje de coincidencia (con comunas.py)
-  moderacion.py, sanciones.py   Moderación del chat, advertencias, baneos y reportes
-  auth.py       Contraseñas, tokens y control de acceso por rol
-frontend/       Páginas, estilos y scripts del navegador
-scripts/        Herramientas de apoyo (crear administrador, construir el índice de IA)
-migraciones/    Scripts SQL para la base de datos (Supabase)
-tests/          Pruebas automáticas
+Fase 1/, Fase 2/      Documentos y evidencias de cada fase
+Videos de Prueba/     Videos de prueba del sistema
+src/                  Código fuente de la aplicación
+  app/                Backend (FastAPI)
+    routers/          Un archivo por sección de la API (auth, solicitudes, postulaciones, chat, admin...)
+    models.py         Tablas de la base de datos
+    matching.py       Puntaje de coincidencia (con comunas.py)
+    moderacion.py, sanciones.py   Moderación del chat, advertencias, baneos y reportes
+    auth.py           Contraseñas, tokens y control de acceso por rol
+  frontend/           Páginas, estilos y scripts del navegador
+  scripts/            Herramientas de apoyo (crear administrador, construir el índice de IA)
+  migraciones/        Scripts SQL para la base de datos (Supabase)
+  tests/              Pruebas automáticas
+  postman/, pruebas/  Colección de Postman y documentos de pruebas
+  requirements.txt    Dependencias (y requirements-dev.txt para las pruebas)
+  vercel.json         Configuración del despliegue
 ```
 
 ## Solución de problemas

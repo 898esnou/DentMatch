@@ -8,7 +8,7 @@ El proyecto tiene cuatro tipos de pruebas:
 
 | Tipo | Qué es | Dónde está | Autor |
 |---|---|---|---|
-| Pruebas en video | Grabaciones del sistema funcionando | `Videos de Prueba/` y `Fase 1/Evidencias Grupales/` | Joaquín Rohland |
+| Pruebas en video | Grabaciones del sistema funcionando | `Videos de Prueba/` y `Fase 1/Evidencias Grupales/` (en la raíz del repositorio) | Joaquín Rohland |
 | Pruebas automáticas | Código que verifica solo que el backend se comporte bien | `tests/` | Benjamín Canales |
 | Pruebas de API con Postman | Colección de 80 peticiones (108 verificaciones) que recorre la API como cada rol; ejecutada con Newman sin fallas | `postman/` (ver [Pruebas_postman.md](Pruebas_postman.md)) | Benjamín Canales |
 | Verificaciones manuales | Recorridos hechos en el navegador antes de cada entrega | (ver sección 3) | Benjamín Canales |
